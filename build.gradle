@@ -1,12 +1,28 @@
 plugins {
-  id 'qupath.extension-conventions'
   id 'java-library'
+  // To create a shadow/fat jar, including dependencies
+  id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
 ext.moduleName = 'qupath.extension.omero'
 archivesBaseName = 'qupath-extension-omero'
 description = "QuPath extension to support image reading using OMERO's web API."
+version = "0.3.0-SNAPSHOT"
 
-configurations {
-  implementation.extendsFrom commonstext
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+
+dependencies {
+  implementation "org.apache.commons:commons-text:1.9"
+  
+  shadow "io.github.qupath:qupath-gui-fx:0.3.0-SNAPSHOT"    
+  shadow "org.slf4j:slf4j-api:1.7.25"
+}
+
+// Copy dependencies
+task copyDependencies(type: Copy) {
+  from configurations.default
+  into 'build/libs'
 }
