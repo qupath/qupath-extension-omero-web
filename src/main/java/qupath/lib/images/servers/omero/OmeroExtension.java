@@ -29,6 +29,9 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.Label;
@@ -38,6 +41,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import qupath.lib.gui.ActionTools;
 import qupath.lib.gui.QuPathGUI;
+import qupath.lib.gui.Version;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.gui.extensions.QuPathExtension;
 import qupath.lib.gui.tools.MenuTools;
@@ -48,13 +52,23 @@ import qupath.lib.gui.tools.PaneTools;
  */
 public class OmeroExtension implements QuPathExtension {
 	
+	private final static Logger logger = LoggerFactory.getLogger(OmeroExtension.class);
+	
 	/**
 	 * To handle the different stages of browsers (only allow one per OMERO server)
 	 */
 	private static Map<OmeroWebClient, OmeroWebImageServerBrowserCommand> browsers = new HashMap<>();
+	
+	private static boolean alreadyInstalled = false;
+	
+	private static Version minimumVersion = Version.parse("0.3.0-SNAPSHOT");
 
 	@Override
 	public void installExtension(QuPathGUI qupath) {
+		if (alreadyInstalled || !checkCompatibility())
+			return;
+		
+		alreadyInstalled = true;
 		var actionClients = ActionTools.createAction(new OmeroWebClientsCommand(qupath), "Manage server connections");
 		var actionSendObjects = ActionTools.createAction(new OmeroWritePathObjectsCommand(qupath), "Send annotations to OMERO");
 		Menu browseServerMenu = new Menu("Browse server...");
@@ -73,6 +87,26 @@ public class OmeroExtension implements QuPathExtension {
 				);
 		createServerListMenu(qupath, browseServerMenu);
 	}
+	
+	
+	/**
+	 * Check compatibility with the QuPath version.
+	 * @return
+	 */
+	private static boolean checkCompatibility() {
+		try {
+			var version = QuPathGUI.getVersion();
+			// If >= the minimum version, we are compatible as far as we know
+			if (minimumVersion.compareTo(version) <= 0)
+				return true;
+		} catch (Exception e) {
+			logger.debug("Version check exception: " + e.getLocalizedMessage(), e);
+		}
+		logger.warn("OMERO extension is not compatible with the current QuPath version ({}.{}.{} required)",
+				minimumVersion.getMajor(), minimumVersion.getMinor(), minimumVersion.getPatch());
+		return false;
+	}
+	
 
 	@Override
 	public String getName() {
