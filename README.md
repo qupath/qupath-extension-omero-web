@@ -27,3 +27,4 @@ gradlew clean build
 ```
 
 The output will be under `build/libs`.
+You can drag the jar file on top of QuPath to install the extension.
