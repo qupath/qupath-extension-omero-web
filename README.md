@@ -20,7 +20,7 @@ It is not compatible with earlier QuPath versions.
 
 ## Building
 
-You can build the extension with
+You can build the extension using OpenJDK 11 or later with
 
 ```bash
 gradlew clean build
