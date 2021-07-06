@@ -448,6 +448,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 					comboGroup.getItems().setAll(groups);
 				}
 			} catch (ConnectException ex) {
+				logger.warn(ex.getLocalizedMessage());
 				logger.info("Will not fetch the current OMERO group.");
 			}
 		}

@@ -144,7 +144,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 						} else
 							logger.error("Requested JPEG quality '{}' is invalid, must be between 0 and 1. I will use {} instead.", parsedQuality, quality);
 					} catch (NumberFormatException ex) {
-						logger.error("Unable to parse JPEG quality from {}", args[i+1]);
+						logger.error("Unable to parse JPEG quality from {}", args[i+1], ex);
 					}
 				}
 			}

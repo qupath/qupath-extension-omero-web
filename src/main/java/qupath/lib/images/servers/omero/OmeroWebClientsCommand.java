@@ -320,13 +320,14 @@ public class OmeroWebClientsCommand implements Runnable {
 				
 				executor.submit(() -> {
 					try {
-						final boolean canAccessImage = client.canBeAccessed(imageUri, OmeroObjectType.IMAGE);
+						final boolean canAccessImage = OmeroWebClient.canBeAccessed(imageUri, OmeroObjectType.IMAGE);
 						String tooltip = (client.isLoggedIn() && !canAccessImage) ? "Unreachable image (access not permitted)" : imageUri.toString();
 						Platform.runLater(() -> {
 							imageServerName.setTooltip(new Tooltip(tooltip));
 							imageServerName.setGraphic(OmeroTools.createStateNode(canAccessImage));									
 						});
 					} catch (ConnectException ex) {
+						logger.warn(ex.getLocalizedMessage());
 						Platform.runLater(() -> {
 							imageServerName.setTooltip(new Tooltip("Unreachable image"));									
 							imageServerName.setGraphic(OmeroTools.createStateNode(false));

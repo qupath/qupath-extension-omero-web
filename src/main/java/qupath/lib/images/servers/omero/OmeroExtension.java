@@ -189,7 +189,7 @@ public class OmeroExtension implements QuPathExtension {
 						browser.getStage().requestFocus();		
 					
 				} catch (FileNotFoundException ex) {
-					Dialogs.showErrorMessage("OMERO web server", "An error occured when trying to reach " + path);
+					Dialogs.showErrorMessage("OMERO web server", String.format("An error occured when trying to reach %s: %s\"", path, ex.getLocalizedMessage()));
 				} catch (IOException | URISyntaxException ex) {
 					Dialogs.showErrorMessage("OMERO web server", ex.getLocalizedMessage());
 					return;
