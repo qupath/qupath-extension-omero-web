@@ -142,9 +142,10 @@ public final class OmeroTools {
 			gson = new GsonBuilder().registerTypeAdapter(OmeroObject.class, new OmeroObjects.GsonOmeroObjectDeserializer()).setLenient().create();
 			try {
 				var omeroObj = gson.fromJson(d, OmeroObject.class);
-				omeroObj.setParent(parent);
-				if (omeroObj != null)
-					list.add(omeroObj);
+				if (omeroObj != null) {
+					omeroObj.setParent(parent);
+					list.add(omeroObj);					
+				}
 			} catch (Exception e) {
 				logger.error("Error parsing OMERO object: " + e.getLocalizedMessage(), e);
 			}
@@ -250,7 +251,7 @@ public final class OmeroTools {
         						orphanedFolder.setLoading(false);
         				});
     				} catch (IOException ex) {
-						logger.error("Could not fetch information for image id: " + e.getAsJsonObject().get("id"));
+						logger.error("Could not fetch information for image id: " + e.getAsJsonObject().get("id"), ex);
 					}
     			});
         	});
@@ -276,9 +277,10 @@ public final class OmeroTools {
 		for (var d: orphanedDatasets) {
 			try {
 				OmeroObject omeroObj = gson.fromJson(d, OmeroObject.class);
-				omeroObj.setParent(server);
-				if (omeroObj != null)
-					list.add(omeroObj);
+				if (omeroObj != null) {
+					omeroObj.setParent(server);
+					list.add(omeroObj);					
+				}
 			} catch (Exception e) {
 				logger.error("Error parsing OMERO object: {}", e.getLocalizedMessage());
 			}
@@ -440,7 +442,7 @@ public final class OmeroTools {
 				// See if resulting JSON is a list (e.g. Points/MultiPolygon)
 				List<JsonElement> roiList = Arrays.asList(GsonTools.getInstance().fromJson(myJson, JsonElement[].class));
 				roiList.forEach(e -> jsonList.add(e.toString()));
-			} catch (Exception e) {
+			} catch (Exception ex) {
 				jsonList.add(myJson);
 			}
 		}
@@ -523,7 +525,7 @@ public final class OmeroTools {
 				scheme = "https://";
 			return new URL(scheme, host, "").toURI();
 		} catch (MalformedURLException | URISyntaxException ex) {
-			logger.error("Could not parse server from {}", uri.toString());
+			logger.error("Could not parse server from {}", uri.toString(), ex);
 		}
 		return null;
 	}
@@ -550,13 +552,14 @@ public final class OmeroTools {
         // Catch bad response
         if (response != 200)
         	return jsonList;
-        
-        InputStreamReader reader = new InputStreamReader(connection.getInputStream());
-        JsonObject map = GsonTools.getInstance().fromJson(reader, JsonObject.class);
-        map.get("data").getAsJsonArray().forEach(jsonList::add);
-        reader.close();
 
-        JsonObject meta = map.getAsJsonObject("meta");
+        JsonObject map;
+        try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
+        	map = GsonTools.getInstance().fromJson(reader, JsonObject.class);
+        }
+
+        map.get("data").getAsJsonArray().forEach(jsonList::add);
+    	JsonObject meta = map.getAsJsonObject("meta");
         int offset = 0;
         int totalCount = meta.get("totalCount").getAsInt();
         int limit = meta.get("limit").getAsInt();

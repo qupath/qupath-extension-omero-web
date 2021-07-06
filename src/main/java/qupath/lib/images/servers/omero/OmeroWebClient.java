@@ -113,17 +113,17 @@ public class OmeroWebClient {
 	
 	private OmeroServerInfo omeroServerInfo;
 	private OmeroAPI supportedVersions;
-	private OmeroAPIVersion version;
+	private OmeroAPIVersion APIVersion;
 	private String token;
 	
 	private Timer timer;
 	
 	static OmeroWebClient create(URI serverURI, boolean startTimer) throws JsonSyntaxException, MalformedURLException, IOException, URISyntaxException {
 		// Clean server URI (filter out wrong URIs and get rid of unnecessary characters)
-		serverURI = new URL(serverURI.getScheme(), serverURI.getHost(), "").toURI();
+		var cleanServerURI = new URL(serverURI.getScheme(), serverURI.getHost(), "").toURI();
 		
 		// Create OmeroWebClient with the serverURI
-		OmeroWebClient client = new OmeroWebClient(serverURI);
+		OmeroWebClient client = new OmeroWebClient(cleanServerURI);
 		
 		// Start timer to keep connection alive
 		if (startTimer)
@@ -420,7 +420,8 @@ public class OmeroWebClient {
 			
 			logger.debug(result);
 			return true;
-		} catch (Exception e) {
+		} catch (Exception ex) {
+			logger.error(ex.getLocalizedMessage());
 			Dialogs.showErrorNotification("OMERO web server", "Could not connect to OMERO web server.\nCheck the following:\n- Valid credentials.\n- Access permission.\n- Correct URL.");
 		}
 		return false;
@@ -473,10 +474,10 @@ public class OmeroWebClient {
 	
 	private boolean loadURLs() throws JsonSyntaxException, MalformedURLException, IOException {
 		supportedVersions = parseJSON(OmeroAPI.class, serverURI.toString(), "/api/");
-		version = supportedVersions.getLatestVersion();
-		if (version == null)
+		APIVersion = supportedVersions.getLatestVersion();
+		if (APIVersion == null)
 			return false;
-		omeroURLs = parseJSON(new TypeToken<Map<String, String>>() {}.getType(), version.versionURL);
+		omeroURLs = parseJSON(new TypeToken<Map<String, String>>() {}.getType(), APIVersion.versionURL);
 		omeroServerInfo = parseJSON(OmeroServerList.class, omeroURLs.get(URL_SERVERS)).data.get(0);
 		return true;
 	}
@@ -496,6 +497,15 @@ public class OmeroWebClient {
 		connection.setRequestProperty("Content-Type", "application/json");
 		connection.setRequestMethod("GET");
 		connection.setDoInput(true);
+		
+		// In case of '301 Permanently moved' (sometimes happens when 'http' instead of 'https')
+		var code = connection.getResponseCode();
+		if (code == 301) {
+			var redirectedLink = connection.getHeaderField("Location");
+			logger.error("Could not reach {}. Source permanently moved to {}", connection.getURL().toString(), redirectedLink != null ? redirectedLink : "unknown");
+			throw new IOException(code + ": " + connection.getResponseMessage());
+		}
+		
 		try (InputStream stream = connection.getInputStream()) {
 			return GeneralTools.readInputStreamAsString(stream);
 		}

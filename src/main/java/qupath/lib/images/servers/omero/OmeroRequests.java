@@ -81,10 +81,10 @@ public final class OmeroRequests {
 	 */
 	public static JsonObject requestMetadata(String scheme, String host, int id) throws IOException {
 		URL url = new URL(scheme, host, String.format(WEBGATEWAY_DATA, id));
-		InputStreamReader reader = new InputStreamReader(url.openStream());
-		JsonObject map = new Gson().fromJson(reader, JsonObject.class);
-		reader.close();
-		return map;
+		try (InputStreamReader reader = new InputStreamReader(url.openStream())) {
+			JsonObject map = new Gson().fromJson(reader, JsonObject.class);			
+			return map;
+		}
 	}
 	
 	/**
@@ -125,12 +125,9 @@ public final class OmeroRequests {
         	throw new IOException(String.format("Connection to %s failed: Error %d.", url.getHost(), response));
         
         // Read input stream
-        InputStreamReader reader = new InputStreamReader(connection.getInputStream());
-        JsonObject json = GsonTools.getInstance().fromJson(reader, JsonObject.class);
-        reader.close();
-
-        // Return json
-		return json;
+        try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
+        	return GsonTools.getInstance().fromJson(reader, JsonObject.class);
+        }
 	}
 	
 	/**
@@ -270,10 +267,9 @@ public final class OmeroRequests {
 		URL urlOrphanedImages = new URL(scheme, host, String.format("/webclient/api/%s/?orphaned=true", objectType.toURLString()));
 		HttpURLConnection connection = (HttpURLConnection) urlOrphanedImages.openConnection();
         if (connection.getResponseCode() == 200) {
-        	InputStreamReader reader = new InputStreamReader(connection.getInputStream());
-        	JsonObject map = GsonTools.getInstance().fromJson(reader, JsonObject.class);
-        	reader.close();
-        	return map;
+        	try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
+        		return GsonTools.getInstance().fromJson(reader, JsonObject.class);
+        	}
         } else
         	throw new IOException(String.format("Error %d while connecting to OMERO Webclient: %s", connection.getResponseCode(), connection.getResponseMessage()));
 	}
@@ -292,10 +288,9 @@ public final class OmeroRequests {
 	 */
 	public static JsonElement requestOMEROAnnotations(String scheme, String host, int id, OmeroObjectType objType, OmeroAnnotationType annType) throws IOException {
 		URL url = new URL(scheme, host, String.format(WEBCLIENT_READ_ANNOTATION, annType.toURLString(), objType.toString().toLowerCase(), id, System.currentTimeMillis()));
-		InputStreamReader reader = new InputStreamReader(url.openStream());
-		JsonElement json = GsonTools.getInstance().fromJson(reader, JsonElement.class);
-		reader.close();
-		return json;
+		try (InputStreamReader reader = new InputStreamReader(url.openStream())) {
+			return GsonTools.getInstance().fromJson(reader, JsonElement.class);
+		}
 	}
 
 	/**
@@ -334,7 +329,6 @@ public final class OmeroRequests {
 				"\"deleted\":{},\n" +
 				"\"new\":[%s],\"modified\":[]}}", id, roiJsonList.size(), String.join(", ", roiJsonList));
 		
-		
 		// Create request
 		URL url = new URL(scheme, host, -1, "/iviewer/persist_rois/");
 		var conn = url.openConnection();
@@ -343,10 +337,9 @@ public final class OmeroRequests {
 		conn.setDoOutput(true);
 		
 		// Send JSON
-		OutputStream stream = conn.getOutputStream();
-		stream.write(request.getBytes("UTF-8"));
-		stream.close();
-		
+		try (OutputStream stream = conn.getOutputStream()) {
+			stream.write(request.getBytes("UTF-8"));	
+		}
 		
 		// Get response
 		String response = GeneralTools.readInputStreamAsString(conn.getInputStream());
@@ -444,15 +437,16 @@ public final class OmeroRequests {
 				)
 		);
 		
-		InputStreamReader reader = new InputStreamReader(url.openStream());
-		String response = "";
-		var temp = reader.read();
-		while (temp != -1) {
-			response += (char)temp;
-			temp = reader.read();
+		try (InputStreamReader reader = new InputStreamReader(url.openStream())) {
+			String response = "";
+			var temp = reader.read();
+			while (temp != -1) {
+				response += (char)temp;
+				temp = reader.read();
+			}
+			
+			return response;			
 		}
-		
-		return response;
 	}
 
 	/**
@@ -465,7 +459,7 @@ public final class OmeroRequests {
 			var url = new URL(uri.getScheme(), uri.getHost(), "/api/v0/m/" + OmeroObjectType.PROJECT.toURLString());
 			var conn = (HttpURLConnection) url.openConnection();
 			return conn.getResponseCode() == 200;
-		} catch (IOException e) {
+		} catch (IOException ex) {
 			return false;
 		}
 	}

@@ -34,7 +34,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import qupath.imagej.images.servers.ImageJServer;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.ImageServerBuilder;
@@ -138,6 +137,7 @@ public class OmeroWebImageServerBuilder implements ImageServerBuilder<BufferedIm
 			Dialogs.showErrorNotification("OMERO web server", ex.getLocalizedMessage());
 			OmeroWebClients.addFailedHost(uri);
 		} catch (URISyntaxException | IOException ex) {				// Catch errors when creating an OmeroWebClient
+			logger.error(ex.getLocalizedMessage());
 			Dialogs.showErrorNotification("OMERO web server", "Could not connect to OMERO web server.\nCheck the following:\n- Valid credentials.\n- Access permission.\n- Correct URL.");			
 		}
 		return false;
