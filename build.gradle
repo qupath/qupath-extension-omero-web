@@ -31,6 +31,12 @@ dependencies {
   shadow "org.slf4j:slf4j-api:1.7.30"
 }
 
+processResources {
+  from ("${projectDir}/LICENSE.txt") {
+    into 'licenses/'
+  }
+}
+
 tasks.register("copyDependencies", Copy) {
   description "Copy dependencies into the output libs directory"
   group "QuPath"
