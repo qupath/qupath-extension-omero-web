@@ -73,6 +73,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 	private final String[] args;	
 	private final String host;
 	private final String scheme;
+	private final int port;
 
 	private ImageServerMetadata originalMetadata;
 
@@ -125,6 +126,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		this.uri = uri;
 		this.scheme = uri.getScheme();
 		this.host = uri.getHost();
+		this.port = uri.getPort();
 		this.client = client;
 		this.originalMetadata = buildMetadata();
 		// Args are stored in the JSON - passwords and usernames must not be included!
@@ -181,7 +183,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		boolean isRGB = true;
 		double magnification = Double.NaN;
 		
-		JsonObject map = OmeroRequests.requestMetadata(scheme, host, Integer.parseInt(id));
+		JsonObject map = OmeroRequests.requestMetadata(scheme, host, port, Integer.parseInt(id));
 		JsonObject size = map.getAsJsonObject("size");
 
 		sizeX = size.getAsJsonPrimitive("width").getAsInt();
@@ -299,18 +301,18 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 	 * <p>
 	 * Warning: This method is subject to change in the future.
 	 * 
-	 * @return
+	 * @return list of path objects
 	 * @throws IOException
 	 */
 	@Override
 	public Collection<PathObject> readPathObjects() throws IOException {
 
 		//		URL urlROIs = new URL(
-		//				scheme, host, -1, "/webgateway/get_rois_json/" + id
+		//				scheme, host, port, "/webgateway/get_rois_json/" + id
 		//				);
 
 		// Options are: Rectangle, Ellipse, Point, Line, Polyline, Polygon and Label
-		var data = OmeroRequests.requestROIs(scheme, host, id);
+		var data = OmeroRequests.requestROIs(scheme, host, port, id);
 		List<PathObject> list = new ArrayList<>();
 		var gson = new GsonBuilder().registerTypeAdapter(OmeroShape.class, new OmeroShapes.GsonShapeDeserializer()).setLenient().create();
 			
@@ -390,31 +392,29 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 					"&maps=[{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}}]" +
 					"&m=c&p=normal&q=" + quality;
 
-			URL url = new URL(scheme, host, urlFile);
+			URL url = new URL(scheme, host, port, urlFile);
 
 			BufferedImage img = ImageIO.read(url);
 
 			return img;
-
-		} else {
-			int x = request.getTileX();
-			int y = request.getTileY();
-			//			int width = request.getTileWidth();
-			//			int height = request.getTileHeight();
-			int width = getPreferredTileWidth();
-			int height = getPreferredTileHeight();
-
-			urlFile = "/webgateway/render_image_region/" + id + 
-					"/" + request.getZ() + 
-					"/" + request.getT() +
-					"/?region=" + x + "," + y + "," + width + "," + height +
-					"&c=1|0:255$FF0000,2|0:255$00FF00,3|0:255$0000FF" +
-					"&maps=[{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}}]" +
-					"&m=c&p=normal&q=" + quality;			
 		}
+		
+		// If resolution == 1
+		int x = request.getTileX();
+		int y = request.getTileY();
+		int width = getPreferredTileWidth();
+		int height = getPreferredTileHeight();
+
+		urlFile = "/webgateway/render_image_region/" + id + 
+				"/" + request.getZ() + 
+				"/" + request.getT() +
+				"/?region=" + x + "," + y + "," + width + "," + height +
+				"&c=1|0:255$FF0000,2|0:255$00FF00,3|0:255$0000FF" +
+				"&maps=[{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}}]" +
+				"&m=c&p=normal&q=" + quality;			
 
 
-		URL url = new URL(scheme, host, urlFile);
+		URL url = new URL(scheme, host, port, urlFile);
 
 		BufferedImage img = ImageIO.read(url);
 
@@ -478,6 +478,14 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 	 */
 	public String getScheme() {
 		return scheme;
+	}
+	
+	/**
+	 * Return the URI port used by this image server
+	 * @return port
+	 */
+	public int getPort() {
+		return port;
 	}
 
 	@Override

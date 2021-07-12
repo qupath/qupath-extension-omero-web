@@ -121,15 +121,14 @@ public class OmeroWebImageServerBuilder implements ImageServerBuilder<BufferedIm
 			
 			if (!isLoggedIn)
 				return false;
-			else {
-				// Add the client to the list (but not URI yet!)
-				OmeroWebClients.addClient(client);
-
-				// Check if client can reach the OMERO object while being logged in
-				if (!OmeroWebClient.canBeAccessed(uri, OmeroTools.parseOmeroObjectType(uri)))
-					throw new AccessDeniedException(String.format("\"%s\" does not have permission to read %s", client.getUsername(), uri));
-			}
 			
+			// Add the client to the list (but not URI yet!)
+			OmeroWebClients.addClient(client);
+
+			// Check if client can reach the OMERO object while being logged in
+			if (!OmeroWebClient.canBeAccessed(uri, OmeroTools.parseOmeroObjectType(uri)))
+				throw new AccessDeniedException(String.format("\"%s\" does not have permission to read %s", client.getUsername(), uri));
+		
 			return true;
 		} catch (AccessDeniedException | ConnectException ex) {		// Catch 'access not permitted'
 			Dialogs.showErrorNotification("OMERO web server", ex.getLocalizedMessage());

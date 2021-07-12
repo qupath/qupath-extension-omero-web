@@ -140,7 +140,7 @@ class OmeroShapes {
 					shape.setType("Point");
 					shape.setText(src.getName() != null ? src.getName() : "");
 					shape.setFillColor(pathClass != null ? ARGBToRGBA(src.getPathClass().getColor()) : -256);
-					points[i] = context.serialize(shape, Point.class);;
+					points[i] = context.serialize(shape, Point.class);
 				}
 				return context.serialize(points);
 				

@@ -91,7 +91,7 @@ public final class OmeroTools {
 	private final static Pattern patternType = Pattern.compile("show=(\\w+-)");
 	
 	/**
-	 * Patterns to parse Projects and Datasets ID ('link URI').
+	 * Patterns to parse Project and Dataset IDs ('link URI').
 	 */
 	private final static Pattern patternLinkProject = Pattern.compile("show=project-(\\d+)");
 	private final static Pattern patternLinkDataset = Pattern.compile("show=dataset-(\\d+)");
@@ -111,7 +111,7 @@ public final class OmeroTools {
 	 */
 	public static OmeroWebClient getWebclient(OmeroWebImageServer server) {
 		return server.getWebclient();
-	};
+	}
 	
 	
 	/**
@@ -137,7 +137,7 @@ public final class OmeroTools {
 			type = OmeroObjectType.IMAGE;
 
 		var gson = new GsonBuilder().registerTypeAdapter(OmeroObject.class, new OmeroObjects.GsonOmeroObjectDeserializer()).setLenient().create();
-		List<JsonElement> data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), type, parent);
+		List<JsonElement> data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(),uri.getPort(), type, parent);
 		for (var d: data) {
 			gson = new GsonBuilder().registerTypeAdapter(OmeroObject.class, new OmeroObjects.GsonOmeroObjectDeserializer()).setLenient().create();
 			try {
@@ -229,7 +229,7 @@ public final class OmeroTools {
 		list.clear();
 		
 		try {
-			var map = OmeroRequests.requestWebClientObjectList(uri.getScheme(), uri.getHost(), OmeroObjectType.IMAGE);
+			var map = OmeroRequests.requestWebClientObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.IMAGE);
     		ExecutorService executorRequests = Executors.newSingleThreadExecutor(ThreadTools.createThreadFactory("orphaned-image-requests", true));
     		
     		// Get the total amount of orphaned images to load
@@ -242,7 +242,7 @@ public final class OmeroTools {
     			executorRequests.submit(() -> {
     				try {
     					var id = Integer.parseInt(e.getAsJsonObject().get("id").toString());
-    					OmeroObject omeroObj = readOmeroObject(uri.getScheme(), uri.getHost(), id, OmeroObjectType.IMAGE);
+    					OmeroObject omeroObj = readOmeroObject(uri.getScheme(), uri.getHost(), uri.getPort(), id, OmeroObjectType.IMAGE);
         				Platform.runLater(() -> {
         					list.add(omeroObj);
         					
@@ -273,7 +273,7 @@ public final class OmeroTools {
 		List<OmeroObject> list = new ArrayList<>();
 		var gson = new GsonBuilder().registerTypeAdapter(OmeroObject.class, new OmeroObjects.GsonOmeroObjectDeserializer()).setLenient().create();
 	
-		var orphanedDatasets = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), OmeroObjectType.DATASET, true);
+		var orphanedDatasets = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.DATASET, true);
 		for (var d: orphanedDatasets) {
 			try {
 				OmeroObject omeroObj = gson.fromJson(d, OmeroObject.class);
@@ -296,14 +296,15 @@ public final class OmeroTools {
      * 
      * @param scheme
 	 * @param host
+	 * @param port
 	 * @param id
 	 * @param type
 	 * @return OmeroObject
 	 * @throws IOException
      */
-    public static OmeroObject readOmeroObject(String scheme, String host, int id, OmeroObjectType type) throws IOException {
-    	// Request Json
-    	var map = OmeroRequests.requestObjectInfo(scheme, host, id, type);
+    public static OmeroObject readOmeroObject(String scheme, String host, int port, int id, OmeroObjectType type) throws IOException {
+    	// Request json
+    	var map = OmeroRequests.requestObjectInfo(scheme, host, port, id, type);
         
         // Create OmeroObject
         var gson = new GsonBuilder().registerTypeAdapter(OmeroObject.class, new OmeroObjects.GsonOmeroObjectDeserializer()).setLenient().create();
@@ -385,10 +386,10 @@ public final class OmeroTools {
 	 */
 	public static OmeroAnnotations readOmeroAnnotations(URI uri, OmeroObject obj, OmeroAnnotationType category) {
 		try {
-			var json = OmeroRequests.requestOMEROAnnotations(uri.getScheme(), uri.getHost(), obj.getId(), obj.getType(), category);
+			var json = OmeroRequests.requestOMEROAnnotations(uri.getScheme(), uri.getHost(), uri.getPort(), obj.getId(), obj.getType(), category);
 			return OmeroAnnotations.getOmeroAnnotations(json.getAsJsonObject());
-		} catch (Exception e) {
-			logger.warn("Could not fetch {} information: {}", category, e.getLocalizedMessage());
+		} catch (Exception ex) {
+			logger.warn("Could not fetch {} information: {}", category, ex.getLocalizedMessage());
 			return null;
 		}
 	}
@@ -411,6 +412,7 @@ public final class OmeroTools {
 		String id = server.getId();
 		String host = server.getHost();
 		String scheme = server.getScheme();
+		int port = server.getPort();
 		
 		// TODO: probably should do this in one line
 		Gson gsonTMAs  = new GsonBuilder().registerTypeAdapter(TMACoreObject.class, new OmeroShapes.GsonShapeSerializer()).serializeSpecialFloatingPointValues().setLenient().create();
@@ -447,7 +449,7 @@ public final class OmeroTools {
 			}
 		}
 		
-		return OmeroRequests.requestWriteROIs(scheme, host, Integer.parseInt(id), server.getWebclient().getToken(), jsonList);
+		return OmeroRequests.requestWriteROIs(scheme, host, port, Integer.parseInt(id), server.getWebclient().getToken(), jsonList);
 	}
 	
 	/**
@@ -460,9 +462,9 @@ public final class OmeroTools {
 	 */
 	public static BufferedImage getThumbnail(OmeroWebImageServer server, int imageId, int prefSize) {
 		try {
-			return OmeroRequests.requestThumbnail(server.getScheme(), server.getHost(), imageId, prefSize);			
-		} catch (IOException e) {
-			logger.warn("Error requesting the thumbnail: {}", e.getLocalizedMessage());
+			return OmeroRequests.requestThumbnail(server.getScheme(), server.getHost(), server.getPort(), imageId, prefSize);			
+		} catch (IOException ex) {
+			logger.warn("Error requesting the thumbnail: {}", ex.getLocalizedMessage());
 			return null;
 		}
 	}
@@ -477,9 +479,9 @@ public final class OmeroTools {
 	 */
 	public static BufferedImage getThumbnail(URI uri, int id, int prefSize) {
 		try {
-			return OmeroRequests.requestThumbnail(uri.getScheme(), uri.getHost(), id, prefSize);
-		} catch (IOException e) {
-			logger.warn("Error requesting the thumbnail: {}", e.getLocalizedMessage());
+			return OmeroRequests.requestThumbnail(uri.getScheme(), uri.getHost(), uri.getPort(), id, prefSize);
+		} catch (IOException ex) {
+			logger.warn("Error requesting the thumbnail: {}", ex.getLocalizedMessage());
 			return null;
 		}
 	}
@@ -498,11 +500,11 @@ public final class OmeroTools {
 	
 	/**
 	 * Return a clean URI of the server from which the given URI is specified. This method relies on 
-	 * the specified {@code uri} to be formed properly (with a scheme and a host). 
+	 * the specified {@code uri} to be formed properly (with at least a scheme and a host). 
 	 * <p>
 	 * A few notes:
 	 * <li> If the URI does not contain a host (but does a path), it will be returned without modification. </li>
-	 * <li> If no host <b> and </b> no path is found, {@code null} is returned. </li>
+	 * <li> If no host <b>and</b> no path is found, {@code null} is returned. </li>
 	 * <li> If the specified {@code uri} does not contain a scheme, {@code https://} will be used. </li>
 	 * <p>
 	 * E.g. {@code https://www.my-server.com/show=image-462} returns {@code https://www.my-server.com/}
@@ -523,9 +525,9 @@ public final class OmeroTools {
 			var scheme = uri.getScheme();
 			if (scheme == null || scheme.isEmpty())
 				scheme = "https://";
-			return new URL(scheme, host, "").toURI();
+			return new URL(scheme, host, uri.getPort(), "").toURI();
 		} catch (MalformedURLException | URISyntaxException ex) {
-			logger.error("Could not parse server from {}", uri.toString(), ex);
+			logger.error("Could not parse server from {}: {}", uri.toString(), ex.getLocalizedMessage());
 		}
 		return null;
 	}
@@ -587,10 +589,10 @@ public final class OmeroTools {
 	 */
     static List<URI> getURIs(URI uri) throws IOException {
 		List<URI> list = new ArrayList<>();
-		uri = URI.create(uri.toString().replace("show%3Dimage-", "show=image-"));
+		URI cleanServerUri = URI.create(uri.toString().replace("show%3Dimage-", "show=image-"));
         String elemId = "image-";
-        String query = uri.getQuery() != null ? uri.getQuery() : "";
-        String shortPath = uri.getPath() + query;
+        String query = cleanServerUri.getQuery() != null ? uri.getQuery() : "";
+        String shortPath = cleanServerUri.getPath() + query;
         
         Pattern[] similarPatterns = new Pattern[] {patternOldViewer, patternNewViewer, patternWebViewer};
 
@@ -599,7 +601,12 @@ public final class OmeroTools {
         	var matcher = similarPatterns[i].matcher(shortPath);
             if (matcher.find()) {
                 elemId += matcher.group(1);
-                list.add(URI.create(uri.getScheme() + "://" + uri.getHost() + "/webclient/?show=" + elemId));
+                
+                try {
+					list.add(new URL(cleanServerUri.getScheme(), cleanServerUri.getHost(), cleanServerUri.getPort(), "/webclient/?show=" + elemId).toURI());
+				} catch (MalformedURLException | URISyntaxException ex) {
+					logger.warn(ex.getLocalizedMessage());
+				}
                 return list;
             }
         }
@@ -610,7 +617,13 @@ public final class OmeroTools {
             var patternElem = Pattern.compile("image-(\\d+)");
             var matcherElem = patternElem.matcher(newURI.toString());
             while (matcherElem.find()) {
-                list.add(URI.create(uri.getScheme() + "://" + uri.getHost() + uri.getPath() + "?show=" + "image-" + matcherElem.group(1)));
+                list.add(URI.create(String.format("%s://%s%s%s%s%s", 
+                		uri.getScheme(), 
+                		uri.getHost(),
+                		uri.getPort() >= 0 ? ":" + uri.getPort() : "", 
+                		uri.getPath(), 
+                		"?show=image-", 
+                		matcherElem.group(1))));
             }
         	return list;
         }
@@ -620,7 +633,7 @@ public final class OmeroTools {
 	}
 	
     static URI getStandardURI(URI uri) throws IOException {
-		List<String> ids = new ArrayList<String>();
+		List<String> ids = new ArrayList<>();
 		String vertBarSign = "%7C";
 		
 		// Identify the type of element shown (e.g. dataset)
@@ -644,19 +657,24 @@ public final class OmeroTools {
         }
 		
         // Cascading the types to get all ('leaf') images
-        StringBuilder sb = new StringBuilder(uri.getScheme() + "://" + uri.getHost() + uri.getPath() + "?show=image-");
-        List<String> tempIds = new ArrayList<String>();
+        StringBuilder sb = new StringBuilder(
+        		String.format("%s://%s%s%s%s",
+	        		uri.getScheme(), 
+	        		uri.getHost(), 
+	        		uri.getPort() >= 0 ? ":" + uri.getPort() : "", 
+	        		uri.getPath(), 
+	        		"?show=image-"));
+        
+        List<String> tempIds = new ArrayList<>();
         // TODO: Support screen and plates
         switch (type) {
         case SCREEN:
-        	break;
         case PLATE:
-        	break;
         case WELL:
         	break;
         case PROJECT:
         	for (String id: ids) {
-        		var data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), OmeroObjectType.DATASET, Integer.parseInt(id));
+        		var data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.DATASET, Integer.parseInt(id));
     			for (int i = 0; i < data.size(); i++) {
         			tempIds.add(data.get(i).getAsJsonObject().get("@id").getAsString());
         		}
@@ -667,7 +685,7 @@ public final class OmeroTools {
         	
         case DATASET:
         	for (String id: ids) {
-        		var data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), OmeroObjectType.IMAGE, Integer.parseInt(id));
+        		var data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.IMAGE, Integer.parseInt(id));
     			for (int i = 0; i < data.size(); i++) {
     				tempIds.add(data.get(i).getAsJsonObject().get("@id").getAsString());
     			}	

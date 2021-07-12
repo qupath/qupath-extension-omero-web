@@ -238,7 +238,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
     	orphanedImageList = FXCollections.observableArrayList();
     	orphanedFolder = new OrphanedFolder(orphanedImageList);
     	currentOrphanedCount = orphanedFolder.getCurrentCountProperty();
-		thumbnailBank = new ConcurrentHashMap<Integer, BufferedImage>();
+		thumbnailBank = new ConcurrentHashMap<>();
 		projectMap = new ConcurrentHashMap<>();
 		datasetMap = new ConcurrentHashMap<>();
 		executorTable = Executors.newSingleThreadExecutor(ThreadTools.createThreadFactory("children-loader", true));
@@ -284,8 +284,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		usernameLabel.textProperty().bind(Bindings.createStringBinding(() -> {
 			if (client.getUsername().isEmpty() && client.isLoggedIn())
 				return "public";
-			else
-				return client.getUsername();
+			return client.getUsername();
 		}, client.usernameProperty(), client.logProperty()));
 		
 		// 'Num of open images' text and number are bound to the size of client observable list
@@ -310,7 +309,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		omeroIcons = getOmeroIcons();
 		
 		// Create converter from Owner object to proper String
-		ownerStringConverter = new StringConverter<Owner>() {
+		ownerStringConverter = new StringConverter<>() {
 		    @Override
 		    public String toString(Owner owner) {
 		    	if (owner != null)
@@ -373,8 +372,13 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 	    // Opens the OMERO object in a browser
 	    openBrowserItem.setOnAction(ev -> {
 	    	var selected = tree.getSelectionModel().getSelectedItems();
-			if (selected != null && !selected.isEmpty() && selected.size() == 1)
+			if (selected != null && !selected.isEmpty() && selected.size() == 1) {
+				if (selected.get(0).getValue() instanceof OmeroObjects.OrphanedFolder) {
+					Dialogs.showPlainMessage("Requesting orphaned folder", "Link to orphaned folder does not exist!");
+					return;
+				}
 				QuPathGUI.launchBrowserWindow(createObjectURI(selected.get(0).getValue()));
+			}
 	    });
 	    openBrowserItem.disableProperty().bind(tree.getSelectionModel().selectedItemProperty().isNull()
 	    		.or(Bindings.size(tree.getSelectionModel().getSelectedItems()).isNotEqualTo(1)));
@@ -427,7 +431,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 				var tempImageURI = server.getURIs().iterator().next();
 				if (OmeroTools.getServerURI(tempImageURI).equals(serverURI) && OmeroWebClient.canBeAccessed(tempImageURI, OmeroObjectType.IMAGE)) {
 					try {
-						JsonObject mapImageInfo = OmeroRequests.requestObjectInfo(serverURI.getScheme(), serverURI.getHost(), Integer.parseInt(server.getId()), OmeroObjectType.IMAGE);
+						JsonObject mapImageInfo = OmeroRequests.requestObjectInfo(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), Integer.parseInt(server.getId()), OmeroObjectType.IMAGE);
 						
 						Group group = GsonTools.getInstance()
 								.fromJson(mapImageInfo.get("data")
@@ -469,25 +473,24 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 			if (cellData != null && selectedItems.size() == 1 && selectedItems.get(0).getValue() != null) {
 				var type = selectedItems.get(0).getValue().getType();
 				if (type == OmeroObjectType.ORPHANED_FOLDER)
-					return new ReadOnlyObjectWrapper<String>(orphanedAttributes[cellData.getValue()]);
+					return new ReadOnlyObjectWrapper<>(orphanedAttributes[cellData.getValue()]);
 				else if (type == OmeroObjectType.PROJECT)
-					return new ReadOnlyObjectWrapper<String>(projectAttributes[cellData.getValue()]);
+					return new ReadOnlyObjectWrapper<>(projectAttributes[cellData.getValue()]);
 				else if (type == OmeroObjectType.DATASET)
-					return new ReadOnlyObjectWrapper<String>(datasetAttributes[cellData.getValue()]);
+					return new ReadOnlyObjectWrapper<>(datasetAttributes[cellData.getValue()]);
 				else if (type == OmeroObjectType.IMAGE)
-					return new ReadOnlyObjectWrapper<String>(imageAttributes[cellData.getValue()]);				
+					return new ReadOnlyObjectWrapper<>(imageAttributes[cellData.getValue()]);				
 			}
-			return new ReadOnlyObjectWrapper<String>("");
+			return new ReadOnlyObjectWrapper<>("");
 			
 		});
 		valueCol.setCellValueFactory(cellData -> {
 			var selectedItems = tree.getSelectionModel().getSelectedItems();
 			if (cellData != null && selectedItems.size() == 1 && selectedItems.get(0).getValue() != null) 
 				return getObjectInfo(cellData.getValue(), selectedItems.get(0).getValue());
-			else
-				return new ReadOnlyObjectWrapper<String>();
+			return new ReadOnlyObjectWrapper<>();
 		});
-		valueCol.setCellFactory(n -> new TableCell<Integer, String>() {
+		valueCol.setCellFactory(n -> new TableCell<>() {
 			@Override
 	        protected void updateItem(String item, boolean empty) {
 				super.updateItem(item, empty);
@@ -591,6 +594,8 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 							}
 							return out.parallelStream();
 						} else if (uri.getType() == OmeroObjectType.DATASET)
+							return getChildren(uri).parallelStream();
+						else if (uri.getType() == OmeroObjectType.ORPHANED_FOLDER)
 							return getChildren(uri).parallelStream();
 						return Stream.of(uri);
 					})
@@ -698,7 +703,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		else if (omeroObj.getType() == OmeroObjectType.DATASET && datasetMap.containsKey(omeroObj))
 			return datasetMap.get(omeroObj);
 		else if (omeroObj.getType() == OmeroObjectType.IMAGE)
-			return new ArrayList<OmeroObject>();
+			return new ArrayList<>();
 		
 		List<OmeroObject> children;
 		try {
@@ -719,7 +724,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 				datasetMap.put(omeroObj, children);
 		} catch (IOException e) {
 			logger.error("Could not fetch server information: {}", e.getLocalizedMessage());
-			return new ArrayList<OmeroObject>();
+			return new ArrayList<>();
 		}
 		return children;
 	}
@@ -728,18 +733,19 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
     	Map<OmeroObjectType, BufferedImage> map = new HashMap<>();
     	var scheme = serverURI.getScheme();
     	var host = serverURI.getHost();
+    	var port = serverURI.getPort();
 		try {
 			// Load project icon
-			map.put(OmeroObjectType.PROJECT, OmeroRequests.requestIcon(scheme, host, "folder16.png"));
+			map.put(OmeroObjectType.PROJECT, OmeroRequests.requestIcon(scheme, host, port, "folder16.png"));
 			
 			// Load dataset icon
-			map.put(OmeroObjectType.DATASET, OmeroRequests.requestIcon(scheme, host, "folder_image16.png"));
+			map.put(OmeroObjectType.DATASET, OmeroRequests.requestIcon(scheme, host, port, "folder_image16.png"));
 			
 			// Load image icon
-			map.put(OmeroObjectType.IMAGE, OmeroRequests.requestImageIcon(scheme, host, "image16.png"));
+			map.put(OmeroObjectType.IMAGE, OmeroRequests.requestImageIcon(scheme, host, port, "image16.png"));
 			
 			// Load orphaned folder icon
-			map.put(OmeroObjectType.ORPHANED_FOLDER, OmeroRequests.requestIcon(scheme, host, "folder_yellow16.png"));
+			map.put(OmeroObjectType.ORPHANED_FOLDER, OmeroRequests.requestIcon(scheme, host, port, "folder_yellow16.png"));
 			
 		} catch (IOException e) {
 			logger.warn("Could not load OMERO icons: {}", e.getLocalizedMessage());
@@ -780,9 +786,10 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
      * @return
      */
 	private String createObjectURI(OmeroObject omeroObj) {
-		return String.format("%s://%s/webclient/?show=%s-%d", 
+		return String.format("%s://%s%s/webclient/?show=%s-%d", 
 				serverURI.getScheme(), 
 				serverURI.getHost(), 
+				serverURI.getPort() > -1 ? ":" + serverURI.getPort() : "", 
 				omeroObj.getType().toString().toLowerCase(), 
 				omeroObj.getId()
 				);
@@ -824,7 +831,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 
 	private static ObservableValue<String> getObjectInfo(Integer index, OmeroObject omeroObject) {
 		if (omeroObject == null)
-			return new ReadOnlyObjectWrapper<String>();
+			return new ReadOnlyObjectWrapper<>();
 		String[] outString = new String[0];
 		String name = omeroObject.getName();
 		String id = omeroObject.getId() + "";
@@ -861,7 +868,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 			outString = new String[] {name, id, owner, group, acquisitionDate, width, height, c, z, t, pixelSizeX, pixelSizeY, pixelSizeZ, pixelType};
 		}
 		
-		return new ReadOnlyObjectWrapper<String>(outString[index]);
+		return new ReadOnlyObjectWrapper<>(outString[index]);
 	}
 
 	private void updateDescription() {
@@ -1639,7 +1646,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		    TableColumn<SearchResult, SearchResult> linkCol = new TableColumn<>("Link");
 		    
 		    typeCol.setCellValueFactory(n -> new ReadOnlyObjectWrapper<>(n.getValue()));
-		    typeCol.setCellFactory(n -> new TableCell<SearchResult, SearchResult>() {
+		    typeCol.setCellFactory(n -> new TableCell<>() {
 		    	
 				@Override
 		        protected void updateItem(SearchResult item, boolean empty) {
@@ -1696,7 +1703,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		    importedCol.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().imported.toString()));
 		    groupCol.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().group));
 		    linkCol.setCellValueFactory(n -> new ReadOnlyObjectWrapper<>(n.getValue()));
-		    linkCol.setCellFactory(n -> new TableCell<SearchResult, SearchResult>() {
+		    linkCol.setCellFactory(n -> new TableCell<>() {
 		        private final Button button = new Button("Link");
 
 		        @Override
@@ -1792,6 +1799,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 				var response = OmeroRequests.requestAdvancedSearch(
 						serverURI.getScheme(), 
 						serverURI.getHost(), 
+						serverURI.getPort(),
 						searchTf.getText(), 
 						fields.toArray(new String[0]), 
 						datatypes.stream().map(e -> "datatype=" + e.toURLString()).toArray(String[]::new), 

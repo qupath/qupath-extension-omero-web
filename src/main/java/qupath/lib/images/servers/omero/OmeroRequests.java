@@ -73,14 +73,15 @@ public final class OmeroRequests {
 	
 	/**
 	 * Request the metadata of OMERO image with {@code id}.
-	 * @param scheme
-	 * @param host
-	 * @param id
+	 * @param scheme server's scheme
+	 * @param host server's host
+	 * @param port server's port
+	 * @param id object's OMERO id
 	 * @return metadata json
 	 * @throws IOException
 	 */
-	public static JsonObject requestMetadata(String scheme, String host, int id) throws IOException {
-		URL url = new URL(scheme, host, String.format(WEBGATEWAY_DATA, id));
+	public static JsonObject requestMetadata(String scheme, String host, int port, int id) throws IOException {
+		URL url = new URL(scheme, host, port, String.format(WEBGATEWAY_DATA, id));
 		try (InputStreamReader reader = new InputStreamReader(url.openStream())) {
 			JsonObject map = new Gson().fromJson(reader, JsonObject.class);			
 			return map;
@@ -92,13 +93,14 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param id object's OMERO id
 	 * @param type object's type
 	 * @return json response
 	 * @throws IOException
 	 */
-	public static JsonObject requestObjectInfo(String scheme, String host, int id, OmeroObjectType type) throws IOException {
-		return requestObjectInfo(scheme, host, id, type, null);
+	public static JsonObject requestObjectInfo(String scheme, String host, int port, int id, OmeroObjectType type) throws IOException {
+		return requestObjectInfo(scheme, host, port, id, type, null);
 	}
 	
 	/**
@@ -106,15 +108,16 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param id object's OMERO id
 	 * @param type object's type
 	 * @param args
 	 * @return json response
 	 * @throws IOException
 	 */
-	public static JsonObject requestObjectInfo(String scheme, String host, int id, OmeroObjectType type, String args) throws IOException {
+	public static JsonObject requestObjectInfo(String scheme, String host, int port, int id, OmeroObjectType type, String args) throws IOException {
 		// Create URL
-		URL url = new URL(scheme, host, String.format(JSON_API_INFO, type.toURLString(), id) + (args == null ? "" : args));
+		URL url = new URL(scheme, host, port, String.format(JSON_API_INFO, type.toURLString(), id) + (args == null ? "" : args));
 		
 		// Open connection
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -141,13 +144,14 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param objectType object's type
 	 * @return list of json responses
 	 * @throws IOException
 	 * @see #requestWebClientObjectList
 	 */
-	public static List<JsonElement> requestObjectList(String scheme, String host, OmeroObjectType objectType) throws IOException {
-			return requestObjectList(scheme, host, objectType, null, -1);
+	public static List<JsonElement> requestObjectList(String scheme, String host, int port, OmeroObjectType objectType) throws IOException {
+			return requestObjectList(scheme, host, port, objectType, null, -1);
 	}
 	
 	/**
@@ -161,14 +165,15 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param objectType object's type
 	 * @param onlyOrphaned type of objects to request
 	 * @return list of json responses
 	 * @throws IOException
 	 * @see #requestWebClientObjectList
 	 */
-	public static List<JsonElement> requestObjectList(String scheme, String host, OmeroObjectType objectType, boolean onlyOrphaned) throws IOException {
-		return requestObjectList(scheme, host, objectType, onlyOrphaned ? OmeroObjectType.SERVER : objectType, -1);
+	public static List<JsonElement> requestObjectList(String scheme, String host, int port, OmeroObjectType objectType, boolean onlyOrphaned) throws IOException {
+		return requestObjectList(scheme, host, port, objectType, onlyOrphaned ? OmeroObjectType.SERVER : objectType, -1);
 	}
 	
 	/**
@@ -180,14 +185,15 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param objectType object's type
 	 * @param parent object's parent type
 	 * @return list of json responses
 	 * @throws IOException
 	 * @see #requestWebClientObjectList
 	 */
-	public static List<JsonElement> requestObjectList(String scheme, String host, OmeroObjectType objectType, OmeroObject parent) throws IOException {
-		return requestObjectList(scheme, host, objectType, parent.getType(), parent.getId());
+	public static List<JsonElement> requestObjectList(String scheme, String host, int port, OmeroObjectType objectType, OmeroObject parent) throws IOException {
+		return requestObjectList(scheme, host, port, objectType, parent.getType(), parent.getId());
 	}
 	
 	/**
@@ -199,26 +205,27 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param objectType object's type
 	 * @param parentId object's parent id
 	 * @return list of json responses
 	 * @throws IOException
 	 * @see #requestWebClientObjectList
 	 */
-	public static List<JsonElement> requestObjectList(String scheme, String host, OmeroObjectType objectType, int parentId) throws IOException {
+	public static List<JsonElement> requestObjectList(String scheme, String host, int port, OmeroObjectType objectType, int parentId) throws IOException {
 		if (objectType == OmeroObjectType.SERVER)
 			throw new InvalidParameterException("objectType parameter cannot be OmeroObjectType.SERVER.");
 		
 		if (objectType == OmeroObjectType.PROJECT || objectType == OmeroObjectType.SCREEN)
-			return requestObjectList(scheme, host, objectType, OmeroObjectType.SERVER, parentId);
+			return requestObjectList(scheme, host, port, objectType, OmeroObjectType.SERVER, parentId);
 		if (objectType == OmeroObjectType.DATASET)
-			return requestObjectList(scheme, host, objectType, OmeroObjectType.PROJECT, parentId);
+			return requestObjectList(scheme, host, port, objectType, OmeroObjectType.PROJECT, parentId);
 		else if (objectType == OmeroObjectType.IMAGE)
-			return requestObjectList(scheme, host, objectType, OmeroObjectType.DATASET, parentId);
+			return requestObjectList(scheme, host, port, objectType, OmeroObjectType.DATASET, parentId);
 		else if (objectType == OmeroObjectType.PLATE)
-			return requestObjectList(scheme, host, objectType, OmeroObjectType.SCREEN, parentId);
+			return requestObjectList(scheme, host, port, objectType, OmeroObjectType.SCREEN, parentId);
 		else if (objectType == OmeroObjectType.WELL)			
-			return requestObjectList(scheme, host, objectType, OmeroObjectType.PLATE, parentId);
+			return requestObjectList(scheme, host, port, objectType, OmeroObjectType.PLATE, parentId);
 		else
 			throw new IOException(String.format("Could not recognized OMERO object: %s", objectType.toString()));
 	}
@@ -229,6 +236,7 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param objectType object's type
 	 * @param parentType type of object's parent
 	 * @param parentId object's parent id
@@ -236,15 +244,15 @@ public final class OmeroRequests {
 	 * @throws IOException
 	 * @see #requestWebClientObjectList
 	 */
-	public static List<JsonElement> requestObjectList(String scheme, String host, OmeroObjectType objectType, OmeroObjectType parentType, int parentId) throws IOException {
+	public static List<JsonElement> requestObjectList(String scheme, String host, int port, OmeroObjectType objectType, OmeroObjectType parentType, int parentId) throws IOException {
 		URL url;
 		String query = "childCount=true";
 		if (parentType == OmeroObjectType.SERVER)	// Orphaned
-			url = new URL(scheme, host, String.format(JSON_API_LIST, objectType.toURLString(), query) + "&orphaned=true");
+			url = new URL(scheme, host, port, String.format(JSON_API_LIST, objectType.toURLString(), query) + "&orphaned=true");
 		else if (parentId == -1)					// All OmeroObjects of type 'objectType'
-			url = new URL(scheme, host, String.format(JSON_API_LIST, objectType.toURLString(), query));
+			url = new URL(scheme, host, port, String.format(JSON_API_LIST, objectType.toURLString(), query));
 		else										// All OmeroObjects of type 'objectType' with parent
-			url = new URL(scheme, host, String.format(JSON_API_FILTERED_LIST, parentType.toURLString(), parentId, objectType.toURLString(), query));
+			url = new URL(scheme, host, port, String.format(JSON_API_FILTERED_LIST, parentType.toURLString(), parentId, objectType.toURLString(), query));
 
 		// Return json
 		return OmeroTools.readPaginated(url);
@@ -258,20 +266,21 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param objectType object's type
 	 * @return JsonObject
 	 * @throws IOException
 	 * @see #requestObjectList
 	 */
-	public static JsonObject requestWebClientObjectList(String scheme, String host, OmeroObjectType objectType) throws IOException {
-		URL urlOrphanedImages = new URL(scheme, host, String.format("/webclient/api/%s/?orphaned=true", objectType.toURLString()));
+	public static JsonObject requestWebClientObjectList(String scheme, String host, int port, OmeroObjectType objectType) throws IOException {
+		URL urlOrphanedImages = new URL(scheme, host, port, String.format("/webclient/api/%s/?orphaned=true", objectType.toURLString()));
 		HttpURLConnection connection = (HttpURLConnection) urlOrphanedImages.openConnection();
         if (connection.getResponseCode() == 200) {
         	try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
         		return GsonTools.getInstance().fromJson(reader, JsonObject.class);
         	}
-        } else
-        	throw new IOException(String.format("Error %d while connecting to OMERO Webclient: %s", connection.getResponseCode(), connection.getResponseMessage()));
+        }
+		throw new IOException(String.format("Error %d while connecting to OMERO Webclient: %s", connection.getResponseCode(), connection.getResponseMessage()));
 	}
 	
 	/**
@@ -280,14 +289,15 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param id object's id
 	 * @param objType object's type
 	 * @param annType annotation's type
 	 * @return JsonElement
 	 * @throws IOException
 	 */
-	public static JsonElement requestOMEROAnnotations(String scheme, String host, int id, OmeroObjectType objType, OmeroAnnotationType annType) throws IOException {
-		URL url = new URL(scheme, host, String.format(WEBCLIENT_READ_ANNOTATION, annType.toURLString(), objType.toString().toLowerCase(), id, System.currentTimeMillis()));
+	public static JsonElement requestOMEROAnnotations(String scheme, String host, int port, int id, OmeroObjectType objType, OmeroAnnotationType annType) throws IOException {
+		URL url = new URL(scheme, host, port, String.format(WEBCLIENT_READ_ANNOTATION, annType.toURLString(), objType.toString().toLowerCase(), id, System.currentTimeMillis()));
 		try (InputStreamReader reader = new InputStreamReader(url.openStream())) {
 			return GsonTools.getInstance().fromJson(reader, JsonElement.class);
 		}
@@ -299,12 +309,13 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param id object's id
 	 * @return list of json responses
 	 * @throws IOException
 	 */
-	public static List<JsonElement> requestROIs(String scheme, String host, String id) throws IOException {
-		URL url = new URL(scheme, host, String.format(JSON_API_ROIS, id));
+	public static List<JsonElement> requestROIs(String scheme, String host, int port, String id) throws IOException {
+		URL url = new URL(scheme, host, port, String.format(JSON_API_ROIS, id));
 		return OmeroTools.readPaginated(url);
 	}
 	
@@ -314,6 +325,7 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param id object's id
 	 * @param token webclient's token
 	 * @param roiJsonList list of Jsons
@@ -321,7 +333,7 @@ public final class OmeroRequests {
 	 * @throws IOException
 	 * @see OmeroTools
 	 */
-	public static boolean requestWriteROIs(String scheme, String host, int id, String token, List<String> roiJsonList) throws IOException {
+	public static boolean requestWriteROIs(String scheme, String host, int port, int id, String token, List<String> roiJsonList) throws IOException {
 		String request = String.format("{\"imageId\":%d,\n" +
 				"\"rois\":{\"count\":%d,\n" +
 				"\"empty_rois\":{},\n" +
@@ -330,9 +342,9 @@ public final class OmeroRequests {
 				"\"new\":[%s],\"modified\":[]}}", id, roiJsonList.size(), String.join(", ", roiJsonList));
 		
 		// Create request
-		URL url = new URL(scheme, host, -1, "/iviewer/persist_rois/");
+		URL url = new URL(scheme, host, port, "/iviewer/persist_rois/");
 		var conn = url.openConnection();
-		conn.setRequestProperty("Referer", new URL(scheme, host, "/iviewer/?images=" + id).toString());
+		conn.setRequestProperty("Referer", new URL(scheme, host, port, "/iviewer/?images=" + id).toString());
 		conn.setRequestProperty("X-CSRFToken", token);
 		conn.setDoOutput(true);
 		
@@ -354,13 +366,14 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param id object's id
 	 * @param prefSize thumbnail's size
 	 * @return thumbnail
 	 * @throws IOException
 	 */
-	public static BufferedImage requestThumbnail(String scheme, String host, int id, int prefSize) throws IOException {
-		URL url = new URL(scheme, host, String.format(WEBGATEWAY_THUMBNAIL, id, prefSize));			
+	public static BufferedImage requestThumbnail(String scheme, String host, int port, int id, int prefSize) throws IOException {
+		URL url = new URL(scheme, host, port, String.format(WEBGATEWAY_THUMBNAIL, id, prefSize));			
 		return ImageIO.read(url);
 		
 	}
@@ -370,12 +383,13 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param iconFilename icon's filename
 	 * @return icon
 	 * @throws IOException
 	 */
-	public static BufferedImage requestIcon(String scheme, String host, String iconFilename) throws IOException {
-		URL url = new URL(scheme, host, String.format(WEBGATEWAY_ICON, iconFilename));
+	public static BufferedImage requestIcon(String scheme, String host, int port, String iconFilename) throws IOException {
+		URL url = new URL(scheme, host, port, String.format(WEBGATEWAY_ICON, iconFilename));
 		return ImageIO.read(url);
 	}
 	
@@ -386,12 +400,13 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param iconFilename icon's filename
 	 * @return icon
 	 * @throws IOException
 	 */
-	public static BufferedImage requestImageIcon(String scheme, String host, String iconFilename) throws IOException {
-		URL url = new URL(scheme, host, String.format(WEBGATEWAY_IMAGE_ICON, iconFilename));
+	public static BufferedImage requestImageIcon(String scheme, String host, int port, String iconFilename) throws IOException {
+		URL url = new URL(scheme, host, port, String.format(WEBGATEWAY_IMAGE_ICON, iconFilename));
 		return ImageIO.read(url);
 	}
 
@@ -402,6 +417,7 @@ public final class OmeroRequests {
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
+	 * @param port server's port
 	 * @param query query to search
 	 * @param fields fields to query
 	 * @param datatypes datatypes to query
@@ -410,8 +426,8 @@ public final class OmeroRequests {
 	 * @return response
 	 * @throws IOException
 	 */
-	public static String requestAdvancedSearch(String scheme, String host, String query, String[] fields, String[] datatypes,
-			Group group, Owner owner) throws IOException {
+	public static String requestAdvancedSearch(String scheme, String host, int port, String query, String[] fields, 
+			String[] datatypes,	Group group, Owner owner) throws IOException {
 		
 		// Throw NPE to avoid unexpected behavior due to wrong OMERO URL syntax
 		if (group == null || owner == null)
@@ -427,6 +443,7 @@ public final class OmeroRequests {
 		URL url = new URL(
 				scheme, 					// Scheme
 				host, 						// Host
+				port, 						// Port
 				String.format(urlQuery, 	// Long url query
 						query, 
 						String.join("&", fields), 
@@ -456,7 +473,7 @@ public final class OmeroRequests {
 	 */
 	public static boolean isLoggedIn(URI uri) {
 		try {
-			var url = new URL(uri.getScheme(), uri.getHost(), "/api/v0/m/" + OmeroObjectType.PROJECT.toURLString());
+			var url = new URL(uri.getScheme(), uri.getHost(), uri.getPort(), "/api/v0/m/" + OmeroObjectType.PROJECT.toURLString());
 			var conn = (HttpURLConnection) url.openConnection();
 			return conn.getResponseCode() == 200;
 		} catch (IOException ex) {

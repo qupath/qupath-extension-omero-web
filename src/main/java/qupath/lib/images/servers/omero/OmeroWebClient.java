@@ -49,7 +49,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.naming.OperationNotSupportedException;
-import javax.net.ssl.HttpsURLConnection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +119,7 @@ public class OmeroWebClient {
 	
 	static OmeroWebClient create(URI serverURI, boolean startTimer) throws JsonSyntaxException, MalformedURLException, IOException, URISyntaxException {
 		// Clean server URI (filter out wrong URIs and get rid of unnecessary characters)
-		var cleanServerURI = new URL(serverURI.getScheme(), serverURI.getHost(), "").toURI();
+		var cleanServerURI = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "").toURI();
 		
 		// Create OmeroWebClient with the serverURI
 		OmeroWebClient client = new OmeroWebClient(cleanServerURI);
@@ -165,7 +164,7 @@ public class OmeroWebClient {
 			this.token = getCSRFToken();
 
 		String url = omeroURLs.get(URL_LOGIN);
-		HttpsURLConnection connection = (HttpsURLConnection) URI.create(url).toURL().openConnection();
+		HttpURLConnection connection = (HttpURLConnection) URI.create(url).toURL().openConnection();
 		connection.setRequestProperty("X-CSRFToken", this.token);
 		connection.setRequestMethod("POST");
 		connection.setRequestProperty("Referer", url + ":" + omeroServerInfo.port);
@@ -218,7 +217,7 @@ public class OmeroWebClient {
 	private int keepAlive() {
 		try {
 			logger.debug("Attempting to keep connection alive...");
-			var pingURL = URI.create(serverURI.getScheme() + "://" + serverURI.getHost() + "/webclient/keepalive_ping/?_=" + System.currentTimeMillis()).toURL();
+			var pingURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/webclient/keepalive_ping/?_=" + System.currentTimeMillis());
 			HttpURLConnection connection = (HttpURLConnection) pingURL.openConnection();
 			connection.setRequestProperty("Content-Type", "application/json");
 			connection.setRequestMethod("GET");
@@ -265,7 +264,7 @@ public class OmeroWebClient {
 				throw new OperationNotSupportedException("Type not supported: " + type);
 			}	
 			
-			URL url = new URL(uri.getScheme(), uri.getHost(), query + id);
+			URL url = new URL(uri.getScheme(), uri.getHost(), uri.getPort(), query + id);
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestProperty("Content-Type", "application/json");
 			connection.setRequestMethod("GET");
@@ -344,7 +343,7 @@ public class OmeroWebClient {
 	 * Check and return whether the client is logged in to its server 
 	 * (<b>not</b> necessarily with access to all its images).
 	 * 
-	 * @return
+	 * @return isLoggedIn
 	 * @see #isLoggedIn()
 	 */
 	public boolean checkIfLoggedIn() {
@@ -354,7 +353,7 @@ public class OmeroWebClient {
 	
 	/**
 	 * Return the log property of this client.
-	 * @return
+	 * @return logProperty
 	 */
 	public BooleanProperty logProperty() {
 		return loggedIn;
@@ -432,7 +431,7 @@ public class OmeroWebClient {
 	 */
 	public void logOut() {
 		try {
-			URL url = new URL(serverURI.getScheme(), serverURI.getHost(), "/webclient/logout/");
+			URL url = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/webclient/logout/");
 			HttpURLConnection connection = (HttpURLConnection)url.openConnection();
 			connection.setRequestProperty("X-CSRFToken", token);
 			connection.setRequestProperty("Content-Type", "application/json");
