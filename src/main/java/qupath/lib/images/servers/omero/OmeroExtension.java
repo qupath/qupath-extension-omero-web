@@ -39,10 +39,11 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import qupath.lib.common.Version;
 import qupath.lib.gui.ActionTools;
 import qupath.lib.gui.QuPathGUI;
-import qupath.lib.gui.Version;
 import qupath.lib.gui.dialogs.Dialogs;
+import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
 import qupath.lib.gui.tools.MenuTools;
 import qupath.lib.gui.tools.PaneTools;
@@ -50,7 +51,7 @@ import qupath.lib.gui.tools.PaneTools;
 /**
  * Extension to access images hosted on OMERO.
  */
-public class OmeroExtension implements QuPathExtension {
+public class OmeroExtension implements QuPathExtension, GitHubProject {
 	
 	private final static Logger logger = LoggerFactory.getLogger(OmeroExtension.class);
 	
@@ -210,5 +211,11 @@ public class OmeroExtension implements QuPathExtension {
 	 */
 	static Map<OmeroWebClient, OmeroWebImageServerBrowserCommand> getOpenedBrowsers() {
 		return browsers;
+	}
+
+
+	@Override
+	public GitHubRepo getRepository() {
+		return GitHubRepo.create(getName(), "qupath", "qupath-extension-omero");
 	}
 }
