@@ -410,7 +410,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 					"/?region=" + x + "," + y + "," + width + "," + height +
 					"&c=1|0:255$FF0000,2|0:255$00FF00,3|0:255$0000FF" +
 					"&maps=[{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}}]" +
-					"&m=c&p=normal&q=" + quality;			
+					"&m=c&p=normal&q=" + quality;
 		}
 
 

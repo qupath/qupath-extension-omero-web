@@ -113,9 +113,9 @@ public class OmeroWebClientsCommand implements Runnable {
 			dialog.setTitle("OMERO web clients");
 			dialog.setScene(new Scene(mainPane));
 			dialog.setOnCloseRequest(e -> dialog = null);
-			QuPathGUI qupath = QuPathGUI.getInstance();
-			if (qupath != null)
-				dialog.initOwner(qupath.getStage());
+			QuPathGUI qupath2 = QuPathGUI.getInstance();
+			if (qupath2 != null)
+				dialog.initOwner(qupath2.getStage());
 		} else
 			dialog.requestFocus();
 
@@ -308,9 +308,9 @@ public class OmeroWebClientsCommand implements Runnable {
 		}
 		
 		
-		private GridPane createTitledPaneContent(OmeroWebClient client) {
+		private GridPane createTitledPaneContent(OmeroWebClient client2) {
 			GridPane gp = new GridPane();
-			for (URI imageUri: client.getURIs()) {
+			for (URI imageUri: client2.getURIs()) {
 				// To save time, check the imageServers' status in other threads and update the pane later
 				ProgressIndicator pi = new ProgressIndicator();
 				pi.setPrefSize(15, 15);
@@ -321,7 +321,7 @@ public class OmeroWebClientsCommand implements Runnable {
 				executor.submit(() -> {
 					try {
 						final boolean canAccessImage = OmeroWebClient.canBeAccessed(imageUri, OmeroObjectType.IMAGE);
-						String tooltip = (client.isLoggedIn() && !canAccessImage) ? "Unreachable image (access not permitted)" : imageUri.toString();
+						String tooltip = (client2.isLoggedIn() && !canAccessImage) ? "Unreachable image (access not permitted)" : imageUri.toString();
 						Platform.runLater(() -> {
 							imageServerName.setTooltip(new Tooltip(tooltip));
 							imageServerName.setGraphic(OmeroTools.createStateNode(canAccessImage));									

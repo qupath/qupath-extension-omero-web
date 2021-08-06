@@ -620,7 +620,7 @@ public final class OmeroTools {
 	}
 	
     static URI getStandardURI(URI uri) throws IOException {
-		List<String> ids = new ArrayList<String>();
+		List<String> ids = new ArrayList<>();
 		String vertBarSign = "%7C";
 		
 		// Identify the type of element shown (e.g. dataset)
@@ -645,7 +645,7 @@ public final class OmeroTools {
 		
         // Cascading the types to get all ('leaf') images
         StringBuilder sb = new StringBuilder(uri.getScheme() + "://" + uri.getHost() + uri.getPath() + "?show=image-");
-        List<String> tempIds = new ArrayList<String>();
+        List<String> tempIds = new ArrayList<>();
         // TODO: Support screen and plates
         switch (type) {
         case SCREEN:

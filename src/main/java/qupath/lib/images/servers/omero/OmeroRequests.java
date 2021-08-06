@@ -342,11 +342,13 @@ public final class OmeroRequests {
 		}
 		
 		// Get response
-		String response = GeneralTools.readInputStreamAsString(conn.getInputStream());
-	    if (response.toLowerCase().contains("error"))
-	    	throw new IOException(response);
-		
-		return true;
+		try (var stream = conn.getInputStream()) {
+			var response = GeneralTools.readInputStreamAsString(stream);
+			if (response.toLowerCase().contains("error"))
+				throw new IOException(response);
+			
+			return true;
+		}
 	}
 
 	/**
