@@ -496,7 +496,7 @@ final class OmeroObjects {
 		
 		@Override
 		public String toString() {
-			List<String> list = new ArrayList<String>(Arrays.asList("Owner: " + getName(), emailAddress, institution, username));
+			List<String> list = new ArrayList<>(Arrays.asList("Owner: " + getName(), emailAddress, institution, username));
 			list.removeAll(Arrays.asList("", null));
 			return String.join(", ", list);
 		}

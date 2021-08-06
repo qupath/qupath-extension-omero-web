@@ -262,7 +262,7 @@ public final class OmeroRequests {
 	/**
 	 * Request a list of all {@code OmeroObject}s with type {@code objectType} from the server via the Webclient.
 	 * <p>
-	 * This can be an alternative to {@link #requestObjectList(String, String, OmeroObjectType)} if the OMERO API times out.
+	 * This can be an alternative to {@link #requestObjectList(String, String, int, OmeroObjectType)} if the OMERO API times out.
 	 * 
 	 * @param scheme server's scheme
 	 * @param host server's host
@@ -354,11 +354,13 @@ public final class OmeroRequests {
 		}
 		
 		// Get response
-		String response = GeneralTools.readInputStreamAsString(conn.getInputStream());
-	    if (response.toLowerCase().contains("error"))
-	    	throw new IOException(response);
-		
-		return true;
+		try (var stream = conn.getInputStream()) {
+			String response = GeneralTools.readInputStreamAsString(stream);
+			if (response.toLowerCase().contains("error"))
+				throw new IOException(response);
+			
+			return true;
+		}
 	}
 
 	/**
@@ -395,7 +397,7 @@ public final class OmeroRequests {
 	
 	/**
 	 * Request OMERO icon with the specified {@code iconFilename} from the provided server. 
-	 * This is a separate method from {@link #requestIcon(String, String, String)} because 
+	 * This is a separate method from {@link #requestIcon(String, String, int, String)} because 
 	 * OMERO Image icons are hosted on a separate path.
 	 * 
 	 * @param scheme server's scheme
