@@ -62,12 +62,12 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 	
 	private static boolean alreadyInstalled = false;
 	
-	private static Version minimumVersion = Version.parse("0.3.0-SNAPSHOT");
-
 	@Override
 	public void installExtension(QuPathGUI qupath) {
-		if (alreadyInstalled || !checkCompatibility())
+		if (alreadyInstalled)
 			return;
+		
+		logger.debug("Installing OMERO extension");
 		
 		alreadyInstalled = true;
 		var actionClients = ActionTools.createAction(new OmeroWebClientsCommand(qupath), "Manage server connections");
@@ -87,25 +87,6 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
     	                )
 				);
 		createServerListMenu(qupath, browseServerMenu);
-	}
-	
-	
-	/**
-	 * Check compatibility with the QuPath version.
-	 * @return
-	 */
-	private static boolean checkCompatibility() {
-		try {
-			var version = QuPathGUI.getVersion();
-			// If >= the minimum version, we are compatible as far as we know
-			if (minimumVersion.compareTo(version) <= 0)
-				return true;
-		} catch (Exception e) {
-			logger.debug("Version check exception: " + e.getLocalizedMessage(), e);
-		}
-		logger.warn("OMERO extension is not compatible with the current QuPath version ({}.{}.{} required)",
-				minimumVersion.getMajor(), minimumVersion.getMinor(), minimumVersion.getPatch());
-		return false;
 	}
 	
 
@@ -217,5 +198,10 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 	@Override
 	public GitHubRepo getRepository() {
 		return GitHubRepo.create(getName(), "qupath", "qupath-extension-omero");
+	}
+	
+	@Override
+	public Version getQuPathVersion() {
+		return Version.parse("0.3.0-rc2");
 	}
 }

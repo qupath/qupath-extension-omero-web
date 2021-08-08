@@ -9,7 +9,7 @@ plugins {
 ext.moduleName = 'qupath.extension.omero'
 archivesBaseName = 'qupath-extension-omero'
 description = "QuPath extension to support image reading using OMERO's web API."
-version = "0.3.0-SNAPSHOT"
+version = "0.3.0-rc2"
 
 repositories {
   mavenCentral()
@@ -27,7 +27,7 @@ repositories {
 dependencies {
   implementation "org.apache.commons:commons-text:1.9"
   
-  shadow "io.github.qupath:qupath-gui-fx:0.3.0-SNAPSHOT"    
+  shadow "io.github.qupath:qupath-gui-fx:0.3.0-rc2"    
   shadow "org.slf4j:slf4j-api:1.7.30"
 }
 

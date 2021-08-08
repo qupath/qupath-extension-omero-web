@@ -17,6 +17,15 @@ The extension is intended for the (at the time of writing) not-yet-released
 QuPath v0.3.
 It is not compatible with earlier QuPath versions.
 
+## Installing
+
+To install the OMERO extension, download the latest `qupath-extension-omero-[version].jar` file from [releases](https://github.com/qupath/qupath-extension-omero/releases) and drag it onto the main QuPath window.
+
+If you haven't installed any extensions before, you'll be prompted to select a QuPath user directory.
+The extension will then be copied to a location inside that directory.
+
+You might then need to restart QuPath (but not your computer).
+
 
 ## Building
 
