@@ -3,15 +3,16 @@ plugins {
   // To create a shadow/fat jar, including dependencies
   id 'com.github.johnrengelman.shadow' version '7.0.0'
   // Reduce JavaCPP dependencies
-  id 'org.bytedeco.gradle-javacpp-platform' version '1.5.5'
+  id 'org.bytedeco.gradle-javacpp-platform' version '1.5.6'
 }
 
 ext.moduleName = 'qupath.extension.omero'
 archivesBaseName = 'qupath-extension-omero'
 description = "QuPath extension to support image reading using OMERO's web API."
-version = "0.3.0-rc2"
+version = "0.3.0"
 
 repositories {
+//  mavenLocal()
   mavenCentral()
   
   maven {
@@ -27,7 +28,7 @@ repositories {
 dependencies {
   implementation "org.apache.commons:commons-text:1.9"
   
-  shadow "io.github.qupath:qupath-gui-fx:0.3.0-rc2"    
+  shadow "io.github.qupath:qupath-gui-fx:0.3.0"    
   shadow "org.slf4j:slf4j-api:1.7.30"
 }
 
