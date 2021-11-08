@@ -53,6 +53,8 @@ import javax.naming.OperationNotSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -70,6 +72,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import qupath.lib.common.GeneralTools;
 import qupath.lib.gui.dialogs.Dialogs;
+import qupath.lib.images.servers.omero.OmeroObjects.Group;
 import qupath.lib.images.servers.omero.OmeroObjects.OmeroObjectType;
 import qupath.lib.io.GsonTools;
 
@@ -103,6 +106,16 @@ public class OmeroWebClient {
 	 */
 	private StringProperty username;
 	
+	/**
+	 * The default group to switch to when browsing an OMERO server. Might change if user switches account/logs off
+	 */
+	private Group defaultGroup;
+	
+	/**
+	 * User ID fetched from the login request response. Can be used to match {@code Owner}s in the browser.
+	 */
+	private int userId;
+	
 	
 	/**
 	 * Logged in property (modified by login/loggedIn/logout/timer)
@@ -134,6 +147,8 @@ public class OmeroWebClient {
 	private OmeroWebClient(final URI serverUri) throws JsonSyntaxException, MalformedURLException, IOException {
 		this.serverURI = serverUri;
 		this.username = new SimpleStringProperty("");
+		this.defaultGroup = null;
+		this.userId = -1;
 		this.loggedIn = new SimpleBooleanProperty(false);
 		loadURLs();
 	}
@@ -290,7 +305,15 @@ public class OmeroWebClient {
 	String getUsername() {
 		return username.get();
 	}
+
+	Group getDefaultGroup() {
+		return defaultGroup;
+	}
 	
+	int getUserId() {
+		return userId;
+	}
+
 	void setUsername(String newUsername) {
 		username.set(newUsername);
 	}
@@ -335,8 +358,36 @@ public class OmeroWebClient {
 	 * @return isLoggedIn
 	 * @see #checkIfLoggedIn()
 	 */
-	public boolean isLoggedIn() {
+	boolean isLoggedIn() {
 		return loggedIn.get();
+	}
+	
+	/**
+	 * Return the log property of this client.
+	 * @return logProperty
+	 */
+	BooleanProperty logProperty() {
+		return loggedIn;
+	}	
+	
+	/**
+	 * Fetch the default {@code Group} from a JSON string (from a login request response).
+	 * @param json login request response
+	 * @return defaultGroup or {@code null} if none
+	 */
+	private static Group getDefaultGroup(String json) {
+		JsonElement element = JsonParser.parseString(json);
+		return GsonTools.getInstance().fromJson(element.getAsJsonObject().get("eventContext"), Group.class);
+	}
+	
+	/**
+	 * Fetch the User ID from a JSON string (from a login request response).
+	 * @param json
+	 * @return userId
+	 */
+	private static int getUserId(String json) {
+		JsonElement element = JsonParser.parseString(json);
+		return element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userId").getAsInt();		
 	}
 	
 	/**
@@ -350,15 +401,6 @@ public class OmeroWebClient {
 		loggedIn.set(OmeroRequests.isLoggedIn(serverURI));
 		return loggedIn.get();		
 	}
-	
-	/**
-	 * Return the log property of this client.
-	 * @return logProperty
-	 */
-	public BooleanProperty logProperty() {
-		return loggedIn;
-	}
-	
 	/**
 	 * Log in to the client's server with optional args.
 	 * 
@@ -395,6 +437,10 @@ public class OmeroWebClient {
 			
 			String result = authenticate(authentication, omeroServerInfo.id);
 			Arrays.fill(authentication.getPassword(), (char)0);
+			
+			// Parse login response JSON to get default Group and user ID
+			defaultGroup = getDefaultGroup(result);
+			userId = getUserId(result);
 			
 			// If we have previous URIs and the the username was different
 			if (uris.size() > 0 && !usernameOld.isEmpty() && !usernameOld.equals(authentication.getUserName())) {

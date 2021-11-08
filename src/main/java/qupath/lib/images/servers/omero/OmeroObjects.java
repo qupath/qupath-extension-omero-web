@@ -518,10 +518,10 @@ final class OmeroObjects {
 	
 	static class Group {
 		
-		@SerializedName(value = "@id")
+		@SerializedName(value = "@id", alternate={"groupId"})
 		private int id;
 		
-		@SerializedName(value = "Name")
+		@SerializedName(value = "Name", alternate={"groupName"})
 		private String name;
 		
 		// Singleton (with static factory)
