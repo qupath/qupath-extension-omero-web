@@ -1194,7 +1194,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 							Platform.runLater(() -> {
 								comboOwner.getItems().setAll(tempOwners);
 								// Always default to the Owner corresponding to the current client
-								var clientOwner = tempOwners.stream().filter(tempOwner -> tempOwner.getId() == client.getUserId()).toList();
+								var clientOwner = tempOwners.stream().filter(tempOwner -> tempOwner.getId() == client.getUserId()).collect(Collectors.toList());
 								if (clientOwner.isEmpty())
 									comboOwner.getSelectionModel().selectFirst(); // 'All members'
 								else
