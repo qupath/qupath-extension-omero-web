@@ -437,7 +437,7 @@ final class OmeroObjects {
 	}
 	
 	
-	static class Owner {
+	static class Owner implements Comparable<Owner> {
 		
 		@SerializedName(value = "@id", alternate = "id")
 		private int id;
@@ -513,6 +513,11 @@ final class OmeroObjects {
 			if (!(obj instanceof Owner))
 				return false;
 			return ((Owner)obj).id == this.id;
+		}
+
+		@Override
+		public int compareTo(Owner other) {
+			return lastName.compareToIgnoreCase(other.lastName);
 		}
 	}
 	

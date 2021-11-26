@@ -1156,8 +1156,6 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 					List<OmeroObject> children = OmeroWebImageServerBrowserCommand.this.getChildren(omeroObj);
 					
 					Group currentGroup = comboGroup.getSelectionModel().getSelectedItem();
-					Owner currentOwner = comboOwner.getSelectionModel().getSelectedItem();
-					
 					// If server, update list of groups/owners (and comboBoxes)
 					if (omeroObj.getType() == OmeroObjectType.SERVER) {
 						// Fetch ALL Groups and ALL Owners
@@ -1169,6 +1167,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 								.filter(e -> e.getGroup().equals(currentGroup))
 								.map(e -> e.getOwner())
 								.filter(distinctByName(Owner::getName))
+								.sorted()
 								.collect(Collectors.toList());
 						
 						// If we suddenly found more Groups, update the set (shoudn't happen)
