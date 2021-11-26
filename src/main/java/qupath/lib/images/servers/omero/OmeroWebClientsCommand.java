@@ -38,6 +38,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
@@ -52,6 +53,7 @@ import javafx.stage.Stage;
 import qupath.lib.common.ThreadTools;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.dialogs.Dialogs;
+import qupath.lib.gui.tools.IconFactory;
 import qupath.lib.gui.tools.PaneTools;
 import qupath.lib.images.servers.omero.OmeroObjects.OmeroObjectType;
 
@@ -154,6 +156,15 @@ public class OmeroWebClientsCommand implements Runnable {
 		}
 	}
 	
+	/**
+	 * Create a node with a dot, either filled with green if {@code active} or red otherwise.
+	 * @param active
+	 * @return node
+	 */
+	static Node createStateNode(boolean active) {
+		var state = active ? IconFactory.PathIcons.ACTIVE_SERVER : IconFactory.PathIcons.INACTIVE_SERVER;
+		return IconFactory.createNode(QuPathGUI.TOOLBAR_ICON_SIZE, QuPathGUI.TOOLBAR_ICON_SIZE, state);
+	}
 	
 	/**
 	 * Class to keep info about an OMERO server for display.
@@ -199,9 +210,8 @@ public class OmeroWebClientsCommand implements Runnable {
 			// Bind state node
 			userLabel.graphicProperty().bind(Bindings.createObjectBinding(() -> {
 				if (client.getUsername().isEmpty())
-					return OmeroTools.createStateNode(client.checkIfLoggedIn());
-				else
-					return OmeroTools.createStateNode(client.logProperty().get());
+					return createStateNode(client.checkIfLoggedIn());
+				return createStateNode(client.logProperty().get());
 			}, client.usernameProperty()));
 			
 			// Make it appear on the right of the server's URI
@@ -324,13 +334,13 @@ public class OmeroWebClientsCommand implements Runnable {
 						String tooltip = (client2.isLoggedIn() && !canAccessImage) ? "Unreachable image (access not permitted)" : imageUri.toString();
 						Platform.runLater(() -> {
 							imageServerName.setTooltip(new Tooltip(tooltip));
-							imageServerName.setGraphic(OmeroTools.createStateNode(canAccessImage));									
+							imageServerName.setGraphic(createStateNode(canAccessImage));									
 						});
 					} catch (ConnectException ex) {
 						logger.warn(ex.getLocalizedMessage());
 						Platform.runLater(() -> {
 							imageServerName.setTooltip(new Tooltip("Unreachable image"));									
-							imageServerName.setGraphic(OmeroTools.createStateNode(false));
+							imageServerName.setGraphic(createStateNode(false));
 						});
 					}
 				});
