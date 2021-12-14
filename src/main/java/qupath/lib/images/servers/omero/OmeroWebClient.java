@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
-import java.net.Authenticator;
 import java.net.ConnectException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -41,6 +40,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,18 +57,8 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
-import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import qupath.lib.common.GeneralTools;
+import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.images.servers.omero.OmeroObjects.OmeroObjectType;
 import qupath.lib.io.GsonTools;
@@ -91,7 +81,7 @@ public class OmeroWebClient {
 	/**
 	 * List of all URIs supported by this client. This list should be populated after calls to {@link #canBeAccessed(URI, OmeroObjectType)}.
 	 */
-	private ObservableList<URI> uris = FXCollections.observableArrayList();
+	private List<URI> uris = new ArrayList<>();
 	
 	/**
 	 * 'Clean' URI representing the server's URI (<b>not</b> its images). <p> See {@link OmeroTools#getServerURI(URI)}.
@@ -101,13 +91,13 @@ public class OmeroWebClient {
 	/**
 	 * The username might be empty (public), and might also change (user switching account)
 	 */
-	private StringProperty username;
+	private String username;
 	
 	
 	/**
 	 * Logged in property (modified by login/loggedIn/logout/timer)
 	 */
-	private BooleanProperty loggedIn;
+	private boolean loggedIn;
 	
 	
 	private OmeroServerInfo omeroServerInfo;
@@ -133,8 +123,8 @@ public class OmeroWebClient {
 
 	private OmeroWebClient(final URI serverUri) throws JsonSyntaxException, MalformedURLException, IOException {
 		this.serverURI = serverUri;
-		this.username = new SimpleStringProperty("");
-		this.loggedIn = new SimpleBooleanProperty(false);
+		this.username = "";
+		this.loggedIn = false;
 		loadURLs();
 	}
 
@@ -147,7 +137,7 @@ public class OmeroWebClient {
 			public void run() {
 				if (keepAlive() == -1) {
 					this.cancel();
-					loggedIn.set(false);
+					loggedIn = false;
 				}
 			}
 		}, 60000L, 60000L);
@@ -278,23 +268,14 @@ public class OmeroWebClient {
 		}
 	}
 
-	
 	String getToken() {
 		return token;
 	}
-	
-	StringProperty usernameProperty() {
+
+	String getUsername() {
 		return username;
 	}
 
-	String getUsername() {
-		return username.get();
-	}
-	
-	void setUsername(String newUsername) {
-		username.set(newUsername);
-	}
-	
 	/**
 	 * Return the server URI ('clean' URI) of this {@code OmeroWebClient}.
 	 * @return serverUri
@@ -309,8 +290,8 @@ public class OmeroWebClient {
 	 * @return list of uris
 	 * @see #addURI(URI)
 	 */
-	ObservableList<URI> getURIs() {
-		return FXCollections.unmodifiableObservableList(uris);
+	List<URI> getURIs() {
+		return Collections.unmodifiableList(uris);
 	}
 	
 	/**
@@ -321,12 +302,10 @@ public class OmeroWebClient {
 	 * @see #getURIs()
 	 */
 	void addURI(URI uri) {
-		Platform.runLater(() -> {
-			if (!uris.contains(uri))
-				uris.add(uri);
-			else
-				logger.debug("URI already exists in the list. Ignoring operation.");
-		});
+		if (!uris.contains(uri))
+			uris.add(uri);
+		else
+			logger.debug("URI already exists in the list. Ignoring operation.");
 	}
 	
 	/**
@@ -336,7 +315,7 @@ public class OmeroWebClient {
 	 * @see #checkIfLoggedIn()
 	 */
 	public boolean isLoggedIn() {
-		return loggedIn.get();
+		return loggedIn;
 	}
 	
 	/**
@@ -347,15 +326,7 @@ public class OmeroWebClient {
 	 * @see #isLoggedIn()
 	 */
 	public boolean checkIfLoggedIn() {
-		loggedIn.set(OmeroRequests.isLoggedIn(serverURI));
-		return loggedIn.get();		
-	}
-	
-	/**
-	 * Return the log property of this client.
-	 * @return logProperty
-	 */
-	public BooleanProperty logProperty() {
+		loggedIn = OmeroRequests.isLoggedIn(serverURI);
 		return loggedIn;
 	}
 	
@@ -368,7 +339,7 @@ public class OmeroWebClient {
 	public boolean logIn(String...args) {
 		try {
 			// TODO: Parse args to look for password (or password file - and don't store them!)
-			String usernameOld = username.get();
+			String usernameOld = username;
 			char[] password = null;
 			List<String> cleanedArgs = new ArrayList<>();
 			int i = 0;
@@ -389,18 +360,20 @@ public class OmeroWebClient {
 				logger.debug("Username & password parsed from args");
 				authentication = new PasswordAuthentication(usernameOld, password);
 			} else 
-				authentication = OmeroAuthenticatorFX.getPasswordAuthentication("Please enter your login details for OMERO server", serverURI.toString(), usernameOld);
+				authentication = OmeroWebClients.getAuthenticator().requestPasswordAuthenticationInstance(serverURI.toString(), null, 0, null, "Please enter your login details for OMERO server", null, null, null);
 			if (authentication == null)
 				return false;
 			
 			String result = authenticate(authentication, omeroServerInfo.id);
 			Arrays.fill(authentication.getPassword(), (char)0);
 			
-			// If we have previous URIs and the the username was different
-			if (uris.size() > 0 && !usernameOld.isEmpty() && !usernameOld.equals(authentication.getUserName())) {
-				Dialogs.showInfoNotification("OMERO login", String.format("OMERO account switched from \"%s\" to \"%s\" for %s", usernameOld, authentication.getUserName(), serverURI));
-			} else if (uris.size() == 0 || usernameOld.isEmpty())
-				Dialogs.showInfoNotification("OMERO login", String.format("Login successful: %s(\"%s\")", serverURI, authentication.getUserName()));
+			if (QuPathGUI.getInstance() != null) {
+				// If we have previous URIs and the the username was different
+				if (uris.size() > 0 && !usernameOld.isEmpty() && !usernameOld.equals(authentication.getUserName()))
+					Dialogs.showInfoNotification("OMERO login", String.format("OMERO account switched from \"%s\" to \"%s\" for %s", usernameOld, authentication.getUserName(), serverURI));
+				else if (uris.size() == 0 || usernameOld.isEmpty())
+					Dialogs.showInfoNotification("OMERO login", String.format("Login successful: %s(\"%s\")", serverURI, authentication.getUserName()));				
+			}
 			
 			// If a browser was currently opened with this client, close it
 			if (OmeroExtension.getOpenedBrowsers().containsKey(this)) {
@@ -411,11 +384,8 @@ public class OmeroWebClient {
 			// (Re)start timer (needed if logging back in for instance)
 			startTimer();
 			
-			// If this method is called from 'project-import' thread (i.e. 'Open URI..'), 'Not on FX Appl. thread' IllegalStateException is thrown
-			Platform.runLater(() -> {
-				loggedIn.set(true);
-				username.set(authentication.getUserName());
-			});
+			loggedIn = true;
+			username = authentication.getUserName();
 			
 			logger.debug(result);
 			return true;
@@ -428,8 +398,9 @@ public class OmeroWebClient {
 	
 	/**
 	 * Log out this client from the server.
+	 * @return is logged in
 	 */
-	public void logOut() {
+	public boolean logOut() {
 		try {
 			URL url = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/webclient/logout/");
 			HttpURLConnection connection = (HttpURLConnection)url.openConnection();
@@ -445,13 +416,15 @@ public class OmeroWebClient {
 			if (response != 200 && response != 403)
 				throw new IOException("Server returned " + response);
 			
-			loggedIn.set(false);
+			loggedIn = false;
 			timer.cancel();
 			timer = null;
-			username.set("");
+			username = "";
 		} catch (IOException e) {
 			logger.error("Could not logout.", e.getLocalizedMessage());
 		}
+		
+		return loggedIn;
 	}
 	
 	@Override
@@ -543,9 +516,7 @@ public class OmeroWebClient {
 	private class OmeroServerList {
 		private List<OmeroServerInfo> data;
 	}
-		
 
-	
 	private class OmeroServerInfo {
 		
 		private int id;
@@ -556,59 +527,6 @@ public class OmeroWebClient {
 		@Override
 		public String toString() {
 			return String.format("Host: %s, Server: %s, ID: %d, Port: %d", host, server, id, port);
-		}
-	}
-		
-
-	private static class OmeroAuthenticatorFX extends Authenticator {
-
-		private String lastUsername = "";
-
-		@Override
-		protected PasswordAuthentication getPasswordAuthentication() {
-			PasswordAuthentication authentication = getPasswordAuthentication(getRequestingPrompt(),
-					getRequestingHost(), lastUsername);
-			if (authentication == null)
-				return null;
-
-			lastUsername = authentication.getUserName();
-			return authentication;
-		}
-
-		static PasswordAuthentication getPasswordAuthentication(String prompt, String host, String lastUsername) {
-			GridPane pane = new GridPane();
-			Label labHost = new Label(host);
-			Label labUsername = new Label("Username");
-			TextField tfUsername = new TextField(lastUsername);
-			labUsername.setLabelFor(tfUsername);
-			
-			Label labPassword = new Label("Password");
-			PasswordField tfPassword = new PasswordField();
-			labPassword.setLabelFor(tfPassword);
-
-			int row = 0;
-			if (prompt != null && !prompt.isBlank())
-				pane.add(new Label(prompt), 0, row++, 2, 1);
-			pane.add(labHost, 0, row++, 2, 1);
-			pane.add(labUsername, 0, row);
-			pane.add(tfUsername, 1, row++);
-			pane.add(labPassword, 0, row);
-			pane.add(tfPassword, 1, row++);
-
-			pane.setHgap(5);
-			pane.setVgap(5);
-
-			if (!Dialogs.showConfirmDialog("Login", pane))
-				return null;
-
-			String userName = tfUsername.getText();
-			int passLength = tfPassword.getCharacters().length();
-			char[] password = new char[passLength];
-			for (int i = 0; i < passLength; i++) {
-				password[i] = tfPassword.getCharacters().charAt(i);
-			}
-
-			return new PasswordAuthentication(userName, password);
 		}
 	}
 }

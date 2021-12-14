@@ -56,9 +56,14 @@ import com.google.gson.JsonObject;
 
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -183,6 +188,11 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 	private Map<Integer, BufferedImage> thumbnailBank;
 	private IntegerProperty currentOrphanedCount;
 	
+	// Wrapping properties
+	private StringProperty usernameProperty;
+	private BooleanProperty logProperty;
+	private IntegerProperty nOpenImagesProperty;
+	
 	private final String[] orphanedAttributes = new String[] {"Name"};
 	
 	private final String[] projectAttributes = new String[] {"Name", 
@@ -232,6 +242,9 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
     	
     	if (!loggedIn)
     		return;
+    	
+    	// Add this browser to list of active browsers
+    	OmeroExtension.getOpenedBrowsers().put(client, this);
 
     	// Initialize class variables
     	serverChildrenList = new ArrayList<>();
@@ -243,6 +256,9 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		datasetMap = new ConcurrentHashMap<>();
 		executorTable = Executors.newSingleThreadExecutor(ThreadTools.createThreadFactory("children-loader", true));
 		executorThumbnails = Executors.newFixedThreadPool(PathPrefs.numCommandThreadsProperty().get(), ThreadTools.createThreadFactory("thumbnail-loader", true));
+		usernameProperty = new SimpleStringProperty();
+		logProperty = new SimpleBooleanProperty();
+		nOpenImagesProperty = new SimpleIntegerProperty(client.getURIs().size());
 		
 		tree = new TreeView<>();
 		owners = new HashSet<>();
@@ -285,19 +301,19 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 			if (client.getUsername().isEmpty() && client.isLoggedIn())
 				return "public";
 			return client.getUsername();
-		}, client.usernameProperty(), client.logProperty()));
+		}, usernameProperty, logProperty));
 		
 		// 'Num of open images' text and number are bound to the size of client observable list
 		var nOpenImagesText = new Label();
 		var nOpenImages = new Label();
-		nOpenImagesText.textProperty().bind(Bindings.createStringBinding(() -> "Open image" + (client.getURIs().size() > 1 ? "s" : "") + ": ", client.getURIs()));
-		nOpenImages.textProperty().bind(Bindings.concat(Bindings.size(client.getURIs()), ""));
+		nOpenImagesText.textProperty().bind(Bindings.createStringBinding(() -> "Open image" + (nOpenImagesProperty.get() > 1 ? "s" : "") + ": ", nOpenImagesProperty));
+		nOpenImages.textProperty().bind(nOpenImagesProperty.asString());
 		hostLabel.setStyle(BOLD);
 		usernameLabel.setStyle(BOLD);
 		nOpenImages.setStyle(BOLD);
 		
 		Label isReachable = new Label();
-		isReachable.graphicProperty().bind(Bindings.createObjectBinding(() -> OmeroTools.createStateNode(client.isLoggedIn()), client.logProperty()));
+		isReachable.graphicProperty().bind(Bindings.createObjectBinding(() -> OmeroTools.createStateNode(client.isLoggedIn()), logProperty));
 
 		serverAttributePane.addRow(0, new Label("Server: "), hostLabel, isReachable);
 		serverAttributePane.addRow(1, new Label("Username: "), usernameLabel);
@@ -388,21 +404,21 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 			var selected = tree.getSelectionModel().getSelectedItems();
 			if (selected != null && !selected.isEmpty()) {
 				ClipboardContent content = new ClipboardContent();
-				List<String> uris = new ArrayList<>();
+				List<String> urisTemp = new ArrayList<>();
 				for (var obj: selected) {
 					// If orphaned get all children items and add them to list, else create URI for object
 					if (obj.getValue().getType() == OmeroObjectType.ORPHANED_FOLDER)
-						uris.addAll(getObjectsURI(obj.getValue()));
+						urisTemp.addAll(getObjectsURI(obj.getValue()));
 					else
-						uris.add(createObjectURI(obj.getValue()));
+						urisTemp.add(createObjectURI(obj.getValue()));
 				}
 				
-				if (uris.size() == 1)
-					content.putString(uris.get(0));
+				if (urisTemp.size() == 1)
+					content.putString(urisTemp.get(0));
 				else
-					content.putString("[" + String.join(", ", uris) + "]");
+					content.putString("[" + String.join(", ", urisTemp) + "]");
 				Clipboard.getSystemClipboard().setContent(content);
-				Dialogs.showInfoNotification("Copy URI to clipboard", "URI" + (uris.size() > 1 ? "s " : " ") + "successfully copied to clipboard");
+				Dialogs.showInfoNotification("Copy URI to clipboard", "URI" + (urisTemp.size() > 1 ? "s " : " ") + "successfully copied to clipboard");
 			} else
 				Dialogs.showWarningNotification("Copy URI to clipboard", "The item needs to be selected first!");
 	    });
@@ -664,9 +680,19 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		
 		
 		dialog = new Stage();
-		client.logProperty().addListener((v, o, n) -> {
+		logProperty.addListener((v, o, n) -> {
 			if (!n)
 				requestClose();
+		});
+		
+		// Update properties whenever the focus of dialog changes
+		dialog.focusedProperty().addListener((v, o, n) -> {
+			logProperty.set(client.isLoggedIn());
+			nOpenImagesProperty.set(client.getURIs().size());
+			if (client.getUsername().isEmpty() && client.isLoggedIn())
+				usernameProperty.set("public");
+			else
+				usernameProperty.set(client.getUsername());
 		});
 		dialog.sizeToScene();
 		QuPathGUI qupath = QuPathGUI.getInstance();

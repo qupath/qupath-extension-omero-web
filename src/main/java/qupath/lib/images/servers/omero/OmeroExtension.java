@@ -23,7 +23,9 @@ package qupath.lib.images.servers.omero;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.Authenticator;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -37,6 +39,7 @@ import javafx.event.EventHandler;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import qupath.lib.common.Version;
@@ -87,6 +90,10 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
     	                )
 				);
 		createServerListMenu(qupath, browseServerMenu);
+		
+		// Install JavaFX Authenticator for OMERO login if using GUI
+		if (QuPathGUI.getInstance() != null)
+			OmeroWebClients.setAuthenticator(new OmeroAuthenticatorFX());
 	}
 	
 
@@ -103,12 +110,9 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 	private static Menu createServerListMenu(QuPathGUI qupath, Menu browseServerMenu) {
 		EventHandler<Event> validationHandler = e -> {
 			browseServerMenu.getItems().clear();
-			
-			// Get all active servers
-			var activeServers = OmeroWebClients.getAllClients();
-			
+
 			// Populate the menu with each unique active servers
-			for (var client: activeServers) {
+			for (var client: OmeroWebClients.getAllClients()) {
 				if (client == null)
 					continue;
 				MenuItem item = new MenuItem(client.getServerURI() + "...");
@@ -116,7 +120,6 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 					var browser = browsers.get(client);
 					if (browser == null || browser.getStage() == null) {
 						browser = new OmeroWebImageServerBrowserCommand(qupath, client);
-						browsers.put(client, browser);
 						browser.run();
 					} else
 						browser.getStage().requestFocus();
@@ -165,7 +168,6 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 					if (browser == null || browser.getStage() == null) {
 						// Create new browser
 						browser = new OmeroWebImageServerBrowserCommand(qupath, client);
-						browsers.put(client, browser);
 						browser.run();
 					} else	// Request focus for already-existing browser
 						browser.getStage().requestFocus();		
@@ -203,5 +205,58 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 	@Override
 	public Version getQuPathVersion() {
 		return Version.parse("0.3.0-rc2");
+	}
+	
+	
+	private static class OmeroAuthenticatorFX extends Authenticator {
+
+		private String lastUsername = "";
+
+		@Override
+		protected PasswordAuthentication getPasswordAuthentication() {
+			PasswordAuthentication authentication = getPasswordAuthentication(getRequestingPrompt(),
+					getRequestingHost(), lastUsername);
+			if (authentication == null)
+				return null;
+
+			lastUsername = authentication.getUserName();
+			return authentication;
+		}
+
+		static PasswordAuthentication getPasswordAuthentication(String prompt, String host, String lastUsername) {
+			GridPane pane = new GridPane();
+			Label labHost = new Label(host);
+			Label labUsername = new Label("Username");
+			TextField tfUsername = new TextField(lastUsername);
+			labUsername.setLabelFor(tfUsername);
+			
+			Label labPassword = new Label("Password");
+			PasswordField tfPassword = new PasswordField();
+			labPassword.setLabelFor(tfPassword);
+
+			int row = 0;
+			if (prompt != null && !prompt.isBlank())
+				pane.add(new Label(prompt), 0, row++, 2, 1);
+			pane.add(labHost, 0, row++, 2, 1);
+			pane.add(labUsername, 0, row);
+			pane.add(tfUsername, 1, row++);
+			pane.add(labPassword, 0, row);
+			pane.add(tfPassword, 1, row++);
+
+			pane.setHgap(5);
+			pane.setVgap(5);
+
+			if (!Dialogs.showConfirmDialog("Login", pane))
+				return null;
+
+			String userName = tfUsername.getText();
+			int passLength = tfPassword.getCharacters().length();
+			char[] password = new char[passLength];
+			for (int i = 0; i < passLength; i++) {
+				password[i] = tfPassword.getCharacters().charAt(i);
+			}
+
+			return new PasswordAuthentication(userName, password);
+		}
 	}
 }

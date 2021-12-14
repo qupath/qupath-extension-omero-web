@@ -22,18 +22,20 @@
 package qupath.lib.images.servers.omero;
 
 import java.io.IOException;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonSyntaxException;
-
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 /**
  * Class to keep track of active OMERO clients.
@@ -54,7 +56,7 @@ public class OmeroWebClients {
 	/**
 	 * An observable list of active/non-active clients. The user may not necessarily be logged in.
 	 */
-	final private static ObservableList<OmeroWebClient> clients = FXCollections.observableArrayList();
+	final private static List<OmeroWebClient> clients = new ArrayList<>();
 	
 	/**
 	 * A set of potential hosts that don't correspond to valid OMERO web servers.
@@ -62,6 +64,10 @@ public class OmeroWebClients {
 	 */
 	final private static Set<URI> failedUris = new HashSet<>();
 	
+	/**
+	 * Authenticator used for getting credentials. Can either be a custom JavaFX one or a simple Java one.
+	 */
+	private static Authenticator authenticator = new QuPathAuthenticator();
 	
 	/**
 	 * Return the client associated with the specified server URI. 
@@ -89,7 +95,6 @@ public class OmeroWebClients {
 	 * @param client
 	 */
 	static void addClient(OmeroWebClient client) {
-		// Check if logged in to make sure the log property is updated
 		client.checkIfLoggedIn();
 		
 		if (!clients.contains(client))
@@ -128,11 +133,11 @@ public class OmeroWebClients {
 	}
 	
 	/**
-	 * Return the observable list of all clients.
+	 * Return an unmodifiable list of all clients.
 	 * @return client list
 	 */
-	static ObservableList<OmeroWebClient> getAllClients() {
-		return clients;
+	static List<OmeroWebClient> getAllClients() {
+		return Collections.unmodifiableList(clients);
 	}
 	
 	/**
@@ -159,12 +164,33 @@ public class OmeroWebClients {
 		addClient(client);
 		return client;
 	}
-
+	
 	/**
-	 * Log the specified client out.
-	 * @param client
+	 * Set the authenticator to use for client login.
+	 * @param authenticator
 	 */
-	public static void logOut(OmeroWebClient client) {
-		client.logOut();
+	static void setAuthenticator(Authenticator authenticator) {
+		OmeroWebClients.authenticator = authenticator;
+	}
+	
+	/**
+	 * Get the authenticator to use for client login.
+	 * @return authenticator
+	 */
+	static Authenticator getAuthenticator() {
+		return authenticator;
+	}
+	
+	private static class QuPathAuthenticator extends Authenticator {
+
+		@Override
+		protected PasswordAuthentication getPasswordAuthentication() {
+			System.out.println(getRequestingPrompt() + ": " + getRequestingHost());
+			System.out.print("Username: ");
+			String username = System.console().readLine();
+			System.out.print("Password: ");
+			char[] pass = System.console().readPassword();
+			return new PasswordAuthentication(username, pass);
+		}
 	}
 }
