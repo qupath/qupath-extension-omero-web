@@ -132,7 +132,6 @@ import qupath.lib.projects.ProjectImageEntry;
 
 /**
  * Command to browse a specified OMERO server.
- * 
  * @author Melvin Gelbard
  */
 // TODO: Orphaned folder is still 'selectable' via arrow keys (despite being disabled), which looks like a JavaFX bug..
@@ -297,7 +296,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		nOpenImages.setStyle(BOLD);
 		
 		Label isReachable = new Label();
-		isReachable.graphicProperty().bind(Bindings.createObjectBinding(() -> OmeroTools.createStateNode(client.isLoggedIn()), client.logProperty()));
+		isReachable.graphicProperty().bind(Bindings.createObjectBinding(() -> OmeroWebClientsCommand.createStateNode(client.isLoggedIn()), client.logProperty()));
 
 		serverAttributePane.addRow(0, new Label("Server: "), hostLabel, isReachable);
 		serverAttributePane.addRow(1, new Label("Username: "), usernameLabel);
@@ -1455,6 +1454,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		 * Append a key-value row to the end (bottom row) of the specified GridPane.
 		 * @param gp
 		 * @param addSeparator
+		 * @param tooltip 
 		 * @param key
 		 * @param value
 		 */
