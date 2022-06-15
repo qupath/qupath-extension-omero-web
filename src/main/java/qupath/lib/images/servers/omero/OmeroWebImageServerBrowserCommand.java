@@ -455,9 +455,14 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 				logger.info("Will not fetch the current OMERO group.");
 			}
 		}
-		// If nothing is selected (i.e. currently opened image is not from the same server/an error occurred), select first item
-		if (comboGroup.getSelectionModel().isEmpty())
-			comboGroup.getSelectionModel().selectFirst();
+		// If nothing is selected (i.e. currently opened image is not from the same server/an error occurred), select first group/default group
+		if (comboGroup.getSelectionModel().isEmpty()) {
+			var defaultGroup = client.getDefaultGroup();
+			if (defaultGroup == null)
+				comboGroup.getSelectionModel().selectFirst();
+			else
+				comboGroup.getSelectionModel().select(client.getDefaultGroup());
+		}
 		
 		description = new TableView<>();
 		TableColumn<Integer, String> attributeCol = new TableColumn<>("Attribute");
@@ -1150,8 +1155,6 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 					List<OmeroObject> children = OmeroWebImageServerBrowserCommand.this.getChildren(omeroObj);
 					
 					Group currentGroup = comboGroup.getSelectionModel().getSelectedItem();
-					Owner currentOwner = comboOwner.getSelectionModel().getSelectedItem();
-					
 					// If server, update list of groups/owners (and comboBoxes)
 					if (omeroObj.getType() == OmeroObjectType.SERVER) {
 						// Fetch ALL Groups and ALL Owners
@@ -1163,6 +1166,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 								.filter(e -> e.getGroup().equals(currentGroup))
 								.map(e -> e.getOwner())
 								.filter(distinctByName(Owner::getName))
+								.sorted()
 								.collect(Collectors.toList());
 						
 						// If we suddenly found more Groups, update the set (shoudn't happen)
@@ -1173,9 +1177,12 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 							Platform.runLater(() -> {
 								var selectedItem = comboGroup.getSelectionModel().getSelectedItem();
 								comboGroup.getItems().setAll(groups);
-								if (selectedItem == null)
-									comboGroup.getSelectionModel().selectFirst();
-								else
+								if (selectedItem == null) {
+									if (client.getDefaultGroup() != null)
+										comboGroup.getSelectionModel().select(client.getDefaultGroup());
+									else
+										comboGroup.getSelectionModel().selectFirst();
+								} else
 									comboGroup.getSelectionModel().select(selectedItem);
 							});
 						}
@@ -1184,11 +1191,12 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 						if (!tempOwners.containsAll(comboOwner.getItems()) || !comboOwner.getItems().containsAll(tempOwners)) {
 							Platform.runLater(() -> {
 								comboOwner.getItems().setAll(tempOwners);
-								// Attempt not to change the currently selected owner if present in new Owner set
-								if (tempOwners.contains(currentOwner))
-									comboOwner.getSelectionModel().select(currentOwner);
-								else
+								// Always default to the Owner corresponding to the current client
+								var clientOwner = tempOwners.stream().filter(tempOwner -> tempOwner.getId() == client.getUserId()).collect(Collectors.toList());
+								if (clientOwner.isEmpty())
 									comboOwner.getSelectionModel().selectFirst(); // 'All members'
+								else
+									comboOwner.getSelectionModel().select(clientOwner.get(0));
 							});
 						}
 						if (owners.size() == 1)

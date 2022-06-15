@@ -437,7 +437,7 @@ final class OmeroObjects {
 	}
 	
 	
-	static class Owner {
+	static class Owner implements Comparable<Owner> {
 		
 		@SerializedName(value = "@id", alternate = "id")
 		private int id;
@@ -514,14 +514,19 @@ final class OmeroObjects {
 				return false;
 			return ((Owner)obj).id == this.id;
 		}
+
+		@Override
+		public int compareTo(Owner other) {
+			return lastName.compareToIgnoreCase(other.lastName);
+		}
 	}
 	
 	static class Group {
 		
-		@SerializedName(value = "@id")
+		@SerializedName(value = "@id", alternate={"groupId"})
 		private int id;
 		
-		@SerializedName(value = "Name")
+		@SerializedName(value = "Name", alternate={"groupName"})
 		private String name;
 		
 		// Singleton (with static factory)
