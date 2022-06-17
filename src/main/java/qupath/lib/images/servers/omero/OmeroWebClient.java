@@ -48,8 +48,6 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.naming.OperationNotSupportedException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -266,7 +264,7 @@ public class OmeroWebClient {
 			case UNKNOWN:
 				throw new IllegalArgumentException();
 			default:
-				throw new OperationNotSupportedException("Type not supported: " + type);
+				throw new UnsupportedOperationException("Type not supported: " + type);
 			}
 
 			URL url = new URL(uri.getScheme(), uri.getHost(), uri.getPort(), query + id);
@@ -277,7 +275,7 @@ public class OmeroWebClient {
 			int response = connection.getResponseCode();
 			connection.disconnect();
 			return response == 200;
-		} catch (IOException | OperationNotSupportedException ex) {
+		} catch (IOException | UnsupportedOperationException ex) {
 			logger.warn("Error attempting to access OMERO object", ex.getLocalizedMessage());
 			return false;
 		}
