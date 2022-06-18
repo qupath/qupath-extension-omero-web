@@ -2,7 +2,7 @@
  * #%L
  * This file is part of QuPath.
  * %%
- * Copyright (C) 2018 - 2021 QuPath developers, The University of Edinburgh
+ * Copyright (C) 2018 - 2022 QuPath developers, The University of Edinburgh
  * %%
  * QuPath is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -31,9 +31,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.imageio.ImageIO;
 
 import org.slf4j.Logger;
@@ -128,7 +125,12 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		this.host = uri.getHost();
 		this.port = uri.getPort();
 		this.client = client;
-		this.originalMetadata = buildMetadata();
+		
+		Long id = OmeroTools.parseImageId(uri);
+		if (id == null)
+			throw new IOException("No image ID found for " + uri);
+
+		this.originalMetadata = buildMetadata(uri);
 		// Args are stored in the JSON - passwords and usernames must not be included!
 		// Do an extra check to ensure someone hasn't accidentally passed one
 		var invalid = Arrays.asList("--password", "-p", "-u", "--username", "-password");
@@ -157,17 +159,11 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		client.addURI(uri);
 	}
 	
-	protected ImageServerMetadata buildMetadata() throws IOException {
-		String uriQuery = uri.getQuery();
-		if (uriQuery != null && !uriQuery.isEmpty() && uriQuery.startsWith("show=image-")) {
-			Pattern pattern = Pattern.compile("show=image-(\\d+)");
-			Matcher matcher = pattern.matcher(uriQuery);
-			if (matcher.find())
-				this.id = matcher.group(1);
-		}
-		if (this.id == null)
-			this.id = uri.getFragment();
-
+	private static ImageServerMetadata buildMetadata(URI uri) throws IOException {
+		Long id = OmeroTools.parseImageId(uri);
+		if (id == null)
+			throw new IOException("No image ID found for " + uri);
+		
 		int sizeX;
 		int sizeY;
 
@@ -183,7 +179,11 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		boolean isRGB = true;
 		double magnification = Double.NaN;
 		
-		JsonObject map = OmeroRequests.requestMetadata(scheme, host, port, Integer.parseInt(id));
+		JsonObject map = OmeroRequests.requestMetadata(
+				uri.getScheme(),
+				uri.getHost(),
+				uri.getPort(),
+				id);
 		JsonObject size = map.getAsJsonObject("size");
 
 		sizeX = size.getAsJsonPrimitive("width").getAsInt();
@@ -191,7 +191,6 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		sizeC = size.getAsJsonPrimitive("c").getAsInt();
 		sizeZ = size.getAsJsonPrimitive("z").getAsInt();
 		sizeT = size.getAsJsonPrimitive("t").getAsInt();
-		
 		
 
 		JsonElement pixelSizeElement = map.get("pixel_size");
@@ -261,7 +260,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		if (map.has("nominalMagnification"))
 			magnification = map.getAsJsonPrimitive("nominalMagnification").getAsDouble();
 		
-		ImageServerMetadata.Builder builder = new ImageServerMetadata.Builder(getClass(), uri.toString(), sizeX, sizeY)
+		ImageServerMetadata.Builder builder = new ImageServerMetadata.Builder(OmeroWebImageServer.class, uri.toString(), sizeX, sizeY)
 				.sizeT(sizeT)
 				.channels(ImageChannel.getDefaultRGBChannels())
 				.sizeZ(sizeZ)

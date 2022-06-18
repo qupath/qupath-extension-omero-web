@@ -2,7 +2,7 @@
  * #%L
  * This file is part of QuPath.
  * %%
- * Copyright (C) 2018 - 2021 QuPath developers, The University of Edinburgh
+ * Copyright (C) 2018 - 2022 QuPath developers, The University of Edinburgh
  * %%
  * QuPath is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -80,7 +80,7 @@ public final class OmeroRequests {
 	 * @return metadata json
 	 * @throws IOException
 	 */
-	public static JsonObject requestMetadata(String scheme, String host, int port, int id) throws IOException {
+	public static JsonObject requestMetadata(String scheme, String host, int port, long id) throws IOException {
 		URL url = new URL(scheme, host, port, String.format(WEBGATEWAY_DATA, id));
 		try (InputStreamReader reader = new InputStreamReader(url.openStream())) {
 			JsonObject map = new Gson().fromJson(reader, JsonObject.class);			

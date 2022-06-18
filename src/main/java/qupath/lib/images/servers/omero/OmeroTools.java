@@ -2,7 +2,7 @@
  * #%L
  * This file is part of QuPath.
  * %%
- * Copyright (C) 2018 - 2021 QuPath developers, The University of Edinburgh
+ * Copyright (C) 2018 - 2022 QuPath developers, The University of Edinburgh
  * %%
  * QuPath is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -108,6 +108,25 @@ public final class OmeroTools {
 	 */
 	public static OmeroWebClient getWebclient(OmeroWebImageServer server) {
 		return server.getWebclient();
+	}
+	
+	/**
+	 * Parse the image ID from a URI.
+	 * @param uri
+	 * @return the image ID, or null if no ID is found.
+	 */
+	public static Long parseImageId(URI uri) {
+		String uriQuery = uri.getQuery();
+		String id = null;
+		if (uriQuery != null && !uriQuery.isEmpty() && uriQuery.startsWith("show=image-")) {
+			Pattern pattern = Pattern.compile("show=image-(\\d+)");
+			Matcher matcher = pattern.matcher(uriQuery);
+			if (matcher.find())
+				id = matcher.group(1);
+		}
+		if (id == null)
+			id = uri.getFragment();
+		return Long.parseLong(id);
 	}
 	
 	

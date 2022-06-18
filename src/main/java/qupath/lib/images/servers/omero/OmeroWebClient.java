@@ -2,7 +2,7 @@
  * #%L
  * This file is part of QuPath.
  * %%
- * Copyright (C) 2018 - 2021 QuPath developers, The University of Edinburgh
+ * Copyright (C) 2018 - 2022 QuPath developers, The University of Edinburgh
  * %%
  * QuPath is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -72,7 +72,7 @@ import qupath.lib.io.GsonTools;
  */
 public class OmeroWebClient {
 
-	final private static Logger logger = LoggerFactory.getLogger(OmeroWebClient.class);
+	private final static Logger logger = LoggerFactory.getLogger(OmeroWebClient.class);
 
 	private final static String URL_SERVERS = "url:servers";
 	private final static String URL_LOGIN = "url:login";
@@ -109,6 +109,11 @@ public class OmeroWebClient {
 	 * Logged in property (modified by login/loggedIn/logout/timer)
 	 */
 	private boolean loggedIn;
+	
+	/**
+	 * Session ID, if available.
+	 */
+	private String sessionUUID;
 
 
 	private OmeroServerInfo omeroServerInfo;
@@ -117,14 +122,20 @@ public class OmeroWebClient {
 	private String token;
 
 	private Timer timer;
+	
+	private static Map<URI, OmeroWebClient> clients = new HashMap<>();
 
 	static OmeroWebClient create(URI serverURI, boolean startTimer) throws JsonSyntaxException, MalformedURLException, IOException, URISyntaxException {
 		// Clean server URI (filter out wrong URIs and get rid of unnecessary characters)
 		var cleanServerURI = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "").toURI();
 
 		// Create OmeroWebClient with the serverURI
-		OmeroWebClient client = new OmeroWebClient(cleanServerURI);
-
+		var client = clients.getOrDefault(cleanServerURI, null);
+		if (client == null) {
+			client = new OmeroWebClient(cleanServerURI);
+			clients.put(cleanServerURI, client);
+		}
+		
 		// Start timer to keep connection alive
 		if (startTimer)
 			client.startTimer();
@@ -358,6 +369,16 @@ public class OmeroWebClient {
 		JsonElement element = JsonParser.parseString(json);
 		return element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userId").getAsInt();
 	}
+	
+	/**
+	 * Fetch the User ID from a JSON string (from a login request response).
+	 * @param json
+	 * @return session UUID
+	 */
+	private static String getSessionUuid(String json) {
+		JsonElement element = JsonParser.parseString(json);
+		return element.getAsJsonObject().get("eventContext").getAsJsonObject().get("sessionUuid").getAsString();
+	}
 
 	/**
 	 * Check and return whether the client is logged in to its server
@@ -411,6 +432,7 @@ public class OmeroWebClient {
 			// Parse login response JSON to get default Group and user ID
 			defaultGroup = getDefaultGroup(result);
 			userId = getUserId(result);
+			sessionUUID = getSessionUuid(result);
 
 			if (QuPathGUI.getInstance() != null) {
 				// If we have previous URIs and the the username was different
@@ -470,6 +492,15 @@ public class OmeroWebClient {
 		}
 
 		return loggedIn;
+	}
+	
+	/**
+	 * Get the session UUID, if available.
+	 * This may return null if no session UUID is found (e.g. there was no login).
+	 * @return
+	 */
+	public String getSessionUUID() {
+		return sessionUUID;
 	}
 
 	@Override
