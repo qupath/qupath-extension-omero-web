@@ -45,8 +45,6 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import Glacier2.CannotCreateSessionException;
-import Glacier2.PermissionDeniedException;
 import ome.model.units.BigResult;
 import omero.ServerError;
 import omero.gateway.Gateway;
@@ -175,7 +173,7 @@ public class OmeroIceServer extends AbstractTileableImageServer {
 		private ImageAcquisitionData acquisition;
 		private List<ChannelData> channelData;
 				
-		GatewayWrapper(URI uri) throws DSOutOfServiceException, DSAccessException, ExecutionException, IOException, URISyntaxException, CannotCreateSessionException, PermissionDeniedException, ServerError {
+		GatewayWrapper(URI uri) throws DSOutOfServiceException, DSAccessException, ExecutionException, IOException, URISyntaxException {
 			gateway = new Gateway(new SimpleLogger());
 			
 			// Try to use existing web client login

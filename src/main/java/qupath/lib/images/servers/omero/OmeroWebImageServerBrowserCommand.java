@@ -49,6 +49,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.controlsfx.glyphfont.FontAwesome;
+import org.controlsfx.glyphfont.Glyph;
+import org.controlsfx.glyphfont.GlyphFont;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1437,8 +1440,12 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 					rating += ann2.getValue();
 				}
 
-				for (int i = 0; i < Math.round(rating/anns.size()); i++)
-					gp.add(IconFactory.createNode(QuPathGUI.TOOLBAR_ICON_SIZE, QuPathGUI.TOOLBAR_ICON_SIZE, IconFactory.PathIcons.STAR), i, 0);
+				var glyph = new Glyph("FontAwesome", FontAwesome.Glyph.STAR)
+						.size(QuPathGUI.TOOLBAR_ICON_SIZE);
+				var star = GuiTools.ensureDuplicatableGlyph(glyph);
+				for (int i = 0; i < Math.round(rating/anns.size()); i++) {
+					gp.add(star.duplicate(), i, 0);
+				}
 				gp.setHgap(10.0);
 				break;
 			default:
