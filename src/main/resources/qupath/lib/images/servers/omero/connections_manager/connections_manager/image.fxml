@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+
+
+<fx:root contentDisplay="RIGHT" type="Label" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
+   <graphic>
+      <ProgressIndicator prefHeight="15.0" prefWidth="15.0" progress="0.0" />
+   </graphic>
+</fx:root>

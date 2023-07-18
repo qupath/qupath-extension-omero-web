@@ -1,74 +1,96 @@
 plugins {
-  id 'java-library'
-  // To create a shadow/fat jar, including dependencies
-  id 'com.github.johnrengelman.shadow' version '7.0.0'
-  // Reduce JavaCPP dependencies
-  id 'org.bytedeco.gradle-javacpp-platform'
+    // Main gradle plugin for building a Java library
+    id 'java-library'
+    // To create a shadow/fat jar that bundle up all dependencies
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 ext.moduleName = 'qupath.extension.omero'
-archivesBaseName = 'qupath-extension-omero'
-description = "QuPath extension to support image reading using OMERO's web API."
 version = "0.4.0-SNAPSHOT"
-
-repositories {
-//  mavenLocal()
-  mavenCentral()
-  
-  maven {
-    url "https://maven.scijava.org/content/repositories/releases"
-  }
-  
-  maven {
-    url "https://maven.scijava.org/content/repositories/snapshots"
-  }
-  
-  maven {
-    name "ome.maven"
-    url "https://artifacts.openmicroscopy.org/artifactory/maven"
-  }
-
-  maven {
-    name "unidata.releases<"
-    url "https://artifacts.unidata.ucar.edu/content/repositories/unidata-releases"
-  }
-  
-}
+description = "QuPath extension to support image reading using OMERO's web API."
+ext.qupathVersion = gradle.ext.qupathVersion
+ext.qupathJavaVersion = 17
 
 dependencies {
-  implementation libs.commons.text
+    shadow "io.github.qupath:qupath-gui-fx:${qupathVersion}"
 
-  // Auto-discover if OMERO-Gateway is available
-  shadow "org.openmicroscopy:omero-gateway:5.8.0"
+    shadow libs.slf4j
 
-  shadow "io.github.qupath:qupath-gui-fx:${gradle.ext.qupathVersion}"
-  shadow "org.slf4j:slf4j-api:1.7.30"
+    // Auto-discover if OMERO-Gateway is available
+    shadow "org.openmicroscopy:omero-gateway:5.8.0"
+
+    testImplementation "io.github.qupath:qupath-gui-fx:${qupathVersion}"
+    testImplementation libs.junit
+}
+
+jar {
+    manifest {
+        attributes("Implementation-Title": project.name,
+                "Implementation-Version": archiveVersion,
+                "Automatic-Module-Name": moduleName)
+    }
 }
 
 processResources {
-  from ("${projectDir}/LICENSE.txt") {
-    into 'licenses/'
-  }
+    from ("${projectDir}/LICENSE") {
+        into 'licenses/'
+    }
 }
 
 tasks.register("copyDependencies", Copy) {
-  description "Copy dependencies into the output libs directory"
-  group "QuPath"
-  
-  from configurations.default
-  into 'build/libs'
+    description "Copy dependencies into the build directory for use elsewhere"
+    group "QuPath"
+
+    from configurations.default
+    into 'build/libs'
 }
 
 java {
-    def version = project.findProperty('toolchain')
-    if (!version)
-        version = 11
-    else if (version.strip() == 'skip')
-        version = null
-    if (version != null) {
-        logger.quiet("Setting toolchain to {}", version)
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(version)
-        }
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(qupathJavaVersion)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+    def strictJavadoc = findProperty('strictJavadoc')
+    if (!strictJavadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+tasks.named('compileJava') {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(org.gradle.jvm.tasks.Jar) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+repositories {
+    mavenCentral()
+
+    maven {
+        url "https://maven.scijava.org/content/repositories/releases"
+    }
+
+    maven {
+        url "https://maven.scijava.org/content/repositories/snapshots"
+    }
+
+    maven {
+        name "ome.maven"
+        url "https://artifacts.openmicroscopy.org/artifactory/maven"
+    }
+
+    maven {
+        name "unidata.releases<"
+        url "https://artifacts.unidata.ucar.edu/content/repositories/unidata-releases"
     }
 }

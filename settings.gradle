@@ -3,10 +3,13 @@ rootProject.name = 'qupath-extension-omero'
 gradle.ext.qupathVersion = "0.4.3"
 
 dependencyResolutionManagement {
+    versionCatalogs {
+        libs {
+            from("io.github.qupath:qupath-catalog:${gradle.ext.qupathVersion}")
+        }
+    }
 
     repositories {
-
-//	  mavenLocal()
 
         mavenCentral()
 
@@ -18,12 +21,5 @@ dependencyResolutionManagement {
             url "https://maven.scijava.org/content/repositories/snapshots"
         }
 
-    }
-
-
-    versionCatalogs {
-        libs {
-            from("io.github.qupath:qupath-catalog:${gradle.ext.qupathVersion}")
-        }
     }
 }

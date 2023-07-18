@@ -1,13 +1,17 @@
-module qupath.omero {
-	
+module qupath.omero.extension {
     requires java.base;
     requires java.desktop;
+    requires io.github.qupath.core;
+    requires io.github.qupath.gui.fx;
+    requires javafx.graphics;
+    requires javafx.fxml;
+    requires javafx.controls;
+    requires org.controlsfx.controls;
+    requires org.slf4j;
+    requires com.google.common;
+    requires com.google.gson;
+    requires java.net.http;
+    requires javafx.swing;
 
-    requires qupath.gui.fx;
-
-	requires slf4j.api;
-	
-	provides qupath.lib.images.servers.ImageServerBuilder with
-		qupath.lib.images.servers.omero.OmeroWebImageServerBuilder;
-
+    provides qupath.lib.images.servers.ImageServerBuilder with qupath.lib.images.servers.omero.images_servers.web.WebImageServerBuilder;
 }

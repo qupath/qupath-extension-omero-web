@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.Scene?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.stage.Stage?>
+
+<fx:root title="%ConnectionsManager.ConnectionManager.webClients" type="Stage" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
+    <scene>
+        <Scene>
+            <VBox fx:id="container" alignment="CENTER" prefHeight="50.0" prefWidth="250.0" spacing="10.0">
+            <children>
+               <Label text="%ConnectionsManager.ConnectionManager.noClients" />
+            </children></VBox>
+        </Scene>
+    </scene>
+</fx:root>
