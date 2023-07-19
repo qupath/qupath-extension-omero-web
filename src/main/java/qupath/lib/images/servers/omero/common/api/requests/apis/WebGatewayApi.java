@@ -9,7 +9,7 @@ import qupath.lib.awt.common.BufferedImageTools;
 import qupath.lib.images.servers.TileRequest;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
-import qupath.lib.images.servers.omero.common.api.requests.entities.image_metadata.ImageMetadataResponse;
+import qupath.lib.images.servers.omero.common.api.requests.entities.imagemetadata.ImageMetadataResponse;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;

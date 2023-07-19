@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
-import qupath.lib.images.servers.omero.common.omero_entities.shapes.Shape;
+import qupath.lib.images.servers.omero.common.omeroentities.shapes.Shape;
 import qupath.lib.io.GsonTools;
 import qupath.lib.objects.*;
 

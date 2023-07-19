@@ -8,8 +8,8 @@ import javafx.scene.control.SeparatorMenuItem;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.api.clients.WebClients;
-import qupath.lib.images.servers.omero.browser.browse_server.BrowserCommand;
-import qupath.lib.images.servers.omero.browser.new_server.NewServerForm;
+import qupath.lib.images.servers.omero.browser.browseserver.BrowserCommand;
+import qupath.lib.images.servers.omero.browser.newserver.NewServerForm;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
 import java.text.MessageFormat;
@@ -19,8 +19,8 @@ import java.util.ResourceBundle;
 
 /**
  * Menu allowing to create a connection with a new server
- * (see the {@link qupath.lib.images.servers.omero.browser.new_server new server} package), or to browse
- * an already connected server (see the {@link qupath.lib.images.servers.omero.browser.browse_server browse server} package).
+ * (see the {@link qupath.lib.images.servers.omero.browser.newserver new server} package), or to browse
+ * an already connected server (see the {@link qupath.lib.images.servers.omero.browser.browseserver browse server} package).
  */
 public class BrowseMenu extends Menu {
     private final static ResourceBundle resources = UiUtilities.getResources();

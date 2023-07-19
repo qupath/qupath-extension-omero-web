@@ -12,12 +12,12 @@ import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
 import qupath.lib.images.servers.omero.common.api.requests.entities.login.LoginResponse;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.OrphanedFolder;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.RepositoryEntity;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.Server;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Dataset;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Project;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.image.Image;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.OrphanedFolder;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.Server;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Dataset;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Project;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.image.Image;
 
 import java.awt.image.BufferedImage;
 import java.net.*;
@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  *     It has a reference to a {@link qupath.lib.images.servers.omero.common.api.requests.RequestsHandler RequestsHandler}
  *     which can be used to retrieve information from the OMERO server,
- *     and a reference to a {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.Server Server}
+ *     and a reference to a {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.Server Server}
  *     which is the ancestor of all OMERO entities.
  * </p>
  */
@@ -86,7 +86,7 @@ public class WebClient {
     }
 
     /**
-     * @return the {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.Server Server} of this client
+     * @return the {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.Server Server} of this client
      */
     public Server getServer() {
         return server;

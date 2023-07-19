@@ -7,8 +7,8 @@ import qupath.lib.images.servers.omero.common.api.requests.entities.search.Searc
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchResult;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
-import qupath.lib.images.servers.omero.common.omero_entities.annotations.AnnotationGroup;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.ServerEntity;
+import qupath.lib.images.servers.omero.common.omeroentities.annotations.AnnotationGroup;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.ServerEntity;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;

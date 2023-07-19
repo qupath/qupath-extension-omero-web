@@ -4,7 +4,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
-import qupath.lib.images.servers.omero.common.api.authenticators.command_line.CommandLineAuthenticator;
+import qupath.lib.images.servers.omero.common.api.authenticators.commandline.CommandLineAuthenticator;
 import qupath.lib.images.servers.omero.common.api.authenticators.gui.GuiAuthenticator;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 

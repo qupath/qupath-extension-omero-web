@@ -30,9 +30,9 @@ import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
 import qupath.lib.gui.tools.MenuTools;
-import qupath.lib.images.servers.omero.annotations_sender.AnnotationSender;
+import qupath.lib.images.servers.omero.annotationsender.AnnotationSender;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
-import qupath.lib.images.servers.omero.connections_manager.ConnectionsManagerCommand;
+import qupath.lib.images.servers.omero.connectionsmanager.ConnectionsManagerCommand;
 import qupath.lib.images.servers.omero.browser.BrowseMenu;
 
 import java.util.ResourceBundle;
@@ -42,8 +42,8 @@ import java.util.ResourceBundle;
  * It adds 3 menus to the Extensions menu:
  * <ul>
  *     <li>A browse menu, described in {@link qupath.lib.images.servers.omero.browser browser}.</li>
- *     <li>A connection manager action, described in {@link qupath.lib.images.servers.omero.connections_manager connection manager}.</li>
- *     <li>An annotation sender action, described in {@link qupath.lib.images.servers.omero.annotations_sender annotation sender}.</li>
+ *     <li>A connection manager action, described in {@link qupath.lib.images.servers.omero.connectionsmanager connection manager}.</li>
+ *     <li>An annotation sender action, described in {@link qupath.lib.images.servers.omero.annotationsender annotation sender}.</li>
  * </ul>
  */
 public class OmeroExtension implements QuPathExtension, GitHubProject {

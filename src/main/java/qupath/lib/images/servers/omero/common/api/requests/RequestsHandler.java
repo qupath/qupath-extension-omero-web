@@ -2,7 +2,7 @@ package qupath.lib.images.servers.omero.common.api.requests;
 
 import javafx.beans.property.*;
 import qupath.lib.images.servers.*;
-import qupath.lib.images.servers.omero.common.api.requests.entities.image_metadata.ImageMetadataResponse;
+import qupath.lib.images.servers.omero.common.api.requests.entities.imagemetadata.ImageMetadataResponse;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchQuery;
 import qupath.lib.images.servers.omero.common.api.requests.apis.IViewerApi;
 import qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi;
@@ -10,11 +10,11 @@ import qupath.lib.images.servers.omero.common.api.requests.apis.WebGatewayApi;
 import qupath.lib.images.servers.omero.common.api.requests.apis.WebclientApi;
 import qupath.lib.images.servers.omero.common.api.requests.entities.login.LoginResponse;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchResult;
-import qupath.lib.images.servers.omero.common.omero_entities.annotations.AnnotationGroup;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.RepositoryEntity;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Dataset;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Project;
-import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.ServerEntity;
+import qupath.lib.images.servers.omero.common.omeroentities.annotations.AnnotationGroup;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Dataset;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Project;
+import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.ServerEntity;
 import qupath.lib.objects.PathObject;
 
 import java.awt.image.BufferedImage;
