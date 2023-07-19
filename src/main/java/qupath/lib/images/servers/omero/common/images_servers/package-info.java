@@ -5,9 +5,9 @@
  * </p>
  * <p>
  *     Each image server of this extension implements the
- *     {@link qupath.lib.images.servers.omero.images_servers.OmeroImageServer OmeroImageServer} interface,
+ *     {@link qupath.lib.images.servers.omero.common.images_servers.OmeroImageServer OmeroImageServer} interface,
  *     and each image server builder implements the
- *     {@link qupath.lib.images.servers.omero.images_servers.OmeroImageServerBuilder OmeroImageServerBuilder} interface.
+ *     {@link qupath.lib.images.servers.omero.common.images_servers.OmeroImageServerBuilder OmeroImageServerBuilder} interface.
  * </p>
  */
-package qupath.lib.images.servers.omero.images_servers;
+package qupath.lib.images.servers.omero.common.images_servers;

@@ -19,7 +19,7 @@
  * #L%
  */
 
-package qupath.lib.images.servers.omero.images_servers.ice;
+package qupath.lib.images.servers.omero.common.images_servers.ice;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;

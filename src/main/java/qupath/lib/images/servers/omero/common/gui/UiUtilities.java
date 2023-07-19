@@ -18,7 +18,7 @@ import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.gui.tools.GuiTools;
 import qupath.lib.gui.tools.IconFactory;
 import qupath.lib.images.servers.ImageServerProvider;
-import qupath.lib.images.servers.omero.images_servers.OmeroImageServerBuilder;
+import qupath.lib.images.servers.omero.common.images_servers.OmeroImageServerBuilder;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;

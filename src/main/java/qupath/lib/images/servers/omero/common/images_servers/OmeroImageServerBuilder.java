@@ -1,4 +1,4 @@
-package qupath.lib.images.servers.omero.images_servers;
+package qupath.lib.images.servers.omero.common.images_servers;
 
 /**
  * <p>

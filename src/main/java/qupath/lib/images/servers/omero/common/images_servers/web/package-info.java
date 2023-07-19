@@ -8,4 +8,4 @@
  *     and the images are JPEG-compressed, so there is no accurate access of raw pixel data.
  * </p>
  */
-package qupath.lib.images.servers.omero.images_servers.web;
+package qupath.lib.images.servers.omero.common.images_servers.web;

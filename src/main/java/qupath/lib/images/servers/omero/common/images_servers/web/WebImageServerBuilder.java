@@ -1,4 +1,4 @@
-package qupath.lib.images.servers.omero.images_servers.web;
+package qupath.lib.images.servers.omero.common.images_servers.web;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,7 +8,7 @@ import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.api.clients.WebClients;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
-import qupath.lib.images.servers.omero.images_servers.OmeroImageServerBuilder;
+import qupath.lib.images.servers.omero.common.images_servers.OmeroImageServerBuilder;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;

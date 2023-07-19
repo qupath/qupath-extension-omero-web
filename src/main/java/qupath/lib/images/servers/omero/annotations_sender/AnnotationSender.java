@@ -5,7 +5,7 @@ import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
-import qupath.lib.images.servers.omero.images_servers.OmeroImageServer;
+import qupath.lib.images.servers.omero.common.images_servers.OmeroImageServer;
 import qupath.lib.objects.PathObject;
 
 import java.net.URI;
