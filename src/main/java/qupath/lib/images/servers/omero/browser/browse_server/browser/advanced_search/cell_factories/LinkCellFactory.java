@@ -9,9 +9,7 @@ import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import java.util.ResourceBundle;
 
 /**
- * Cell factory used for the "Link" column of the
- * {@link qupath.lib.images.servers.omero.browser.browse_server.browser.advanced_search.AdvancedSearch AdvancedSearch} window.
- * It displays a button that opens the link of the search result in a browser.
+ * Cell factory that displays a button that opens the link of a search result in a browser.
  */
 public class LinkCellFactory extends TableCell<SearchResult, SearchResult> {
     private final static ResourceBundle resources = UiUtilities.getResources();

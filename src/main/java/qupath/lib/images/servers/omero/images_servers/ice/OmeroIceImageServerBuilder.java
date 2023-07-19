@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.ImageServerBuilder;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 
 
 /**

@@ -14,10 +14,17 @@ import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import java.util.ResourceBundle;
 
 /**
- * <p>Cell factory of the hierarchy of a {@link qupath.lib.images.servers.omero.browser.browse_server.browser.Browser browser}.</p>
+ * <p>
+ *     Cell factory of the hierarchy of a {@link javafx.scene.control.TreeView TreeView} containing
+ *     {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.RepositoryEntity RepositoryEntity} elements .</p>
  * <p>
  *     It displays the name of each OMERO entity, a corresponding icon, the number of children (if any),
  *     and additional information with a tooltip.
+ * </p>
+ * <p>
+ *     If the entity is an {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.image.Image Image},
+ *     a complex tooltip described in {@link qupath.lib.images.servers.omero.browser.browse_server.browser.hierarchy.ImageTooltip ImageTooltip}
+ *     is used.
  * </p>
  */
 public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {

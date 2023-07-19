@@ -13,6 +13,9 @@ public class NewServerForm extends VBox {
     @FXML
     private TextField url;
 
+    /**
+     * Creates the new server form.
+     */
     public NewServerForm() {
         UiUtilities.loadFXMLAndGetResources(this, getClass().getResource("new_server_form.fxml"));
 

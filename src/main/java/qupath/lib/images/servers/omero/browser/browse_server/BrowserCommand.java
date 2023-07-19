@@ -4,7 +4,7 @@ import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.browser.browse_server.browser.Browser;
 
 /**
- * Command that starts a {@link qupath.lib.images.servers.omero.browser.browse_server.browser.Browser browser}.
+ * Command that starts a {@link qupath.lib.images.servers.omero.browser.browse_server.browser browser}.
  */
 public class BrowserCommand implements Runnable {
     private final WebClient client;
@@ -18,6 +18,7 @@ public class BrowserCommand implements Runnable {
     public BrowserCommand(WebClient client) {
         this.client = client;
     }
+
     @Override
     public void run() {
         if (browser == null) {

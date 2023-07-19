@@ -11,13 +11,21 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
- * Provides some information on an OMERO image.
- * An image is a child of a dataset or an orphaned folder.
+ * <p>
+ *     Provides some information on an OMERO image.
+ *     An image is a child of a {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Dataset Dataset}
+ *     or an {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.OrphanedFolder OrphanedFolder}.
+ * </p>
+ * <p>
+ *     This class uses the {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.image.PixelInfo PixelInfo} class
+ *     to get information about pixels.
+ * </p>
  */
 public class Image extends ServerEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();
     private static final String[] ATTRIBUTES = new String[] {
             resources.getString("Common.OmeroEntities.Image.name"),
+            resources.getString("Common.OmeroEntities.Image.id"),
             resources.getString("Common.OmeroEntities.Image.owner"),
             resources.getString("Common.OmeroEntities.Image.group"),
             resources.getString("Common.OmeroEntities.Image.acquisitionDate"),

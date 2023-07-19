@@ -11,7 +11,7 @@ import java.util.ResourceBundle;
 
 /**
  * Represents an OMERO project.
- * A project contains datasets.
+ * A project contains {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Dataset Datasets}.
  */
 public class Project extends ServerEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();

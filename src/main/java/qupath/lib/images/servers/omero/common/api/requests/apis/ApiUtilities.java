@@ -1,7 +1,7 @@
 package qupath.lib.images.servers.omero.common.api.requests.apis;
 
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;

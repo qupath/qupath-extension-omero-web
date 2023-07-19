@@ -2,8 +2,8 @@ package qupath.lib.images.servers.omero.common.omero_entities.repository_entitie
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import qupath.lib.images.servers.omero.common.omero_entities.Group;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Group;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 
 import java.util.stream.Stream;
 

@@ -3,7 +3,7 @@ package qupath.lib.images.servers.omero.images_servers.web;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.*;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.images_servers.OmeroImageServer;
 import qupath.lib.objects.*;
@@ -14,15 +14,14 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * <p>{@link qupath.lib.images.servers.ImageServer Image server} that uses the OMERO JSON API.</p>
+ * <p>It doesn't have dependencies but can only work with 8-bit RGB images, and the images are JPEG-compressed.</p>
+ */
 class WebImageServer extends AbstractTileableImageServer implements PathObjectReader, OmeroImageServer {
     private static final Logger logger = LoggerFactory.getLogger(WebImageServer.class);
-    /**
-     * Default JPEG quality if none is specified in the args
-     */
     private static final double DEFAULT_JPEG_QUALITY = 0.9;
-    // Args are stored in the JSON - passwords and usernames must not be included!
-    // Do an extra check to ensure someone hasn't accidentally passed one
-    private static final List<String> INVALID_PARAMETERS = List.of("--password", "-p", "-u", "--username", "-password");
+    private static final List<String> INVALID_PARAMETERS = List.of("--password",  "-password", "-p", "-u", "--username", "-username");
     private final URI uri;
     private final WebClient client;
     private final String[] args;
@@ -36,6 +35,14 @@ class WebImageServer extends AbstractTileableImageServer implements PathObjectRe
         this.args = args;
     }
 
+    /**
+     * Attempt to create a WebImageServer.
+     *
+     * @param uri  the image URI
+     * @param client  the corresponding WebClient
+     * @param args  optional arguments used to open the image
+     * @return a WebImageServer, or an empty Optional if an error occurred
+     */
     public static Optional<WebImageServer> create(URI uri, WebClient client, String... args) {
         try (WebImageServer webImageServer = new WebImageServer(uri, client, args)) {
             if (webImageServer.setId() && webImageServer.setOriginalMetadata() && webImageServer.setQuality(args)) {
@@ -183,7 +190,7 @@ class WebImageServer extends AbstractTileableImageServer implements PathObjectRe
             String arg = args[i].toLowerCase().strip();
 
             if (INVALID_PARAMETERS.contains(arg)) {
-                logger.error("Cannot build server with arg " + arg);
+                logger.error("Cannot build server with arg " + arg + ". Consider removing such sensitive data.");
                 return false;
             } else {
                 if (arg.equals("--quality") || arg.equals("-q")) {

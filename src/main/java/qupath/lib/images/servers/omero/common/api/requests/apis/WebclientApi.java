@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchQuery;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchResult;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
 import qupath.lib.images.servers.omero.common.omero_entities.annotations.AnnotationGroup;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.ServerEntity;
@@ -212,6 +212,6 @@ public class WebclientApi {
      * @return a CompletableFuture with the icon, of an empty Optional if an error occured
      */
     public CompletableFuture<Optional<BufferedImage>> getImageIcon() {
-        return ApiUtilities.getImage(String.format(IMAGE_ICON_URL, host));
+        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(IMAGE_ICON_URL, host));
     }
 }

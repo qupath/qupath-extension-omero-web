@@ -7,17 +7,19 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.TreeItem;
-import qupath.lib.images.servers.omero.common.omero_entities.Group;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Group;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.RepositoryEntity;
 
 import java.util.function.Predicate;
 
 /**
- * <p>Item of the hierarchy of a {@link qupath.lib.images.servers.omero.browser.browse_server.browser.Browser browser}.</p>
  * <p>
- *     The items can be filtered by {@link qupath.lib.images.servers.omero.common.omero_entities.Owner owner},
- *     {@link qupath.lib.images.servers.omero.common.omero_entities.Group group}, and name.
+ *     Item of the hierarchy of a {@link javafx.scene.control.TreeView TreeView} containing
+ *     {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.RepositoryEntity RepositoryEntity} elements .</p>
+ * <p>
+ *     The items can be filtered by {@link Owner owner},
+ *     {@link Group group}, and name.
  * </p>
  * <p>When an item is expanded, a web request is started to retrieve its children (if they don't already exist).</p>
  */

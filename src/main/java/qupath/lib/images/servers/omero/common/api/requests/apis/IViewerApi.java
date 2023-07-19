@@ -5,9 +5,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
-import qupath.lib.images.servers.omero.images_servers.web.shapes.Shape;
+import qupath.lib.images.servers.omero.common.omero_entities.shapes.Shape;
 import qupath.lib.io.GsonTools;
 import qupath.lib.objects.*;
 

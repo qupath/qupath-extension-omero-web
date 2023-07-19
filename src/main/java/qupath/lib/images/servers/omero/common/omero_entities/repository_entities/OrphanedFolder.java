@@ -1,17 +1,17 @@
 package qupath.lib.images.servers.omero.common.omero_entities.repository_entities;
 
 import javafx.application.Platform;
-import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
-import qupath.lib.images.servers.omero.common.omero_entities.Group;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Group;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 
 import java.util.ResourceBundle;
 
 /**
- * An orphaned folder is a container for orphaned images and orphaned datasets.
+ * An orphaned folder is a container for orphaned images and orphaned datasets (described in
+ * {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities server_entities}).
  */
 public class OrphanedFolder extends RepositoryEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();

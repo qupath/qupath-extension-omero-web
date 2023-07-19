@@ -7,7 +7,7 @@ import qupath.lib.images.servers.omero.common.omero_entities.annotations.Annotat
 import java.util.ResourceBundle;
 
 /**
- * An annotation containing a rating (from 0 to 5)
+ * An annotation containing a rating (from 0 to 5).
  */
 public class RatingAnnotation extends Annotation {
     private static final ResourceBundle resources = UiUtilities.getResources();
@@ -21,7 +21,7 @@ public class RatingAnnotation extends Annotation {
     }
 
     /**
-     * Indicates if an annotation type refers to a rating annotation
+     * Indicates if an annotation type refers to a rating annotation.
      *
      * @param type  the annotation type
      * @return whether this annotation type refers to a rating annotation

@@ -6,8 +6,8 @@ import javafx.collections.ObservableList;
 import javafx.util.StringConverter;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
-import qupath.lib.images.servers.omero.common.omero_entities.Group;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Group;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.ServerEntity;
 
 import java.util.ResourceBundle;
@@ -18,7 +18,9 @@ import java.util.function.Predicate;
 
 /**
  * A server is the top element in the OMERO entity hierarchy.
- * It contains one orphaned folder and zero or more projects.
+ * It contains one {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.OrphanedFolder OrphanedFolder}
+ * and zero or more projects (described in
+ * {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities server_entities}).
  */
 public class Server extends RepositoryEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();

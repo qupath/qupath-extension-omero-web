@@ -5,8 +5,8 @@ import com.google.gson.annotations.SerializedName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
-import qupath.lib.images.servers.omero.common.omero_entities.Group;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Group;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.RepositoryEntity;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.image.Image;
 

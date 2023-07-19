@@ -23,3 +23,11 @@ public class OmeroServerList {
         }
     }
 }
+
+class OmeroServerInfo {
+    @SerializedName("id") private int id;
+
+    public int getId() {
+        return id;
+    }
+}

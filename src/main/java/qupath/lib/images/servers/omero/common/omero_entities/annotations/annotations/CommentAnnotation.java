@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
- * Annotation containing a text comment
+ * Annotation containing a text comment.
  */
 public class CommentAnnotation extends Annotation {
     private static final ResourceBundle resources = UiUtilities.getResources();
@@ -22,7 +22,7 @@ public class CommentAnnotation extends Annotation {
     }
 
     /**
-     * Indicates if an annotation type refers to a comment annotation
+     * Indicates if an annotation type refers to a comment annotation.
      *
      * @param type  the annotation type
      * @return whether this annotation type refers to a comment annotation

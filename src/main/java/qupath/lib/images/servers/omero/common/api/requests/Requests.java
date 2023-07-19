@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
 import qupath.lib.io.GsonTools;
 
 import javax.imageio.ImageIO;

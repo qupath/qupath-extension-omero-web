@@ -13,8 +13,14 @@ import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import java.util.ResourceBundle;
 
 /**
- * The connection manager provides a window that displays the connections to all servers.
- * The user can connect, log in, log out, and remove a connection to a server.
+ * <p>
+ *     The connection manager provides a window that displays the connections to all servers.
+ *     The user can connect, log in, log out, and remove a connection to a server.
+ * </p>
+ * <p>
+ *     Each connexion is displayed using the
+ *     {@link qupath.lib.images.servers.omero.connections_manager.connections_manager.Connection Connection} pane.
+ * </p>
  */
 public class ConnectionsManager extends Stage {
     private static ResourceBundle resources;

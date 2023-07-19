@@ -4,7 +4,7 @@ import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.omero_entities.annotations.annotations.*;
 import qupath.lib.images.servers.omero.common.omero_entities.annotations.entities.Experimenter;
 import qupath.lib.images.servers.omero.common.omero_entities.annotations.entities.Link;
@@ -13,8 +13,14 @@ import java.lang.reflect.Type;
 import java.util.Optional;
 
 /**
- * An OMERO annotation is <b>not</b> similar to a QuPath annotation.
- * It represents metadata attached to OMERO entities.
+ * <p>
+ *     An OMERO annotation is <b>not</b> similar to a QuPath annotation.
+ *     It represents metadata attached to OMERO entities.
+ * </p>
+ * <p>
+ *     Sub classes of this class can be found in the
+ *     {@link qupath.lib.images.servers.omero.common.omero_entities.annotations.annotations annotations} package.
+ * </p>
  */
 public abstract class Annotation {
     private final static Logger logger = LoggerFactory.getLogger(Annotation.class);
@@ -51,6 +57,9 @@ public abstract class Annotation {
                 .orElse("");
     }
 
+    /**
+     * Class that deserializes a JSON to an annotation.
+     */
     static class GsonOmeroAnnotationDeserializer implements JsonDeserializer<Annotation> {
         @Override
         public Annotation deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {

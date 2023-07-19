@@ -1,7 +1,7 @@
 package qupath.lib.images.servers.omero.common.api.requests.entities.search;
 
-import qupath.lib.images.servers.omero.common.omero_entities.Group;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Group;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 
 /**
  * Contain information about a search query.

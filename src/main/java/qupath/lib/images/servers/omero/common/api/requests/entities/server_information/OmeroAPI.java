@@ -23,3 +23,12 @@ public class OmeroAPI {
         }
     }
 }
+
+class OmeroAPIVersion {
+    @SerializedName("url:base") private String versionURL;
+
+    public Optional<String> getVersionURL() {
+        return Optional.ofNullable(versionURL);
+    }
+}
+

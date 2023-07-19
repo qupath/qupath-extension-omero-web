@@ -1,4 +1,4 @@
-package qupath.lib.images.servers.omero.images_servers.web.shapes;
+package qupath.lib.images.servers.omero.common.omero_entities.shapes;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * An OMERO shape represents a region that can be drawn to an image.
+ */
 public abstract class Shape {
     private static final Logger logger = LoggerFactory.getLogger(Shape.class);
     @SerializedName(value = "TheC") private Integer c = -1;
@@ -31,8 +34,14 @@ public abstract class Shape {
     @SerializedName(value = "StrokeColor", alternate = "strokeColor") private Integer strokeColor;
     @SerializedName(value = "oldId") private String oldId = "-1:-1";
 
-    abstract public ROI createROI();
+    /**
+     * @return the ROI that corresponds to this shape
+     */
+    abstract ROI createROI();
 
+    /**
+     * @return a PathObject build from the ROI corresponding to this shape
+     */
     public PathObject createAnnotation() {
         var pathObject = PathObjects.createAnnotationObject(createROI());
         initializeObject(pathObject);
@@ -40,6 +49,9 @@ public abstract class Shape {
         return pathObject;
     }
 
+    /**
+     * Class that deserializes a JSON into a shape
+     */
     public static class GsonShapeDeserializer implements JsonDeserializer<Shape> {
         @Override
         public Shape deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
@@ -70,6 +82,9 @@ public abstract class Shape {
         }
     }
 
+    /**
+     * Class that serializes a shape into a JSON
+     */
     public static class GsonShapeSerializer implements JsonSerializer<PathObject> {
         @Override
         public JsonElement serialize(PathObject src, Type typeOfSrc, JsonSerializationContext context) {
@@ -149,8 +164,11 @@ public abstract class Shape {
     }
 
     /**
-     * Parse the OMERO string representing points
-     * @return list of Point2
+     * Parse the OMERO string representing points into a list.
+     *
+     * @param pointsString  a String describing a list of points returned by the OMERO API,
+     *                      for example "2,3 4,2 7,9"
+     * @return a list of points corresponding to the input
      */
     protected static List<Point2> parseStringPoints(String pointsString) {
         return Arrays.stream(pointsString.split(" "))
@@ -166,6 +184,9 @@ public abstract class Shape {
                 .toList();
     }
 
+    /**
+     * @return the ImagePlane corresponding to this shape
+     */
     protected ImagePlane getPlane() {
         return c == null ? ImagePlane.getPlane(z, t) : ImagePlane.getPlaneWithChannel(c, z, t);
     }

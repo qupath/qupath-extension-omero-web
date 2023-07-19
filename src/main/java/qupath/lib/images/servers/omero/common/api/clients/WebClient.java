@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * <p>Class representing an OMERO Web Client. </p>
+ * <p>Class representing an OMERO Web Client.</p>
  * <p>
  *     It handles creating a connection with an OMERO server, logging in, keeping the connection alive,
  *     logging out, and retrieving images (icons, thumbnails) from the server.
@@ -138,7 +138,9 @@ public class WebClient {
         openedImagesURIs.add(imageURI);
     }
 
-    //TODO: really necessary?
+    /**
+     * @return the session UUID of this connection
+     */
     public String getSessionUUID() {
         return sessionUUID;
     }

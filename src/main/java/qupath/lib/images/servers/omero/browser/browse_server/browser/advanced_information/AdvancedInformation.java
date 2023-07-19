@@ -27,7 +27,10 @@ import java.util.ResourceBundle;
  *     OMERO annotations are <b>not</b> similar to QuPath annotations. Rather, they represent metadata
  *     associated with OMERO entities.
  * </p>
- * <p>Annotations are displayed within several titled panes.</p>
+ * <p>
+ *     Annotations are displayed within several panes. Some annotations use a
+ *     {@link FormPane FormPane}, while others use an {@link InformationPane InformationPane}.
+ * </p>
  */
 public class AdvancedInformation extends Stage {
     private ResourceBundle resources;

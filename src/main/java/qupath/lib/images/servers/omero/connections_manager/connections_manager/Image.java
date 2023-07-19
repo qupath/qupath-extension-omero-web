@@ -9,9 +9,17 @@ import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import java.net.URI;
 import java.util.ResourceBundle;
 
+/**
+ * Label showing whether an image is accessible.
+ */
 class Image extends Label {
     private static ResourceBundle resources;
 
+    /**
+     * Creates an Image label.
+     *
+     * @param imageUri  the URI of the image
+     */
     public Image(URI imageUri) {
         resources = UiUtilities.loadFXMLAndGetResources(this, getClass().getResource("image.fxml"));
 

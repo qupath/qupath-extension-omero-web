@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.ImageServerBuilder;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.api.clients.WebClients;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Builder of a {@link WebImageServer WebImageServer}.
+ */
 public class WebImageServerBuilder implements ImageServerBuilder<BufferedImage>, OmeroImageServerBuilder {
     final private static Logger logger = LoggerFactory.getLogger(WebImageServerBuilder.class);
 

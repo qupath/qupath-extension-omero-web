@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
- * Annotation containing several key-value pairs (e.g. license, release date)
+ * Annotation containing several key-value pairs (e.g. license, release date).
  */
 public class MapAnnotation extends Annotation {
     private static final ResourceBundle resources = UiUtilities.getResources();
@@ -22,7 +22,7 @@ public class MapAnnotation extends Annotation {
     }
 
     /**
-     * Indicates if an annotation type refers to a map annotation
+     * Indicates if an annotation type refers to a map annotation.
      *
      * @param type  the annotation type
      * @return whether this annotation type refers to a map annotation

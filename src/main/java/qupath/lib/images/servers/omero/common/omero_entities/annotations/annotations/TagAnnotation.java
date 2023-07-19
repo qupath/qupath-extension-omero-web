@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
- * Annotation containing a text tag
+ * Annotation containing a text tag.
  */
 public class TagAnnotation extends Annotation {
     private static final ResourceBundle resources = UiUtilities.getResources();
@@ -22,7 +22,7 @@ public class TagAnnotation extends Annotation {
     }
 
     /**
-     * Indicates if an annotation type refers to a tag annotation
+     * Indicates if an annotation type refers to a tag annotation.
      *
      * @param type  the annotation type
      * @return whether this annotation type refers to a tag annotation

@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
- * Annotation containing information on a file attached to an OMERO entity
+ * Annotation containing information on a file attached to an OMERO entity.
  */
 public class FileAnnotation extends Annotation {
     private static final ResourceBundle resources = UiUtilities.getResources();
@@ -26,7 +26,7 @@ public class FileAnnotation extends Annotation {
     }
 
     /**
-     * Indicates if an annotation type refers to a file annotation
+     * Indicates if an annotation type refers to a file annotation.
      *
      * @param type  the annotation type
      * @return whether this annotation type refers to a file annotation

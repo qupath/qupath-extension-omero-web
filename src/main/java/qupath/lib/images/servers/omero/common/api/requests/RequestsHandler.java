@@ -23,8 +23,12 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * <p>Intermediate between the APIs and the rest of the application.</p>
- * <p>The only goal of this class is to redirect each web request to the appropriate API.</p>
+ * <p>This class provides functions to perform operations with an OMERO server.</p>
+ * <p>
+ *     As different APIs are used to perform the operations, this class only
+ *     redirect each web request to the appropriate API contained in
+ *     {@link qupath.lib.images.servers.omero.common.api.requests.apis apis}.
+ * </p>
  */
 public class RequestsHandler {
     private final URI host;

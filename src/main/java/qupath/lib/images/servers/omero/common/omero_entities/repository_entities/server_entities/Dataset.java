@@ -11,7 +11,9 @@ import java.util.ResourceBundle;
 
 /**
  * Represents an OMERO dataset.
- * A dataset contains images, and is a child of a project or an orphaned folder.
+ * A dataset contains images (described in {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.image image}),
+ * and is a child of a {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Project Project}
+ * or an {@link qupath.lib.images.servers.omero.common.omero_entities.repository_entities.OrphanedFolder OrphanedFolder}.
  */
 public class Dataset extends ServerEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();

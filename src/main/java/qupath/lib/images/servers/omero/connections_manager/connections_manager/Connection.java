@@ -19,6 +19,16 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
+/**
+ * <p>
+ *     Pane displaying the status of a connection to a server as well as buttons to
+ *     connect, log in, log out, or remove the connection.
+ * </p>
+ * <p>
+ *     It also displays the list of images of this server that are currently opened using the
+ *     {@link qupath.lib.images.servers.omero.connections_manager.connections_manager.Image Image} label.
+ * </p>
+ */
 class Connection extends VBox {
     private final WebClient client;
     private final String serverURI;
@@ -32,10 +42,25 @@ class Connection extends VBox {
     @FXML
     private Button connection;
 
+    /**
+     * Creates the connection pane using a {@link qupath.lib.images.servers.omero.common.api.clients.WebClient WebClient}.
+     * Since a WebClient is present, there is already a connection with the server, so the user will have the possibility
+     * to log in, log out, or remove the connection, but not to connect to the server.
+     *
+     * @param client  the client corresponding to the connection with the server
+     */
     public Connection(WebClient client) {
         this(client, client.getServerURI().toString());
     }
 
+    /**
+     * Creates the connection pane using the URI of a server.
+     * Since there is no WebClient, there is no connection with the server for now, so the user will have the possibility
+     * to connect to the server or to remove the connection, but not to log in or log out.
+     * Logging in or logging out will only be possible after a connection to the server is made.
+     *
+     * @param serverURI  the URI of the server
+     */
     public Connection(String serverURI) {
         this(null, serverURI);
     }

@@ -1,4 +1,4 @@
-package qupath.lib.images.servers.omero.common.omero_entities;
+package qupath.lib.images.servers.omero.common.omero_entities.permissions;
 
 import com.google.gson.annotations.SerializedName;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;

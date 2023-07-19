@@ -1,16 +1,15 @@
-package qupath.lib.images.servers.omero.common.api;
+package qupath.lib.images.servers.omero.common.api.requests;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utility methods for handling requests.
+ * Utility methods for handling API requests.
  */
 public class RequestsUtilities {
     private final static Logger logger = LoggerFactory.getLogger(RequestsUtilities.class);

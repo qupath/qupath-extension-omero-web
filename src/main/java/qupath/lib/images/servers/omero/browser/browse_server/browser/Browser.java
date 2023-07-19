@@ -15,8 +15,8 @@ import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.browser.browse_server.browser.hierarchy.HierarchyCellFactory;
-import qupath.lib.images.servers.omero.common.omero_entities.Group;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Group;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.RepositoryEntity;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.ServerEntity;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.image.Image;
@@ -35,8 +35,22 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Window allowing the user to browse an OMERO server,
- * get information about OMERO entities and open OMERO images.
+ * <p>
+ *     Window allowing the user to browse an OMERO server,
+ *     get information about OMERO entities and open OMERO images.
+ * </p>
+ * <p>
+ *     It displays a hierarchy of OMERO entities using classes of
+ *     {@link qupath.lib.images.servers.omero.browser.browse_server.browser.hierarchy hierarchy}.
+ * </p>
+ * <p>
+ *     It can launch a window showing details on an OMERO entity, described in
+ *     {@link qupath.lib.images.servers.omero.browser.browse_server.browser.advanced_information advanced_information}.
+ * </p>
+ * <p>
+ *     It can launch a window that performs a search on OMERO entities, described in
+ *     {@link qupath.lib.images.servers.omero.browser.browse_server.browser.advanced_search advanced_search}.
+ * </p>
  */
 public class Browser extends Stage {
     private final ResourceBundle resources;

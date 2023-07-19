@@ -1,7 +1,7 @@
 package qupath.lib.images.servers.omero.common.omero_entities.annotations.entities;
 
 import com.google.gson.annotations.SerializedName;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 
 import java.util.Optional;
 

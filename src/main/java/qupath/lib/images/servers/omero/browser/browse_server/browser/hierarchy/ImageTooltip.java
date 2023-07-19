@@ -12,6 +12,10 @@ import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
 import java.util.ResourceBundle;
 
+/**
+ * A pane that shows the name, a thumbnail, and whether an image is
+ * supported by the extension.
+ */
 class ImageTooltip extends VBox {
     private final static String INVALID_CLASS_NAME = "invalid-image";
     private final static char VALID_CHARACTER = 10003;
@@ -27,6 +31,12 @@ class ImageTooltip extends VBox {
     @FXML
     private Label has3Channels;
 
+    /**
+     * Creates the ImageTooltip.
+     *
+     * @param image  the image to describe
+     * @param client  the corresponding client, used to retrieve the thumbnail
+     */
     public ImageTooltip(Image image, WebClient client) {
         ResourceBundle resources = UiUtilities.loadFXMLAndGetResources(this, getClass().getResource("image_tooltip.fxml"));
 

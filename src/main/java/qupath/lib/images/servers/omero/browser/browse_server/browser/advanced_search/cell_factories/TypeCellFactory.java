@@ -5,7 +5,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchResult;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Dataset;
@@ -16,9 +15,7 @@ import java.awt.image.BufferedImage;
 import java.util.Optional;
 
 /**
- * Cell factory used for the "Type" column of the
- * {@link qupath.lib.images.servers.omero.browser.browse_server.browser.advanced_search.AdvancedSearch AdvancedSearch} window.
- * It displays an image representing the search result in the cell and in a tooltip.
+ * Cell factory that displays an image representing the search result in the cell and in a tooltip.
  */
 public class TypeCellFactory extends TableCell<SearchResult, SearchResult> {
     private final WebClient client;

@@ -8,8 +8,14 @@ import java.net.PasswordAuthentication;
 import java.util.ResourceBundle;
 
 /**
- * {@link java.net.Authenticator Authenticator} that reads username and password information
- * from a dialog window.
+ * <p>
+ *     {@link java.net.Authenticator Authenticator} that reads username and password information
+ *     from a dialog window.
+ * </p>
+ * <p>
+ *     The dialog window is described in
+ *     {@link qupath.lib.images.servers.omero.common.api.authenticators.gui.AuthenticatorForm AuthenticatorForm}.
+ * </p>
  */
 public class GuiAuthenticator extends Authenticator {
     private final static ResourceBundle resources = ResourceBundle.getBundle("qupath.lib.images.servers.omero.strings");

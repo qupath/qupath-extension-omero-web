@@ -18,14 +18,18 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
- * Menu allowing to create a connection with a new server, or to browse
- * an already connected server.
+ * Menu allowing to create a connection with a new server
+ * (see the {@link qupath.lib.images.servers.omero.browser.new_server new server} package), or to browse
+ * an already connected server (see the {@link qupath.lib.images.servers.omero.browser.browse_server browse server} package).
  */
 public class BrowseMenu extends Menu {
     private final static ResourceBundle resources = UiUtilities.getResources();
     private final Map<WebClient, BrowserCommand> browserCommands = new HashMap<>();
     private MenuItem newServerItem;
 
+    /**
+     * Creates the browse menu.
+     */
     public BrowseMenu() {
         initUI();
         setUpListeners();

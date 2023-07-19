@@ -8,12 +8,22 @@ import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
+/**
+ * Form that can be used in a dialog to show the number of annotations
+ * to be sent and the image URI to the user.
+ */
 class ConfirmationForm extends VBox {
     @FXML
     private TextField information;
     @FXML
     private TextField uri;
 
+    /**
+     * Creates the confirmation form.
+     *
+     * @param numberOfAnnotations  the number of annotations about to be sent
+     * @param imageURI  the URI of the image
+     */
     public ConfirmationForm(int numberOfAnnotations, String imageURI) {
         ResourceBundle resources = UiUtilities.loadFXMLAndGetResources(this, getClass().getResource("confirmation_form.fxml"));
 

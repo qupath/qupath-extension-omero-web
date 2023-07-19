@@ -2,7 +2,7 @@
  * #%L
  * This file is part of QuPath.
  * %%
- * Copyright (C) 2018 - 2022 QuPath developers, The University of Edinburgh
+ * Copyright (C) 2018 - 2023 QuPath developers, The University of Edinburgh
  * %%
  * QuPath is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -38,7 +38,13 @@ import qupath.lib.images.servers.omero.browser.BrowseMenu;
 import java.util.ResourceBundle;
 
 /**
- * Extension to access images hosted on OMERO.
+ * <p>Install the OMERO extension.</p>
+ * It adds 3 menus to the Extensions menu:
+ * <ul>
+ *     <li>A browse menu, described in {@link qupath.lib.images.servers.omero.browser browser}.</li>
+ *     <li>A connection manager action, described in {@link qupath.lib.images.servers.omero.connections_manager connection manager}.</li>
+ *     <li>An annotation sender action, described in {@link qupath.lib.images.servers.omero.annotations_sender annotation sender}.</li>
+ * </ul>
  */
 public class OmeroExtension implements QuPathExtension, GitHubProject {
 	private final static ResourceBundle resources = UiUtilities.getResources();
@@ -52,15 +58,15 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 
 			BrowseMenu browseMenu = new BrowseMenu();
 			Action connectionManager = ActionTools.createAction(new ConnectionsManagerCommand(qupath.getStage()), ConnectionsManagerCommand.getMenuTitle());
-			Action actionSendObjects = ActionTools.createAction(AnnotationSender::sendAnnotations, AnnotationSender.getMenuTitle());
-			actionSendObjects.disabledProperty().bind(qupath.imageDataProperty().isNull());
+			Action actionSendAnnotations = ActionTools.createAction(AnnotationSender::sendAnnotations, AnnotationSender.getMenuTitle());
+			actionSendAnnotations.disabledProperty().bind(qupath.imageDataProperty().isNull());
 
 			MenuTools.addMenuItems(qupath.getMenu("Extensions", false),
 					MenuTools.createMenu("OMERO",
 							browseMenu,
 							connectionManager,
 							new SeparatorMenuItem(),
-							actionSendObjects
+							actionSendAnnotations
 					)
 			);
 		}

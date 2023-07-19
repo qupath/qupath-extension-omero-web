@@ -9,7 +9,7 @@ import javafx.application.Platform;
 import javafx.beans.property.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.clients.WebClients;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
@@ -21,7 +21,7 @@ import qupath.lib.images.servers.omero.common.omero_entities.repository_entities
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Dataset;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.Project;
 import qupath.lib.images.servers.omero.common.omero_entities.repository_entities.server_entities.ServerEntity;
-import qupath.lib.images.servers.omero.images_servers.web.shapes.Shape;
+import qupath.lib.images.servers.omero.common.omero_entities.shapes.Shape;
 import qupath.lib.objects.PathObject;
 
 import java.net.PasswordAuthentication;
@@ -155,7 +155,7 @@ public class JsonApi {
         if (uri.isEmpty() || authentication == null) {
             return CompletableFuture.completedFuture(LoginResponse.createFailedLoginResponse());
         } else {
-            byte[] body = ApiUtilities.concatAndConvertToBytes(
+            byte[] body = qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.concatAndConvertToBytes(
                     String.join("&", "server=" + serverID, "username=" + authentication.getUserName(), "password=").toCharArray(),
                     authentication.getPassword()
             );

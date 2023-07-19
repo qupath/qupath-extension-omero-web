@@ -7,7 +7,7 @@ import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import qupath.lib.awt.common.BufferedImageTools;
 import qupath.lib.images.servers.TileRequest;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
 import qupath.lib.images.servers.omero.common.api.requests.entities.image_metadata.ImageMetadataResponse;
 
@@ -71,7 +71,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the project icon, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> getProjectIcon() {
-        return ApiUtilities.getImage(String.format(ICON_URL, host, PROJECT_ICON_NAME));
+        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(ICON_URL, host, PROJECT_ICON_NAME));
     }
 
     /**
@@ -81,7 +81,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the dataset icon, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> getDatasetIcon() {
-        return ApiUtilities.getImage(String.format(ICON_URL, host, DATASET_ICON_NAME));
+        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(ICON_URL, host, DATASET_ICON_NAME));
     }
 
     /**
@@ -91,7 +91,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the orphaned folder icon, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> getOrphanedFolderIcon() {
-        return ApiUtilities.getImage(String.format(ICON_URL, host, ORPHANED_FOLDER_ICON_NAME));
+        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(ICON_URL, host, ORPHANED_FOLDER_ICON_NAME));
     }
 
     /**
@@ -105,7 +105,7 @@ public class WebGatewayApi {
     public CompletableFuture<Optional<BufferedImage>> getThumbnail(int id, int size) {
         numberOfThumbnailsLoading.set(numberOfThumbnailsLoading.get() + 1);
 
-        return ApiUtilities.getImage(String.format(THUMBNAIL_URL, host, id, size)).thenApply(thumbnail -> {
+        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(THUMBNAIL_URL, host, id, size)).thenApply(thumbnail -> {
             Platform.runLater(() -> numberOfThumbnailsLoading.set(numberOfThumbnailsLoading.get() - 1));
             return thumbnail;
         });
@@ -147,7 +147,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the tile, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> readOneDimensionalTile(Long id, TileRequest tileRequest, int preferredTileWidth, int preferredTileHeight, double quality, boolean allowSmoothInterpolation) {
-        return ApiUtilities.getImage(String.format(ONE_DIMENSIONAL_TILE_URL,
+        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(ONE_DIMENSIONAL_TILE_URL,
                         host, id, tileRequest.getZ(), tileRequest.getT(),
                         tileRequest.getTileX(), tileRequest.getTileY(), preferredTileWidth, preferredTileHeight,
                         TILE_FIRST_PARAMETER,
@@ -172,7 +172,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the tile, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> readMultiDimensionalTile(Long id, TileRequest tileRequest, int preferredTileWidth, int preferredTileHeight, double quality) {
-        return ApiUtilities.getImage(String.format(MULTI_DIMENSIONAL_TILE_URL,
+        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(MULTI_DIMENSIONAL_TILE_URL,
                 host, id, tileRequest.getZ(), tileRequest.getT(),
                 tileRequest.getLevel(), tileRequest.getTileX() / preferredTileWidth, tileRequest.getTileY() / preferredTileHeight,
                 preferredTileWidth, preferredTileHeight,

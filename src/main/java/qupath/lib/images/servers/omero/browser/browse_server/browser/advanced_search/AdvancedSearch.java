@@ -16,10 +16,10 @@ import qupath.lib.images.servers.omero.browser.browse_server.browser.advanced_se
 import qupath.lib.images.servers.omero.browser.browse_server.browser.advanced_search.cell_factories.TypeCellFactory;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchQuery;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchResult;
-import qupath.lib.images.servers.omero.common.api.RequestsUtilities;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
-import qupath.lib.images.servers.omero.common.omero_entities.Group;
-import qupath.lib.images.servers.omero.common.omero_entities.Owner;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Group;
+import qupath.lib.images.servers.omero.common.omero_entities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
 import java.net.URI;
@@ -27,7 +27,11 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
- * Window allowing to perform a search on Omero entities.
+ * <p>Window allowing to perform a search on Omero entities.</p>
+ * <p>
+ *     It displays a table that uses cell factories of the
+ *     {@link qupath.lib.images.servers.omero.browser.browse_server.browser.advanced_search.cell_factories cell factories} package.
+ * </p>
  */
 public class AdvancedSearch extends Stage {
     private final WebClient client;

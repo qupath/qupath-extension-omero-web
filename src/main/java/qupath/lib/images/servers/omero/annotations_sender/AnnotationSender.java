@@ -16,12 +16,13 @@ import java.util.ResourceBundle;
 
 /**
  * <p>
- *     Utility class to send annotations to the currently opened image hosted on an OMERO server.
+ *     Non instantiable class that sends QuPath annotations to an OMERO server.
  * </p>
  * <p>
  *     Here, an annotation refers to a QuPath annotation (a path object)
  *     and <b>not</b> an OMERO annotation (some metadata attached to images for example).
  * </p>
+ * <p>This class uses a {@link ConfirmationForm ConfirmationForm} to prompt the user for confirmation.</p>
  */
 public class AnnotationSender {
     private final static ResourceBundle resources = UiUtilities.getResources();
@@ -31,7 +32,7 @@ public class AnnotationSender {
     }
 
     /**
-     * @return the name of the command.
+     * @return the name of this command
      */
     public static String getMenuTitle() {
         return resources.getString("AnnotationsSender.sendAnnotations");
@@ -39,8 +40,8 @@ public class AnnotationSender {
 
     /**
      * <p>
-     * Attempt to send selected annotations of the currently opened image to the corresponding OMERO server.
-     * This method doesn't return anything but will show a dialog indicating the success of the operation.
+     *     Attempt to send selected annotations of the currently opened image to the corresponding OMERO server.
+     *     This method doesn't return anything but will show a dialog indicating the success of the operation.
      * </p>
      * <p>If no annotation is selected, all annotations will be sent to the server.</p>
      * <p>Detections are not supported by OMERO and won't be sent to the server.</p>
