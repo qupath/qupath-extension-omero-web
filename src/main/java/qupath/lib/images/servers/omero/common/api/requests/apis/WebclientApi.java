@@ -32,11 +32,9 @@ public class WebclientApi {
     private static final String LOGOUT_URL = "%s/webclient/logout/";
     private static final String ORPHANED_IMAGES_URL = "%s/webclient/api/images/?orphaned=true";
     private final static String READ_ANNOTATION_URL = "%s/webclient/api/annotations/?%s=%d";
-    private final static String SEARCH_URL = """
-            %s/webclient/load_searching/form/
-            ?query=%s&%s&%s&searchGroup=%s&ownedBy=%s
-            &useAcquisitionDate=false&startdateinput=&enddateinput=&_=%d
-            """;
+    private final static String SEARCH_URL = "%s/webclient/load_searching/form/" +
+            "?query=%s&%s&%s&searchGroup=%s&ownedBy=%s" +
+            "&useAcquisitionDate=false&startdateinput=&enddateinput=&_=%d";
     private static final String IMAGE_ICON_URL = "%s/static/webclient/image/image16.png";
     private final URI host;
     private final URI pingUri;

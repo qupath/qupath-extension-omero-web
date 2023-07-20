@@ -102,12 +102,12 @@
                 </VBox>
                 <TableView fx:id="results" HBox.hgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="typeColumn" maxWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.type" />
-                        <TableColumn fx:id="nameColumn" maxWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.name" />
-                        <TableColumn fx:id="acquiredColumn" maxWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.acquired" />
-                        <TableColumn fx:id="importedColumn" maxWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.imported" />
-                        <TableColumn fx:id="groupColumn" maxWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.group" />
-                        <TableColumn fx:id="linkColumn" maxWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.link" />
+                        <TableColumn fx:id="typeColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.type" />
+                        <TableColumn fx:id="nameColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.name" />
+                        <TableColumn fx:id="acquiredColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.acquired" />
+                        <TableColumn fx:id="importedColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.imported" />
+                        <TableColumn fx:id="groupColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.group" />
+                        <TableColumn fx:id="linkColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="-1.0" text="%Browser.Browser.AdvancedSearch.link" />
                     </columns>
                     <padding>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

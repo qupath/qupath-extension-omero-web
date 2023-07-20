@@ -23,6 +23,10 @@ import qupath.lib.images.servers.omero.common.omeroentities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
 import java.net.URI;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -34,6 +38,7 @@ import java.util.ResourceBundle;
  * </p>
  */
 public class AdvancedSearch extends Stage {
+    private final static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     private final WebClient client;
     private ResourceBundle resources;
     @FXML
@@ -155,8 +160,8 @@ public class AdvancedSearch extends Stage {
 
         typeColumn.setCellValueFactory(n -> new ReadOnlyObjectWrapper<>(n.getValue()));
         nameColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getName()));
-        acquiredColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getDateAcquired().toString()));
-        importedColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getDateImported().toString()));
+        acquiredColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(DATE_FORMAT.format(n.getValue().getDateAcquired())));
+        importedColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(DATE_FORMAT.format(n.getValue().getDateImported())));
         groupColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getGroup()));
         linkColumn.setCellValueFactory(n -> new ReadOnlyObjectWrapper<>(n.getValue()));
 
@@ -187,6 +192,13 @@ public class AdvancedSearch extends Stage {
                 importSelectedImages();
             }
         });
+
+        typeColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.16));
+        nameColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.16));
+        acquiredColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.16));
+        importedColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.16));
+        groupColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.16));
+        linkColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.16));
     }
 
     private void importSelectedImages() {
