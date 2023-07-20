@@ -11,7 +11,7 @@ import java.util.ResourceBundle;
  */
 public class RatingAnnotation extends Annotation {
     private static final ResourceBundle resources = UiUtilities.getResources();
-    public static final short MAX_VALUE = 5;
+    private static final short MAX_VALUE = 5;
     @SerializedName(value = "longValue") private short value;
 
     /**

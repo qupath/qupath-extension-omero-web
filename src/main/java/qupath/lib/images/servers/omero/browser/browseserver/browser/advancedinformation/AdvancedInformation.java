@@ -102,7 +102,7 @@ public class AdvancedInformation extends Stage {
             } else if (omeroAnnotationType.equals(CommentAnnotation.class)) {
                 pane = createCommentPane(annotationGroup, annotationList);
             } else if (omeroAnnotationType.equals(RatingAnnotation.class)) {
-                pane = createRatingPane(annotationGroup, annotationList);
+                pane = createRatingPane(annotationList);
             }
 
             if (pane != null) {
@@ -185,7 +185,7 @@ public class AdvancedInformation extends Stage {
         return commentPane;
     }
 
-    private TitledPane createRatingPane(AnnotationGroup annotationGroup, List<Annotation> annotationList) {
+    private TitledPane createRatingPane(List<Annotation> annotationList) {
         InformationPane ratingPane = new InformationPane(RatingAnnotation.getTitle() + " (" + annotationList.size() + ")");
 
         int averageRating = 0;
