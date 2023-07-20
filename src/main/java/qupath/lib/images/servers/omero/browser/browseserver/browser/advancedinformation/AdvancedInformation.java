@@ -6,6 +6,7 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
@@ -127,7 +128,8 @@ public class AdvancedInformation extends Stage {
     }
 
     private TitledPane createMapPane(AnnotationGroup annotationGroup, List<Annotation> annotationList) {
-        FormPane mapPane = new FormPane(MapAnnotation.getTitle() + " (" + annotationList.size() + ")");
+        FormPane mapPane = new FormPane();
+        int numberOfValues = 0;
 
         for (Annotation annotation : annotationList) {
             MapAnnotation mapAnnotation = (MapAnnotation) annotation;
@@ -142,7 +144,10 @@ public class AdvancedInformation extends Stage {
                         )
                 );
             }
+            numberOfValues+= mapAnnotation.getValues().size();
         }
+        mapPane.setTitle(MapAnnotation.getTitle() + " (" + numberOfValues + ")");
+
         return mapPane;
     }
 
@@ -183,16 +188,28 @@ public class AdvancedInformation extends Stage {
     private TitledPane createRatingPane(AnnotationGroup annotationGroup, List<Annotation> annotationList) {
         InformationPane ratingPane = new InformationPane(RatingAnnotation.getTitle() + " (" + annotationList.size() + ")");
 
-        int rating = 0;
+        int averageRating = 0;
         for (Annotation annotation : annotationList) {
             RatingAnnotation ratingAnnotation = (RatingAnnotation) annotation;
-            rating += ratingAnnotation.getValue();
+            averageRating += ratingAnnotation.getValue();
         }
-        Glyph glyph = new Glyph("FontAwesome", FontAwesome.Glyph.STAR).size(QuPathGUI.TOOLBAR_ICON_SIZE);
-        Glyph star = GuiTools.ensureDuplicatableGlyph(glyph);
-        for (int i = 0; i < Math.round((float) rating / annotationGroup.getAnnotations().size()); i++) {
-            ratingPane.addColum(star.duplicate());
+        if (annotationList.size() != 0) {
+            averageRating /= annotationList.size();
+
         }
+
+        Glyph fullStarGlyph = new Glyph("FontAwesome", FontAwesome.Glyph.STAR).size(QuPathGUI.TOOLBAR_ICON_SIZE);
+        Glyph fullStar = GuiTools.ensureDuplicatableGlyph(fullStarGlyph);
+        for (int i = 0; i < averageRating; i++) {
+            ratingPane.addColum(fullStar.duplicate());
+        }
+
+        Glyph emptyStarGlyph = fullStarGlyph.color(new Color(0, 0, 0, .2));
+        Glyph emptyStar = GuiTools.ensureDuplicatableGlyph(emptyStarGlyph);
+        for (int i = 0; i < RatingAnnotation.getMaxValue() - averageRating; i++) {
+            ratingPane.addColum(emptyStar.duplicate());
+        }
+
         return ratingPane;
     }
 }

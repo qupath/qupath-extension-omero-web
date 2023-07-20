@@ -25,8 +25,6 @@ import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.Optional;
 import java.util.ResourceBundle;
 

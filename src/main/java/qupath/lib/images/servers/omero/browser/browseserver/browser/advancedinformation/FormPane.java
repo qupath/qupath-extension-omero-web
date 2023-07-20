@@ -15,12 +15,28 @@ class FormPane extends TitledPane {
 
     /**
      * Creates a new FormPane.
+     */
+    public FormPane() {
+        UiUtilities.loadFXMLAndGetResources(this, getClass().getResource("form_pane.fxml"));
+    }
+
+    /**
+     * Creates a new FormPane.
      *
      * @param title  the title the pane should have
      */
     public FormPane(String title) {
-        UiUtilities.loadFXMLAndGetResources(this, getClass().getResource("form_pane.fxml"));
+        this();
 
+        setTitle(title);
+    }
+
+    /**
+     * Set the text displayed on top of the pane
+     *
+     * @param title  the text to display
+     */
+    public void setTitle(String title) {
         setText(title);
     }
 

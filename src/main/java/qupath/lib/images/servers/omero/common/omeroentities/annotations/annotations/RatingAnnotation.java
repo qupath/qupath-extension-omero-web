@@ -11,6 +11,7 @@ import java.util.ResourceBundle;
  */
 public class RatingAnnotation extends Annotation {
     private static final ResourceBundle resources = UiUtilities.getResources();
+    public static final short MAX_VALUE = 5;
     @SerializedName(value = "longValue") private short value;
 
     /**
@@ -18,6 +19,13 @@ public class RatingAnnotation extends Annotation {
      */
     public static String getTitle() {
         return resources.getString("Common.OmeroEntities.Annotation.Rating.title");
+    }
+
+    /**
+     * @return the maximum value {@link #getValue()} can return
+     */
+    public static short getMaxValue() {
+        return MAX_VALUE;
     }
 
     /**
@@ -31,7 +39,7 @@ public class RatingAnnotation extends Annotation {
     }
 
     /**
-     * @return the rating of the annotation (from 0 to 5)
+     * @return the rating of the annotation (from 1 to {@link #getMaxValue()})
      */
     public short getValue() {
         return value;
