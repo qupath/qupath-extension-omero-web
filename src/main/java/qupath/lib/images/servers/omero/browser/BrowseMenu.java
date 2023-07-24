@@ -18,9 +18,14 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
- * Menu allowing to create a connection with a new server
- * (see the {@link qupath.lib.images.servers.omero.browser.newserver new server} package), or to browse
- * an already connected server (see the {@link qupath.lib.images.servers.omero.browser.browseserver browse server} package).
+ * <p>
+ *     Menu allowing to create a connection with a new server
+ *     (see the {@link qupath.lib.images.servers.omero.browser.newserver new server} package), or to browse
+ *     an already connected server (see the {@link qupath.lib.images.servers.omero.browser.browseserver browse server} package).
+ * </p>
+ * <p>
+ *     This class uses a {@link BrowseMenuModel} to update its state.
+ * </p>
  */
 public class BrowseMenu extends Menu {
     private final static ResourceBundle resources = UiUtilities.getResources();
@@ -41,22 +46,28 @@ public class BrowseMenu extends Menu {
     }
 
     private void setUpListeners() {
-        WebClients.getClients().addListener((ListChangeListener<? super WebClient>) change -> {
-            getItems().clear();
-            removeBrowsersOfRemovedClients();
+        BrowseMenuModel.getClients().addListener((ListChangeListener<? super WebClient>) change -> {
+            while (change.next()) {
+                if (change.wasRemoved()) {
+                    for (WebClient client: change.getRemoved()) {
+                        if (browserCommands.containsKey(client)) {
+                            browserCommands.get(client).close();
+                            browserCommands.remove(client);
+                        }
+                    }
+                }
+            }
 
-            boolean atLeastOneClientAdded = false;
+            getItems().clear();
             for (WebClient client: change.getList()) {
                 BrowserCommand browserCommand = getBrowserCommand(client);
 
                 MenuItem clientMenuItem = new MenuItem(client.getServerURI() + "...");
                 clientMenuItem.setOnAction(e -> browserCommand.run());
                 getItems().add(clientMenuItem);
-
-                atLeastOneClientAdded = true;
             }
 
-            if (atLeastOneClientAdded) {
+            if (getItems().size() > 0) {
                 getItems().add(new SeparatorMenuItem());
             }
 
@@ -86,15 +97,6 @@ public class BrowseMenu extends Menu {
             }
         });
         getItems().add(newServerItem);
-    }
-
-    private void removeBrowsersOfRemovedClients() {
-        for (WebClient client: browserCommands.keySet()) {
-            if (!WebClients.getClients().contains(client)) {
-                browserCommands.get(client).remove();
-                browserCommands.remove(client);
-            }
-        }
     }
 
     private BrowserCommand getBrowserCommand(WebClient client) {

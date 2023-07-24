@@ -1,5 +1,6 @@
 package qupath.lib.images.servers.omero.browser.browseserver.browser.hierarchy;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -51,9 +52,9 @@ public class HierarchyItem extends TreeItem<RepositoryEntity> {
                 computed = true;
 
                 children.setAll(getValue().getChildren().stream().map(object -> new HierarchyItem(object, ownerBinding, groupBinding, nameBinding)).toList());
-                getValue().getChildren().addListener((ListChangeListener<? super RepositoryEntity>) change ->
+                getValue().getChildren().addListener((ListChangeListener<? super RepositoryEntity>) change -> Platform.runLater(() ->
                         children.setAll(change.getList().stream().map(object -> new HierarchyItem(object, ownerBinding, groupBinding, nameBinding)).toList())
-                );
+                ));
 
                 filteredChildren.predicateProperty().bind(Bindings.createObjectBinding(() ->
                                 (Predicate<TreeItem<RepositoryEntity>>) item ->

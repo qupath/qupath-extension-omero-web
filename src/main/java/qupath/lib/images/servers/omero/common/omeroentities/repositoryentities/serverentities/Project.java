@@ -1,7 +1,6 @@
 package qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities;
 
 import com.google.gson.annotations.SerializedName;
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
@@ -11,7 +10,7 @@ import java.util.ResourceBundle;
 
 /**
  * Represents an OMERO project.
- * A project contains {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Dataset Datasets}.
+ * A project contains {@link Dataset Datasets}.
  */
 public class Project extends ServerEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();
@@ -95,9 +94,7 @@ public class Project extends ServerEntity {
 
     private void populateChildren() {
         if (requestsHandler != null) {
-            requestsHandler.getDatasets(this).thenAccept(children -> Platform.runLater(() ->
-                    this.children.addAll(children)
-            ));
+            requestsHandler.getDatasets(this).thenAccept(this.children::addAll);
         }
     }
 }

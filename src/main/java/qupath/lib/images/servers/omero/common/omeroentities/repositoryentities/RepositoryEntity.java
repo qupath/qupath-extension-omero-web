@@ -26,6 +26,7 @@ public abstract class RepositoryEntity {
      *     starts populating it in the background, so changes to this list should
      *     be listened.
      * </p>
+     * <p>This list may be updated from any thread.</p>
      *
      * @return an unmodifiable list of children of this element
      */

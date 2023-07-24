@@ -6,10 +6,7 @@ import java.util.Optional;
 
 /**
  * <p>This class contains various information related to the pixels of an image.</p>
- * <p>
- *     It uses the {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.image.PhysicalSize PhysicalSize}
- *     and {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.image.ImageType ImageType} classes.
- * </p>
+ * <p>It uses the {@link PhysicalSize} and {@link ImageType} classes.</p>
  */
 class PixelInfo {
     @SerializedName(value = "SizeX") private int width;

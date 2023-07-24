@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.ImageServerBuilder;
-import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.api.clients.WebClients;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
@@ -17,7 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Builder of a {@link WebImageServer WebImageServer}.
+ * Builder of a {@link WebImageServer}.
  */
 public class WebImageServerBuilder implements ImageServerBuilder<BufferedImage>, OmeroImageServerBuilder {
     final private static Logger logger = LoggerFactory.getLogger(WebImageServerBuilder.class);
@@ -71,21 +70,15 @@ public class WebImageServerBuilder implements ImageServerBuilder<BufferedImage>,
     }
 
     private Optional<WebClient> getClientAndCheckURIReachable(URI uri, String... args) {
-        var serverURI = RequestsUtilities.getServerURI(uri);
-
-        if (serverURI.isPresent()) {
-            try {
-                var client = WebClients.createClient(serverURI.get().toString(), args).get();
-                if (client.isPresent() && Requests.isLinkReachable(uri).get()) {
-                    return client;
-                } else {
-                    return Optional.empty();
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                logger.error("Client creation interrupted", e);
+        try {
+            var client = WebClients.createClientSync(uri.toString(), args);
+            if (client.isPresent() && Requests.isLinkReachable(uri).get()) {
+                return client;
+            } else {
                 return Optional.empty();
             }
-        } else {
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Client creation interrupted", e);
             return Optional.empty();
         }
     }

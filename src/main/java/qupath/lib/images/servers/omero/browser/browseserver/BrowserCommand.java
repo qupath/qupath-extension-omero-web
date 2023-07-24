@@ -32,7 +32,7 @@ public class BrowserCommand implements Runnable {
     /**
      * Close the corresponding browser.
      */
-    public void remove() {
+    public void close() {
         if (browser != null) {
             browser.close();
         }

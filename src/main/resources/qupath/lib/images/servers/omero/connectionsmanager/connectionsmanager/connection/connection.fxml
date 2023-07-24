@@ -15,7 +15,7 @@
             <Label fx:id="uri" contentDisplay="RIGHT" />
             <Region HBox.hgrow="ALWAYS" />
             <Button fx:id="connection" mnemonicParsing="false" onAction="#onConnectionClicked" text="%ConnectionsManager.Connection.connect" />
-            <Button layoutX="550.0" layoutY="10.0" mnemonicParsing="false" onAction="#onRemoveClicked" text="%ConnectionsManager.Connection.removeClient" />
+            <Button fx:id="remove" layoutX="550.0" layoutY="10.0" mnemonicParsing="false" onAction="#onRemoveClicked" text="%ConnectionsManager.Connection.removeClient" />
          </children>
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

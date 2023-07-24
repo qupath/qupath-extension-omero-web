@@ -1,4 +1,4 @@
-package qupath.lib.images.servers.omero.connectionsmanager.connectionsmanager;
+package qupath.lib.images.servers.omero.connectionsmanager.connectionsmanager.connection;
 
 import javafx.application.Platform;
 import javafx.scene.control.Label;

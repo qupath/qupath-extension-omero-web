@@ -1,17 +1,14 @@
 package qupath.lib.images.servers.omero.common.api.clients;
 
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.gui.QuPathGUI;
-import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
 import qupath.lib.images.servers.omero.common.api.requests.entities.login.LoginResponse;
-import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.OrphanedFolder;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.Server;
@@ -21,9 +18,10 @@ import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.s
 
 import java.awt.image.BufferedImage;
 import java.net.*;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <p>Class representing an OMERO Web Client.</p>
@@ -44,14 +42,13 @@ import java.util.concurrent.CompletableFuture;
 public class WebClient {
     private final static int THUMBNAIL_SIZE = 256;
     private final static long PING_DELAY_MILLISECONDS = 60000L;
-    private final static ResourceBundle resources = UiUtilities.getResources();
     private final static Logger logger = LoggerFactory.getLogger(WebClient.class);
     private final StringProperty username = new SimpleStringProperty("");
     private final BooleanProperty authenticated = new SimpleBooleanProperty(false);
     private final ObservableSet<URI> openedImagesURIs = FXCollections.observableSet();
     private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
-    private final Map<Integer, BufferedImage> thumbnails = new HashMap<>();
-    private final Map<Class<? extends RepositoryEntity>, BufferedImage> omeroIcons = new HashMap<>();
+    private final Map<Integer, BufferedImage> thumbnails = new ConcurrentHashMap<>();
+    private final Map<Class<? extends RepositoryEntity>, BufferedImage> omeroIcons = new ConcurrentHashMap<>();
     private final Server server = new Server();
     private RequestsHandler requestsHandler;
     private Timer timeoutTimer;
@@ -79,6 +76,20 @@ public class WebClient {
     }
 
     /**
+     * <p>Synchronous version of {@link #create(URI, String...)}.</p>
+     * <p>This function may block the calling thread for around a second.</p>
+     */
+    static Optional<WebClient> createSync(URI uri, String... args) {
+        WebClient webClient = new WebClient();
+
+        if (webClient.initializeSync(uri, args)) {
+            return Optional.of(webClient);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
      * @return the {@link qupath.lib.images.servers.omero.common.api.requests.RequestsHandler RequestsHandler} of this client
      */
     public RequestsHandler getRequestsHandler() {
@@ -94,6 +105,7 @@ public class WebClient {
 
     /**
      * @return a read only property indicating if the client is currently authenticated.
+     * This property may be updated from any thread
      */
     public ReadOnlyBooleanProperty getAuthenticated() {
         return authenticated;
@@ -101,7 +113,7 @@ public class WebClient {
 
     /**
      * @return a read only property indicating the username of the client if it is currently authenticated,
-     * or an empty String else
+     * or an empty String else. This property may be updated from any thread
      */
     public ReadOnlyStringProperty getUsername() {
         return username;
@@ -121,6 +133,7 @@ public class WebClient {
      *     actually only returns the URIs given to {@link #addOpenedImage(URI) addOpenedImage}.
      * </p>
      * <p>This function returns an unmodifiable list, use {@link #addOpenedImage(URI) addOpenedImage} to update its state.</p>
+     * <p>This list may be updated from any thread.</p>
      *
      * @return a set of image URIs
      */
@@ -134,7 +147,7 @@ public class WebClient {
      *
      * @param imageURI  the image URI
      */
-    public void addOpenedImage(URI imageURI) {
+    public synchronized void addOpenedImage(URI imageURI) {
         openedImagesURIs.add(imageURI);
     }
 
@@ -163,16 +176,9 @@ public class WebClient {
     public CompletableFuture<Boolean> login(String... args) {
         return requestsHandler.login(args).thenApply(loginResponse -> {
             if (loginResponse.isLoginSuccessful()) {
-                Platform.runLater(() -> {
-                    authenticated.set(true);
-                    setAuthenticationInformation(loginResponse);
-
-                    Dialogs.showInfoNotification(
-                            resources.getString("Common.Api.Clients.login"),
-                            MessageFormat.format(resources.getString("Common.Api.Clients.loginSuccessful"), requestsHandler.getHost(), username.get())
-                    );
-                    startTimer();
-                });
+                setAuthenticated(true);
+                setAuthenticationInformation(loginResponse);
+                startTimer();
             }
 
             return loginResponse.isLoginSuccessful();
@@ -187,11 +193,13 @@ public class WebClient {
      * </p>
      */
     void logout() {
-        requestsHandler.logout();
+        if (authenticated.get()) {
+            requestsHandler.logout();
 
-        authenticated.set(false);
-        username.set("");
-        stopTimer();
+            setAuthenticated(false);
+            setUsername("");
+            stopTimer();
+        }
     }
 
     /**
@@ -206,7 +214,7 @@ public class WebClient {
             return CompletableFuture.completedFuture(Optional.of(thumbnails.get(id)));
         } else {
             return requestsHandler.getThumbnail(id, THUMBNAIL_SIZE).thenApply(thumbnail -> {
-                Platform.runLater(() -> thumbnail.ifPresent(bufferedImage -> thumbnails.put(id, bufferedImage)));
+                thumbnail.ifPresent(bufferedImage -> thumbnails.put(id, bufferedImage));
                 return thumbnail;
             });
         }
@@ -249,10 +257,10 @@ public class WebClient {
             if (requestsHandler.isPresent()) {
                 this.requestsHandler = requestsHandler.get();
                 try {
-                    if (requestsHandler.get().canSkipAuthentication().join()) {
+                    if (requestsHandler.get().canSkipAuthentication().get()) {
                         return true;
                     } else {
-                        return login(args).join();
+                        return login(args).get();
                     }
                 } catch (Exception e) {
                     logger.error("Error initializing client", e);
@@ -263,25 +271,58 @@ public class WebClient {
             }
         }).thenApply(loggedIn -> {
             if (loggedIn) {
-                Platform.runLater(() -> {
-                    populateIcons();
-                    server.initialize(requestsHandler);
-                });
+                populateIcons();
+                server.initialize(requestsHandler);
             }
 
             return loggedIn;
         });
     }
 
-    private void setAuthenticationInformation(LoginResponse loginResponse) {
+    private boolean initializeSync(URI uri, String... args) {
+        try {
+            var requestsHandler = RequestsHandler.create(uri).get();
+
+            if (requestsHandler.isPresent()) {
+                this.requestsHandler = requestsHandler.get();
+
+                boolean authenticated = true;
+                if (!this.requestsHandler.canSkipAuthentication().get()) {
+                    authenticated = login(args).get();
+                }
+
+                if (authenticated) {
+                    populateIcons();
+                    server.initialize(requestsHandler.get());
+                }
+                return authenticated;
+            } else {
+                return false;
+            }
+
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error initializing client", e);
+            return false;
+        }
+    }
+
+    private synchronized void setAuthenticated(boolean authenticated) {
+        this.authenticated.set(authenticated);
+    }
+
+    private synchronized void setUsername(String username) {
+        this.username.set(username);
+    }
+
+    private synchronized void setAuthenticationInformation(LoginResponse loginResponse) {
         server.setDefaultGroup(loginResponse.getGroup());
         server.setDefaultOwnerId(loginResponse.getUserId());
 
         sessionUUID = loginResponse.getSessionUUID();
-        username.set(loginResponse.getUsername());
+        setUsername(loginResponse.getUsername());
     }
 
-    private void startTimer() {
+    private synchronized void startTimer() {
         if (timeoutTimer == null) {
             timeoutTimer = new Timer("omero-keep-alive", true);
             timeoutTimer.schedule(new TimerTask() {
@@ -289,7 +330,7 @@ public class WebClient {
                 public void run() {
                     requestsHandler.ping().thenAccept(success -> {
                         if (!success) {
-                            Platform.runLater(() -> logout());
+                            logout();
                         }
                     });
                 }
@@ -297,15 +338,17 @@ public class WebClient {
         }
     }
 
-    private void stopTimer() {
-        timeoutTimer.cancel();
+    private synchronized void stopTimer() {
+        if (timeoutTimer != null) {
+            timeoutTimer.cancel();
+        }
         timeoutTimer = null;
     }
 
     private void populateIcons() {
-        requestsHandler.getProjectIcon().thenAccept(icon -> Platform.runLater(() -> icon.ifPresent(bufferedImage -> omeroIcons.put(Project.class, bufferedImage))));
-        requestsHandler.getDatasetIcon().thenAccept(icon -> Platform.runLater(() -> icon.ifPresent(bufferedImage -> omeroIcons.put(Dataset.class, bufferedImage))));
-        requestsHandler.getOrphanedFolderIcon().thenAccept(icon -> Platform.runLater(() -> icon.ifPresent(bufferedImage -> omeroIcons.put(OrphanedFolder.class, bufferedImage))));
-        requestsHandler.getImageIcon().thenAccept(icon -> Platform.runLater(() -> icon.ifPresent(bufferedImage -> omeroIcons.put(Image.class, bufferedImage))));
+        requestsHandler.getProjectIcon().thenAccept(icon -> icon.ifPresent(bufferedImage -> omeroIcons.put(Project.class, bufferedImage)));
+        requestsHandler.getDatasetIcon().thenAccept(icon -> icon.ifPresent(bufferedImage -> omeroIcons.put(Dataset.class, bufferedImage)));
+        requestsHandler.getOrphanedFolderIcon().thenAccept(icon -> icon.ifPresent(bufferedImage -> omeroIcons.put(OrphanedFolder.class, bufferedImage)));
+        requestsHandler.getImageIcon().thenAccept(icon -> icon.ifPresent(bufferedImage -> omeroIcons.put(Image.class, bufferedImage)));
     }
 }

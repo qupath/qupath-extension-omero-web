@@ -4,6 +4,7 @@ import javafx.beans.binding.Bindings;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
+import qupath.lib.images.servers.omero.browser.browseserver.browser.BrowserModel;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.*;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Dataset;
@@ -23,21 +24,23 @@ import java.util.ResourceBundle;
  * </p>
  * <p>
  *     If the entity is an {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.image.Image Image},
- *     a complex tooltip described in {@link qupath.lib.images.servers.omero.browser.browseserver.browser.hierarchy.ImageTooltip ImageTooltip}
- *     is used.
+ *     a complex tooltip described in {@link ImageTooltip} is used.
  * </p>
  */
 public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {
     private static final ResourceBundle resources = UiUtilities.getResources();
     private final WebClient client;
+    private final BrowserModel browserModel;
 
     /**
      * Creates the cell factory.
      *
      * @param client  the client from which icons and additional information will be retrieved
+     * @param browserModel  the browser model of the browser
      */
-    public HierarchyCellFactory(WebClient client) {
+    public HierarchyCellFactory(WebClient client, BrowserModel browserModel) {
         this.client = client;
+        this.browserModel = browserModel;
     }
 
     @Override
@@ -57,7 +60,7 @@ public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {
 
             if (repositoryEntity instanceof OrphanedFolder orphanedFolder) {
                 textProperty().bind(
-                        Bindings.when(client.getRequestsHandler().getOrphanedImagesLoading())
+                        Bindings.when(browserModel.getOrphanedImagesLoading())
                                 .then(Bindings.concat(
                                         orphanedFolder.getName(),
                                         " (",

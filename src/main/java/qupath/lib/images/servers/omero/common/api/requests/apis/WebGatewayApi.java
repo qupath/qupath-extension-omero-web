@@ -1,7 +1,6 @@
 package qupath.lib.images.servers.omero.common.api.requests.apis;
 
 import com.google.gson.JsonObject;
-import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -58,7 +57,8 @@ public class WebGatewayApi {
     }
 
     /**
-     * @return the number of thumbnails currently being loaded
+     * @return the number of thumbnails currently being loaded.
+     * This property may be updated from any thread
      */
     public ReadOnlyIntegerProperty getNumberOfThumbnailsLoading() {
         return numberOfThumbnailsLoading;
@@ -71,7 +71,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the project icon, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> getProjectIcon() {
-        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(ICON_URL, host, PROJECT_ICON_NAME));
+        return ApiUtilities.getImage(String.format(ICON_URL, host, PROJECT_ICON_NAME));
     }
 
     /**
@@ -81,7 +81,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the dataset icon, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> getDatasetIcon() {
-        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(ICON_URL, host, DATASET_ICON_NAME));
+        return ApiUtilities.getImage(String.format(ICON_URL, host, DATASET_ICON_NAME));
     }
 
     /**
@@ -91,7 +91,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the orphaned folder icon, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> getOrphanedFolderIcon() {
-        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(ICON_URL, host, ORPHANED_FOLDER_ICON_NAME));
+        return ApiUtilities.getImage(String.format(ICON_URL, host, ORPHANED_FOLDER_ICON_NAME));
     }
 
     /**
@@ -103,10 +103,10 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the thumbnail, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> getThumbnail(int id, int size) {
-        numberOfThumbnailsLoading.set(numberOfThumbnailsLoading.get() + 1);
+        changeNumberOfThumbnailsLoading(true);
 
-        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(THUMBNAIL_URL, host, id, size)).thenApply(thumbnail -> {
-            Platform.runLater(() -> numberOfThumbnailsLoading.set(numberOfThumbnailsLoading.get() - 1));
+        return ApiUtilities.getImage(String.format(THUMBNAIL_URL, host, id, size)).thenApply(thumbnail -> {
+            changeNumberOfThumbnailsLoading(false);
             return thumbnail;
         });
     }
@@ -147,7 +147,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the tile, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> readOneDimensionalTile(Long id, TileRequest tileRequest, int preferredTileWidth, int preferredTileHeight, double quality, boolean allowSmoothInterpolation) {
-        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(ONE_DIMENSIONAL_TILE_URL,
+        return ApiUtilities.getImage(String.format(ONE_DIMENSIONAL_TILE_URL,
                         host, id, tileRequest.getZ(), tileRequest.getT(),
                         tileRequest.getTileX(), tileRequest.getTileY(), preferredTileWidth, preferredTileHeight,
                         TILE_FIRST_PARAMETER,
@@ -172,7 +172,7 @@ public class WebGatewayApi {
      * @return a CompletableFuture with the tile, or an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> readMultiDimensionalTile(Long id, TileRequest tileRequest, int preferredTileWidth, int preferredTileHeight, double quality) {
-        return qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.getImage(String.format(MULTI_DIMENSIONAL_TILE_URL,
+        return ApiUtilities.getImage(String.format(MULTI_DIMENSIONAL_TILE_URL,
                 host, id, tileRequest.getZ(), tileRequest.getT(),
                 tileRequest.getLevel(), tileRequest.getTileX() / preferredTileWidth, tileRequest.getTileY() / preferredTileHeight,
                 preferredTileWidth, preferredTileHeight,
@@ -180,5 +180,10 @@ public class WebGatewayApi {
                 TILE_SECOND_PARAMETER,
                 quality
         ));
+    }
+
+    private synchronized void changeNumberOfThumbnailsLoading(boolean increment) {
+        int quantityToAdd = increment ? 1 : -1;
+        numberOfThumbnailsLoading.set(numberOfThumbnailsLoading.get() + quantityToAdd);
     }
 }

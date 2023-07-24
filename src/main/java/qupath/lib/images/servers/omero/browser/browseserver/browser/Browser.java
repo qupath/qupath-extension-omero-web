@@ -51,11 +51,15 @@ import java.util.stream.Stream;
  *     It can launch a window that performs a search on OMERO entities, described in
  *     {@link qupath.lib.images.servers.omero.browser.browseserver.browser.advancedsearch advanced_search}.
  * </p>
+ * <p>
+ *     It uses a {@link BrowserModel} to update its state.
+ * </p>
  */
 public class Browser extends Stage {
     private final ResourceBundle resources;
     private static final float DESCRIPTION_ATTRIBUTE_PROPORTION = 0.25f;
     private final WebClient client;
+    private final BrowserModel browserModel;
     @FXML
     private Label serverHost;
     @FXML
@@ -104,6 +108,7 @@ public class Browser extends Stage {
      */
     public Browser(WebClient client) {
         this.client = client;
+        this.browserModel = new BrowserModel(client);
 
         resources = UiUtilities.loadFXMLAndGetResources(this, getClass().getResource("browser.fxml"));
 
@@ -189,7 +194,7 @@ public class Browser extends Stage {
 
     @FXML
     private void onAdvancedClicked(ActionEvent ignoredEvent) {
-        new AdvancedSearch(this, client);
+        new AdvancedSearch(this, client, browserModel);
     }
 
     @FXML
@@ -213,11 +218,11 @@ public class Browser extends Stage {
     private void initUI() {
         serverHost.setText(client.getServerURI().getHost());
 
-        ownerFilter.setItems(client.getServer().getOwners());
+        ownerFilter.setItems(browserModel.getOwners());
         ownerFilter.setConverter(client.getServer().getOwnerStringConverter());
         ownerFilter.getSelectionModel().select(client.getServer().getDefaultUser());
 
-        groupFilter.setItems(client.getServer().getGroups());
+        groupFilter.setItems(browserModel.getGroups());
         groupFilter.getSelectionModel().select(client.getServer().getDefaultGroup());
 
         hierarchy.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -227,7 +232,7 @@ public class Browser extends Stage {
                 groupFilter.getSelectionModel().selectedItemProperty(),
                 nameFilter.textProperty()
         ));
-        hierarchy.setCellFactory(n -> new HierarchyCellFactory(client));
+        hierarchy.setCellFactory(n -> new HierarchyCellFactory(client, browserModel));
 
         attributeColumn.setCellValueFactory(cellData -> {
             var selectedItems = hierarchy.getSelectionModel().getSelectedItems();
@@ -265,26 +270,26 @@ public class Browser extends Stage {
     }
 
     private void setUpListeners() {
-        username.textProperty().bind(Bindings.when(client.getAuthenticated())
-                .then(client.getUsername())
+        username.textProperty().bind(Bindings.when(browserModel.getAuthenticated())
+                .then(browserModel.getUsername())
                 .otherwise("public")
         );
 
-        numberOpenImages.textProperty().bind(Bindings.size(client.getOpenedImagesURIs()).asString());
+        numberOpenImages.textProperty().bind(Bindings.size(browserModel.getOpenedImagesURIs()).asString());
 
-        loadingObjects.visibleProperty().bind(Bindings.notEqual(client.getRequestsHandler().getNumberOfEntitiesLoading(), 0));
+        loadingObjects.visibleProperty().bind(Bindings.notEqual(browserModel.getNumberOfEntitiesLoading(), 0));
 
         loadingOrphaned.textProperty().bind(Bindings.concat(
                 resources.getString("Browser.Browser.loadingOrphanedImages"),
                 " (",
-                client.getRequestsHandler().getNumberOfOrphanedImagesLoaded(),
+                browserModel.getNumberOfOrphanedImagesLoaded(),
                 "/",
-                client.getRequestsHandler().getNumberOfOrphanedImages(),
+                browserModel.getNumberOfOrphanedImages(),
                 ")"
         ));
-        loadingOrphaned.visibleProperty().bind(client.getRequestsHandler().getOrphanedImagesLoading());
+        loadingOrphaned.visibleProperty().bind(browserModel.getOrphanedImagesLoading());
 
-        loadingThumbnail.visibleProperty().bind(Bindings.notEqual(client.getRequestsHandler().getNumberOfThumbnailsLoading(), 0));
+        loadingThumbnail.visibleProperty().bind(Bindings.notEqual(browserModel.getNumberOfThumbnailsLoading(), 0));
 
         ownerFilter.getItems().addListener((ListChangeListener<? super Owner>) change ->
                 ownerFilter.getSelectionModel().selectFirst()

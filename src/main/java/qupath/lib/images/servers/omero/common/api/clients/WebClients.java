@@ -1,25 +1,19 @@
 package qupath.lib.images.servers.omero.common.api.clients;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
-import qupath.lib.images.servers.omero.common.api.authenticators.commandline.CommandLineAuthenticator;
-import qupath.lib.images.servers.omero.common.api.authenticators.gui.GuiAuthenticator;
-import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
-import java.net.Authenticator;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Utility classes that monitors all opened clients.
+ * Utility classes that monitors all active connections to servers.
  */
 public class WebClients {
     final private static ObservableList<WebClient> clients = FXCollections.observableArrayList();
     final private static ObservableList<WebClient> clientsImmutable = FXCollections.unmodifiableObservableList(clients);
-    private static Authenticator authenticator;
 
     private WebClients() {
         throw new AssertionError("This class is not instantiable.");
@@ -33,34 +27,26 @@ public class WebClients {
      * </p>
      * <p>This function is asynchronous.</p>
      *
-     * @param url  the URL of the server
+     * @param url  the URL of the server. It doesn't have to be the base URL of the server
      * @param args  optional arguments to login. See {@link qupath.lib.images.servers.omero.common.api.clients.WebClient#create(URI, String...) WebClient.create()}
      * @return a CompletableFuture with the client if the connection is successful, or an empty Optional otherwise
      */
     public static CompletableFuture<Optional<WebClient>> createClient(String url, String... args) {
-        var uri = RequestsUtilities.createURI(url);
+        var serverURI = getServerURI(url);
 
-        if (uri.isPresent()) {
-            var host = RequestsUtilities.getServerURI(uri.get());
+        if (serverURI.isPresent()) {
+            var existingClient = getExistingClient(serverURI.get());
 
-            if (host.isPresent()) {
-                var existingClient = clients.stream().filter(e -> e.getServerURI().equals(host.get())).findAny();
-
-                if (existingClient.isEmpty()) {
-                    return WebClient.create(host.get(), args).thenApply(client -> {
-                        Platform.runLater(() -> {
-                            if (client.isPresent()) {
-                                ClientsPreferencesManager.addURI(client.get().getServerURI().toString());
-                                clients.add(client.get());
-                            }
-                        });
-                        return client;
-                    });
-                } else {
-                    return CompletableFuture.completedFuture(existingClient);
-                }
+            if (existingClient.isEmpty()) {
+                return WebClient.create(serverURI.get(), args).thenApply(client -> {
+                    if (client.isPresent()) {
+                        ClientsPreferencesManager.addURI(client.get().getServerURI().toString());
+                        updateClients(client.get(), true);
+                    }
+                    return client;
+                });
             } else {
-                return CompletableFuture.completedFuture(Optional.empty());
+                return CompletableFuture.completedFuture(existingClient);
             }
         } else {
             return CompletableFuture.completedFuture(Optional.empty());
@@ -68,28 +54,47 @@ public class WebClients {
     }
 
     /**
-     * Remove a client. This will close the connection and forget
-     * all information about this client.
-     *
-     * @param client  the client to remove
+     * <p>
+     *     Synchronous version of {@link #createClient(String, String...)} that calls
+     *     {@link qupath.lib.images.servers.omero.common.api.clients.WebClient#createSync(URI, String...) WebClient.createSync()}.
+     * </p>
+     * <p>This function may block the calling thread for around a second.</p>
      */
-    public static void deleteClient(WebClient client) {
-        ClientsPreferencesManager.removeURI(client.getServerURI().toString());
-        clients.remove(client);
+    public static Optional<WebClient> createClientSync(String url, String... args) {
+        var serverURI = getServerURI(url);
+
+        if (serverURI.isPresent()) {
+            var existingClient = getExistingClient(serverURI.get());
+
+            if (existingClient.isEmpty()) {
+                var client = WebClient.createSync(serverURI.get(), args);
+                if (client.isPresent()) {
+                    ClientsPreferencesManager.addURI(client.get().getServerURI().toString());
+                    updateClients(client.get(), true);
+                }
+
+                return client;
+            } else {
+                return existingClient;
+            }
+        } else {
+            return Optional.empty();
+        }
     }
 
     /**
      * Logout the client and close its connection.
      *
-     * @param client  the client to disconnect
+     * @param client  the client to disconnect and remove
      */
-    public static void logoutClient(WebClient client) {
+    public static void logoutAndRemoveClient(WebClient client) {
         client.logout();
-        clients.remove(client);
+        updateClients(client, false);
     }
 
     /**
-     * Returns an unmodifiable list of all connected (but not necessarily authenticated) clients.
+     * <p>Returns an unmodifiable list of all connected (but not necessarily authenticated) clients.</p>
+     * <p>This list may be updated from any thread.</p>
      *
      * @return the connected clients
      */
@@ -97,16 +102,24 @@ public class WebClients {
         return clientsImmutable;
     }
 
-    /**
-     * Get the {@link java.net.Authenticator Authenticator} to ask the user for credentials.
-     * If the GUI is used, this is a window, otherwise the command line is used.
-     *
-     * @return the authenticator used to log in
-     */
-    public static Authenticator getAuthenticator() {
-        if (authenticator == null) {
-            authenticator = UiUtilities.usingGUI() ? new GuiAuthenticator() : new CommandLineAuthenticator();
+    private static synchronized void updateClients(WebClient client, boolean add) {
+        if (add) {
+            clients.add(client);
+        } else {
+            clients.remove(client);
         }
-        return authenticator;
+    }
+
+    private static Optional<URI> getServerURI(String url) {
+        var uri = RequestsUtilities.createURI(url);
+        if (uri.isPresent()) {
+            return RequestsUtilities.getServerURI(uri.get());
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<WebClient> getExistingClient(URI uri) {
+        return clients.stream().filter(e -> e.getServerURI().equals(uri)).findAny();
     }
 }

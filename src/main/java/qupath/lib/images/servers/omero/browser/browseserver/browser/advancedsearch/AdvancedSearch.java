@@ -12,6 +12,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import qupath.lib.images.servers.omero.browser.browseserver.browser.BrowserModel;
 import qupath.lib.images.servers.omero.browser.browseserver.browser.advancedsearch.cellfactories.LinkCellFactory;
 import qupath.lib.images.servers.omero.browser.browseserver.browser.advancedsearch.cellfactories.TypeCellFactory;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchQuery;
@@ -38,6 +39,7 @@ import java.util.ResourceBundle;
 public class AdvancedSearch extends Stage {
     private final static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     private final WebClient client;
+    private final BrowserModel browserModel;
     private ResourceBundle resources;
     @FXML
     private TextField query;
@@ -87,9 +89,11 @@ public class AdvancedSearch extends Stage {
      *
      * @param ownerWindow  the stage who should own this window
      * @param client  the client on which the search will be performed
+     * @param browserModel  the browser model of the browser
      */
-    public AdvancedSearch(Stage ownerWindow, WebClient client) {
+    public AdvancedSearch(Stage ownerWindow, WebClient client, BrowserModel browserModel) {
         this.client = client;
+        this.browserModel = browserModel;
 
         initUI(ownerWindow);
         setUpListeners();
@@ -147,11 +151,11 @@ public class AdvancedSearch extends Stage {
     private void initUI(Stage ownerWindow) {
         resources = UiUtilities.loadFXMLAndGetResources(this, getClass().getResource("advanced_search.fxml"));
 
-        owner.setItems(client.getServer().getOwners());
+        owner.setItems(browserModel.getOwners());
         owner.getSelectionModel().selectFirst();
         owner.setConverter(client.getServer().getOwnerStringConverter());
 
-        group.setItems(client.getServer().getGroups());
+        group.setItems(browserModel.getGroups());
         group.getSelectionModel().selectFirst();
 
         results.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);

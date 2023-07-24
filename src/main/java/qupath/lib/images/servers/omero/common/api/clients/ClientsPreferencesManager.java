@@ -24,7 +24,7 @@ public class ClientsPreferencesManager {
     private final static ObservableList<String> urisImmutable = FXCollections.unmodifiableObservableList(uris);
 
     static {
-        uris.addListener((ListChangeListener<? super String>) c -> serverListPreference.set(String.join(",", uris)));
+        uris.addListener((ListChangeListener<? super String>) c -> setServerListPreference(String.join(",", uris)));
     }
 
     private ClientsPreferencesManager() {
@@ -32,9 +32,12 @@ public class ClientsPreferencesManager {
     }
 
     /**
-     * Returns the list of server URI stored by the preferences.
-     * This list is unmodifiable, use the {@link #addURI(String) addURI}
-     * or the {@link #removeURI(String) removeURI} methods to update its state.
+     * <p>
+     *     Returns the list of server URI stored by the preferences.
+     *     This list is unmodifiable, use the {@link #addURI(String) addURI}
+     *     or the {@link #removeURI(String) removeURI} methods to update its state.
+     * </p>
+     * <p>This list may be updated from any thread.</p>
      *
      * @return a list of server URI.
      */
@@ -49,10 +52,10 @@ public class ClientsPreferencesManager {
      * @param uri  the URI to add
      */
     public static void addURI(String uri) {
-        latestServerPreference.set(uri);
+        setLatestServerPreference(uri);
 
         if (!isUriAlreadyPresent(uri)) {
-            uris.add(uri);
+            updateURIs(uri, true);
         }
     }
 
@@ -64,10 +67,10 @@ public class ClientsPreferencesManager {
      */
     public static void removeURI(String uri) {
         if (latestServerPreference.get().equals(uri)) {
-            latestServerPreference.set("");
+            setLatestServerPreference("");
         }
 
-        uris.remove(uri);
+        updateURIs(uri, false);
     }
 
     /**
@@ -94,10 +97,30 @@ public class ClientsPreferencesManager {
      * @param username  the username to set
      */
     public static void setLastUsername(String username) {
-        latestUsernamePreference.set(username);
+        setLatestUsernamePreference(username);
+    }
+
+    private static synchronized void setServerListPreference(String serverListPreference) {
+        ClientsPreferencesManager.serverListPreference.set(serverListPreference);
+    }
+
+    private static synchronized void setLatestServerPreference(String latestServerPreference) {
+        ClientsPreferencesManager.latestServerPreference.set(latestServerPreference);
     }
 
     private static boolean isUriAlreadyPresent(String uri) {
-        return getURIs().contains(uri);
+        return uris.contains(uri);
+    }
+
+    private static synchronized void setLatestUsernamePreference(String latestUsernamePreference) {
+        ClientsPreferencesManager.latestUsernamePreference.set(latestUsernamePreference);
+    }
+
+    private static synchronized void updateURIs(String uri, boolean add) {
+        if (add) {
+            uris.add(uri);
+        } else {
+            uris.remove(uri);
+        }
     }
 }

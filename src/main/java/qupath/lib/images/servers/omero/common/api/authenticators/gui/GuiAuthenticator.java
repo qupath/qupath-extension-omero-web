@@ -13,8 +13,12 @@ import java.util.ResourceBundle;
  *     from a dialog window.
  * </p>
  * <p>
- *     The dialog window is described in
- *     {@link qupath.lib.images.servers.omero.common.api.authenticators.gui.AuthenticatorForm AuthenticatorForm}.
+ *     The dialog window is described in {@link AuthenticatorForm}.
+ * </p>
+ * <p>
+ *     Even though this class uses UI elements, it can be called from any thread.
+ *     However, make sure the UI thread is not blocked when calling this class, otherwise
+ *     it will block the entire application.
  * </p>
  */
 public class GuiAuthenticator extends Authenticator {

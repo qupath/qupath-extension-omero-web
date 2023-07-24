@@ -17,8 +17,7 @@ import java.util.ResourceBundle;
  *     or an {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.OrphanedFolder OrphanedFolder}.
  * </p>
  * <p>
- *     This class uses the {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.image.PixelInfo PixelInfo} class
- *     to get information about pixels.
+ *     This class uses the {@link PixelInfo} class to get information about pixels.
  * </p>
  */
 public class Image extends ServerEntity {

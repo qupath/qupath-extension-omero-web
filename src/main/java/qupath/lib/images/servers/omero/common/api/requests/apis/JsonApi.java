@@ -5,18 +5,16 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qupath.lib.images.servers.omero.common.api.authenticators.Authenticator;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
-import qupath.lib.images.servers.omero.common.api.clients.WebClients;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
 import qupath.lib.images.servers.omero.common.api.requests.entities.login.LoginResponse;
 import qupath.lib.images.servers.omero.common.api.requests.entities.serverinformation.OmeroAPI;
 import qupath.lib.images.servers.omero.common.api.requests.entities.serverinformation.OmeroServerList;
-import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Dataset;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Project;
@@ -37,7 +35,6 @@ import java.util.concurrent.CompletableFuture;
  * </p>
  */
 public class JsonApi {
-    private final static ResourceBundle resources = UiUtilities.getResources();
     private final static Logger logger = LoggerFactory.getLogger(JsonApi.class);
     private final static String SERVERS_URL_KEY = "url:servers";
     private final static String TOKEN_URL_KEY = "url:token";
@@ -45,12 +42,12 @@ public class JsonApi {
     private final static String PROJECTS_URL_KEY = "url:projects";
     private final static String DATASETS_URL_KEY = "url:datasets";
     private final static String IMAGES_URL_KEY = "url:images";
-    private static final String API_URL = "%s/api/";
-    private static final String PROJECTS_URL = "%s?childCount=true";
-    private static final String DATASETS_URL = "%s%d/datasets/?childCount=true";
-    private static final String IMAGES_URL = "%s%d/images/?childCount=true";
-    private static final String ORPHANED_DATASETS_URL = "%s?childCount=true&orphaned=true";
-    private static final String ROIS_URL = "%s/api/v0/m/rois/?image=%s";
+    private final static String API_URL = "%s/api/";
+    private final static String PROJECTS_URL = "%s?childCount=true";
+    private final static String DATASETS_URL = "%s%d/datasets/?childCount=true";
+    private final static String IMAGES_URL = "%s%d/images/?childCount=true";
+    private final static String ORPHANED_DATASETS_URL = "%s?childCount=true&orphaned=true";
+    private final static String ROIS_URL = "%s/api/v0/m/rois/?image=%s";
     private final IntegerProperty numberOfEntitiesLoading = new SimpleIntegerProperty(0);
     private final BooleanProperty areOrphanedImagesLoading = new SimpleBooleanProperty(false);
     private final IntegerProperty numberOfOrphanedImages = new SimpleIntegerProperty(0);
@@ -76,6 +73,7 @@ public class JsonApi {
      */
     public static CompletableFuture<Optional<JsonApi>> createJsonApi(RequestsHandler requestsHandler, URI host) {
         JsonApi jsonApi = new JsonApi(requestsHandler, host);
+
         return jsonApi.initialize().thenApply(initialized -> {
             if (initialized) {
                 return Optional.of(jsonApi);
@@ -93,7 +91,8 @@ public class JsonApi {
     }
 
     /**
-     * @return the number of OMERO entities (e.g. datasets, images) currently being loaded by the API
+     * @return the number of OMERO entities (e.g. datasets, images) currently being loaded by the API.
+     * This property may be updated from any thread
      */
     public ReadOnlyIntegerProperty getNumberOfEntitiesLoading() {
         return numberOfEntitiesLoading;
@@ -101,6 +100,7 @@ public class JsonApi {
 
     /**
      * @return the number of orphaned images currently being loaded by the API
+     * This property may be updated from any thread
      */
     public ReadOnlyBooleanProperty getOrphanedImagesLoading() {
         return areOrphanedImagesLoading;
@@ -108,6 +108,7 @@ public class JsonApi {
 
     /**
      * @return the total number of orphaned images
+     * This property may be updated from any thread
      */
     public ReadOnlyIntegerProperty getNumberOfOrphanedImages() {
         return numberOfOrphanedImages;
@@ -115,6 +116,7 @@ public class JsonApi {
 
     /**
      * @return the number of orphaned images which have been loaded
+     * This property may be updated from any thread
      */
     public ReadOnlyIntegerProperty getNumberOfOrphanedImagesLoaded() {
         return numberOfOrphanedImagesLoaded;
@@ -140,22 +142,13 @@ public class JsonApi {
         var uri = RequestsUtilities.createURI(urls.get(LOGIN_URL_KEY));
 
         PasswordAuthentication authentication = getPasswordAuthenticationFromArgs(args).orElse(
-                WebClients.getAuthenticator().requestPasswordAuthenticationInstance(
-                    host.toString(),
-                    null,
-                    0,
-                    null,
-                    resources.getString("Common.Api.Request.enterLoginDetails"),
-                    null,
-                    null,
-                    null
-                )
+                Authenticator.getPasswordAuthentication(host.toString())
         );
 
         if (uri.isEmpty() || authentication == null) {
             return CompletableFuture.completedFuture(LoginResponse.createFailedLoginResponse());
         } else {
-            byte[] body = qupath.lib.images.servers.omero.common.api.requests.apis.ApiUtilities.concatAndConvertToBytes(
+            byte[] body = ApiUtilities.concatAndConvertToBytes(
                     String.join("&", "server=" + serverID, "username=" + authentication.getUserName(), "password=").toCharArray(),
                     authentication.getPassword()
             );
@@ -226,7 +219,7 @@ public class JsonApi {
      * @param children  the list which should be populated by the orphaned images.
      */
     public void populateOrphanedImagesIntoList(List<RepositoryEntity> children) {
-        areOrphanedImagesLoading.set(true);
+        setOrphanedImagesLoading(true);
 
         getOrphanedImagesURIs().thenAcceptAsync(uris -> {
             // The number of parallel requests is limited to 16
@@ -240,13 +233,13 @@ public class JsonApi {
                         .map(jsonObject -> ServerEntity.createFromJsonElement(jsonObject, requestsHandler))
                         .flatMap(Optional::stream)
                         .toList();
-                Platform.runLater(() -> {
-                    children.addAll(serverEntities);
-                    numberOfOrphanedImagesLoaded.set(numberOfOrphanedImagesLoaded.get() + batch.size());
-                });
+
+                children.addAll(serverEntities);
+
+                addToNumberOfOrphanedImagesLoaded(batch.size());
             }
 
-            Platform.runLater(() -> areOrphanedImagesLoading.set(false));
+            setOrphanedImagesLoading(false);
         });
     }
 
@@ -311,7 +304,7 @@ public class JsonApi {
                 .flatMap(Optional::stream)
                 .toList()
         ).thenApply(uris -> {
-            Platform.runLater(() -> numberOfOrphanedImages.set(uris.size()));
+            setNumberOfOrphanedImages(uris.size());
             return uris;
         });
     }
@@ -355,6 +348,18 @@ public class JsonApi {
         } else {
             return CompletableFuture.completedFuture(false);
         }
+    }
+
+    private synchronized void setOrphanedImagesLoading(boolean orphanedImagesLoading) {
+        areOrphanedImagesLoading.set(orphanedImagesLoading);
+    }
+
+    private synchronized void addToNumberOfOrphanedImagesLoaded(int addition) {
+        numberOfOrphanedImagesLoaded.set(numberOfOrphanedImagesLoaded.get() + addition);
+    }
+
+    private synchronized void setNumberOfOrphanedImages(int numberOfOrphanedImages) {
+        this.numberOfOrphanedImages.set(numberOfOrphanedImages);
     }
 
     private CompletableFuture<Boolean> setServerID(Map<String, String> urls) {
@@ -415,7 +420,7 @@ public class JsonApi {
         }
     }
 
-    private Optional<PasswordAuthentication> getPasswordAuthenticationFromArgs(String... args) {
+    private static Optional<PasswordAuthentication> getPasswordAuthenticationFromArgs(String... args) {
         String username = null;
         char[] password = null;
         int i = 0;
@@ -439,9 +444,10 @@ public class JsonApi {
         var uri = RequestsUtilities.createURI(url);
 
         if (uri.isPresent()) {
-            numberOfEntitiesLoading.set(numberOfEntitiesLoading.get() + 1);
+            changeNumberOfEntitiesLoading(true);
+
             return Requests.getPaginated(uri.get()).thenApply(jsonElements -> {
-                Platform.runLater(() -> numberOfEntitiesLoading.set(numberOfEntitiesLoading.get() - 1));
+                changeNumberOfEntitiesLoading(false);
 
                 return ServerEntity.createFromJsonElements(jsonElements, requestsHandler).toList();
             });
@@ -463,5 +469,10 @@ public class JsonApi {
                 return Optional.empty();
             }
         });
+    }
+
+    private synchronized void changeNumberOfEntitiesLoading(boolean increment) {
+        int quantityToAdd = increment ? 1 : -1;
+        numberOfEntitiesLoading.set(numberOfEntitiesLoading.get() + quantityToAdd);
     }
 }

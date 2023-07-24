@@ -1,6 +1,5 @@
 package qupath.lib.images.servers.omero.common.omeroentities.repositoryentities;
 
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
@@ -29,8 +28,7 @@ public class OrphanedFolder extends RepositoryEntity {
     public OrphanedFolder(RequestsHandler requestsHandler) {
         this.requestsHandler = requestsHandler;
 
-        populateDatasets();
-        populateNumberOfImages();
+        setNumberOfChildren();
     }
 
     @Override
@@ -41,8 +39,12 @@ public class OrphanedFolder extends RepositoryEntity {
     @Override
     public ObservableList<RepositoryEntity> getChildren() {
         if (!childrenPopulated) {
-            requestsHandler.populateOrphanedImagesIntoList(this.children);
             childrenPopulated = true;
+
+            requestsHandler.getOrphanedDatasets().thenAccept(children -> {
+                this.children.addAll(children);
+                requestsHandler.populateOrphanedImagesIntoList(this.children);
+            });
         }
         return childrenImmutable;
     }
@@ -57,14 +59,12 @@ public class OrphanedFolder extends RepositoryEntity {
         return true;
     }
 
-    private void populateDatasets() {
-        requestsHandler.getOrphanedDatasets().thenAccept(children -> Platform.runLater(() -> {
+    private void setNumberOfChildren() {
+        requestsHandler.getOrphanedDatasets().thenCompose(datasets -> {
             numberOfDatasets = children.size();
-            this.children.addAll(children);
-        }));
-    }
-
-    private void populateNumberOfImages() {
-        requestsHandler.getOrphanedImagesURIs().thenAccept(children -> Platform.runLater(() -> numberOfImages = children.size()));
+            return requestsHandler.getOrphanedImagesURIs();
+        }).thenAccept(orphanedImagesURIs ->
+                numberOfImages = orphanedImagesURIs.size()
+        );
     }
 }

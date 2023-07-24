@@ -1,4 +1,4 @@
-package qupath.lib.images.servers.omero.connectionsmanager.connectionsmanager;
+package qupath.lib.images.servers.omero.connectionsmanager.connectionsmanager.connection;
 
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -26,12 +26,16 @@ import java.util.ResourceBundle;
  * </p>
  * <p>
  *     It also displays the list of images of this server that are currently opened using the
- *     {@link qupath.lib.images.servers.omero.connectionsmanager.connectionsmanager.Image Image} label.
+ *     {@link Image Image} label.
+ * </p>
+ * <p>
+ *     This class uses a {@link ConnectionModel} to update its state.
  * </p>
  */
-class Connection extends VBox {
+public class Connection extends VBox {
     private final WebClient client;
     private final String serverURI;
+    private final ConnectionModel connectionModel;
     private static ResourceBundle resources;
     @FXML
     private Label uri;
@@ -41,6 +45,8 @@ class Connection extends VBox {
     private VBox imagesContainer;
     @FXML
     private Button connection;
+    @FXML
+    private Button remove;
 
     /**
      * Creates the connection pane using a {@link qupath.lib.images.servers.omero.common.api.clients.WebClient WebClient}.
@@ -69,6 +75,12 @@ class Connection extends VBox {
         this.client = client;
         this.serverURI = serverURI;
 
+        if (client == null) {
+            connectionModel = null;
+        } else {
+            connectionModel = new ConnectionModel(client);
+        }
+
         initUI();
         setUpListeners();
     }
@@ -90,7 +102,7 @@ class Connection extends VBox {
                 }
             }));
         } else {
-            if (client.getAuthenticated().get()) {
+            if (connectionModel.getAuthenticated().get()) {
                 if (client.canBeClosed()) {
                     boolean logOutConfirmed = Dialogs.showConfirmDialog(
                             resources.getString("ConnectionsManager.Connection.logout"),
@@ -98,7 +110,7 @@ class Connection extends VBox {
                     );
 
                     if (logOutConfirmed) {
-                        WebClients.logoutClient(client);
+                        WebClients.logoutAndRemoveClient(client);
                     }
                 } else {
                     Dialogs.showMessageDialog(
@@ -108,7 +120,16 @@ class Connection extends VBox {
                 }
             } else {
                 client.login().thenAccept(loggedIn -> Platform.runLater(() -> {
-                    if (!loggedIn) {
+                    if (loggedIn) {
+                        Dialogs.showInfoNotification(
+                                resources.getString("ConnectionsManager.Connection.login"),
+                                MessageFormat.format(
+                                        resources.getString("ConnectionsManager.Connection.loginSuccessful"),
+                                        client.getServerURI(),
+                                        client.getUsername().get()
+                                )
+                        );
+                    } else {
                         Dialogs.showErrorMessage(
                                 resources.getString("ConnectionsManager.Connection.loginToServer"),
                                 resources.getString("ConnectionsManager.Connection.loginFailed")
@@ -122,16 +143,23 @@ class Connection extends VBox {
     @FXML
     private void onRemoveClicked(ActionEvent ignoredEvent) {
         if (client == null) {
-            ClientsPreferencesManager.removeURI(serverURI);
+            boolean deletionConfirmed = Dialogs.showConfirmDialog(
+                    resources.getString("ConnectionsManager.Connection.removeClient"),
+                    resources.getString("ConnectionsManager.Connection.removeClientConfirmation")
+            );
+
+            if (deletionConfirmed) {
+                ClientsPreferencesManager.removeURI(serverURI);
+            }
         } else {
             if (client.canBeClosed()) {
                 boolean deletionConfirmed = Dialogs.showConfirmDialog(
-                        resources.getString("ConnectionsManager.Connection.removeClient"),
-                        resources.getString("ConnectionsManager.Connection.removeClientConfirmation")
+                        resources.getString("ConnectionsManager.Connection.disconnectClient"),
+                        resources.getString("ConnectionsManager.Connection.disconnectClientConfirmation")
                 );
 
                 if (deletionConfirmed) {
-                    WebClients.deleteClient(client);
+                    WebClients.logoutAndRemoveClient(client);
                 }
             } else {
                 Dialogs.showMessageDialog(
@@ -148,29 +176,33 @@ class Connection extends VBox {
         uri.setText(serverURI);
         uri.setGraphic(UiUtilities.createStateNode(client != null));
 
-        if (client != null) {
-            for (URI uri: client.getOpenedImagesURIs()) {
+        if (client == null) {
+            remove.setText(resources.getString("ConnectionsManager.Connection.removeClient"));
+        } else {
+            for (URI uri: connectionModel.getOpenedImagesURIs()) {
                 imagesContainer.getChildren().add(new Image(uri));
             }
+
+            remove.setText(resources.getString("ConnectionsManager.Connection.disconnect"));
         }
     }
 
     private void setUpListeners() {
         if (client != null) {
-            uri.textProperty().bind(Bindings.when(client.getAuthenticated())
-                    .then(Bindings.concat(serverURI, " (", client.getUsername(), ")"))
+            uri.textProperty().bind(Bindings.when(connectionModel.getAuthenticated())
+                    .then(Bindings.concat(serverURI, " (", connectionModel.getUsername(), ")"))
                     .otherwise(serverURI)
             );
 
             imagesPane.textProperty().bind(Bindings.concat(
-                    Bindings.size(client.getOpenedImagesURIs()),
+                    Bindings.size(connectionModel.getOpenedImagesURIs()),
                     " ",
-                    Bindings.when(Bindings.size(client.getOpenedImagesURIs()).greaterThan(1))
+                    Bindings.when(Bindings.size(connectionModel.getOpenedImagesURIs()).greaterThan(1))
                             .then(resources.getString("ConnectionsManager.Connection.images"))
                             .otherwise(resources.getString("ConnectionsManager.Connection.image"))
             ));
 
-            client.getOpenedImagesURIs().addListener((SetChangeListener<? super URI>) change -> {
+            connectionModel.getOpenedImagesURIs().addListener((SetChangeListener<? super URI>) change -> {
                 imagesContainer.getChildren().clear();
 
                 for (URI uri: change.getSet()) {
@@ -178,11 +210,10 @@ class Connection extends VBox {
                 }
             });
 
-            connection.textProperty().bind(Bindings.when(client.getAuthenticated())
+            connection.textProperty().bind(Bindings.when(connectionModel.getAuthenticated())
                     .then(resources.getString("ConnectionsManager.Connection.logout"))
                     .otherwise(resources.getString("ConnectionsManager.Connection.login"))
             );
         }
-
     }
 }

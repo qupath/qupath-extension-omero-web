@@ -22,7 +22,7 @@ import java.util.ResourceBundle;
  *     Here, an annotation refers to a QuPath annotation (a path object)
  *     and <b>not</b> an OMERO annotation (some metadata attached to images for example).
  * </p>
- * <p>This class uses a {@link ConfirmationForm ConfirmationForm} to prompt the user for confirmation.</p>
+ * <p>This class uses a {@link ConfirmationForm} to prompt the user for confirmation.</p>
  */
 public class AnnotationSender {
     private final static ResourceBundle resources = UiUtilities.getResources();

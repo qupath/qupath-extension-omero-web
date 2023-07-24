@@ -30,7 +30,7 @@ import java.util.ResourceBundle;
  * </p>
  * <p>
  *     Annotations are displayed within several panes. Some annotations use a
- *     {@link FormPane FormPane}, while others use an {@link InformationPane InformationPane}.
+ *     {@link FormPane}, while others use an {@link InformationPane}.
  * </p>
  */
 public class AdvancedInformation extends Stage {

@@ -1,6 +1,5 @@
 package qupath.lib.images.servers.omero.common.omeroentities.repositoryentities;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.StringConverter;
@@ -18,8 +17,7 @@ import java.util.function.Predicate;
 
 /**
  * A server is the top element in the OMERO entity hierarchy.
- * It contains one {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.OrphanedFolder OrphanedFolder}
- * and zero or more projects (described in
+ * It contains one {@link OrphanedFolder} and zero or more projects (described in
  * {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities server_entities}).
  */
 public class Server extends RepositoryEntity {
@@ -128,8 +126,11 @@ public class Server extends RepositoryEntity {
     }
 
     /**
-     * Returns a list of owners of this server.
-     * It is populated by looking at the owners of all projects.
+     * <p>
+     *     Returns a list of owners of this server.
+     *     It is populated by looking at the owners of all projects.
+     * </p>
+     * <p>This list may be updated from any thread.</p>
      *
      * @return an unmodifiable list of owners of this server
      */
@@ -138,8 +139,11 @@ public class Server extends RepositoryEntity {
     }
 
     /**
-     * Returns a list of groups of this server.
-     * It is populated by looking at the groups of all projects.
+     * <p>
+     *     Returns a list of groups of this server.
+     *     It is populated by looking at the groups of all projects.
+     * </p>
+     * <p>This list may be updated from any thread.</p>
      *
      * @return an unmodifiable list of groups of this server
      */
@@ -148,7 +152,7 @@ public class Server extends RepositoryEntity {
     }
 
     private void populate(RequestsHandler requestsHandler) {
-        requestsHandler.getProjects().thenAccept(children -> Platform.runLater(() -> {
+        requestsHandler.getProjects().thenAccept(children -> {
             this.children.addAll(children);
             this.children.add(orphanedFolder);
 
@@ -165,13 +169,14 @@ public class Server extends RepositoryEntity {
                     .filter(distinctByName(Owner::getName))
                     .filter(owner -> !owners.contains(owner))
                     .toList());
-        }));
+        });
     }
 
     /**
-     * See {@link "<a href="https://stackoverflow.com/questions/23699371/java-8-distinct-by-property">...</a>"}
+     * Creates a predicate that filters an object by one of its property.
+     * See {@link "<a href="https://stackoverflow.com/questions/23699371/java-8-distinct-by-property">this link</a>."}
      */
-    private <T> Predicate<T> distinctByName(Function<? super T, ?> keyExtractor) {
+    private static <T> Predicate<T> distinctByName(Function<? super T, ?> keyExtractor) {
         Set<Object> seen = ConcurrentHashMap.newKeySet();
         return t -> seen.add(keyExtractor.apply(t));
     }
