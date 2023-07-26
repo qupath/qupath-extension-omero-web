@@ -32,7 +32,6 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * <p>
@@ -201,10 +200,10 @@ public class Browser extends Stage {
     private void onImportButtonClicked(ActionEvent ignoredEvent) {
         UiUtilities.openImages(
                 hierarchy.getSelectionModel().getSelectedItems().stream()
-                        .flatMap(item -> Stream.concat(Stream.of(item.getValue()), item.getValue().getEntityAndDescendants()))
+                        .map(TreeItem::getValue)
                         .map(repositoryEntity -> {
-                            if (repositoryEntity instanceof Image image && image.isSupported()) {
-                                return image;
+                            if (repositoryEntity instanceof ServerEntity serverEntity) {
+                                return serverEntity;
                             } else {
                                 return null;
                             }

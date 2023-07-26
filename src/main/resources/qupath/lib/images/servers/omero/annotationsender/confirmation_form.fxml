@@ -3,10 +3,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.VBox?>
 
-
 <fx:root maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" type="VBox" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
-   <children>
-      <Label fx:id="information" text="Label" />
-      <Label fx:id="uri" text="Label" />
-   </children>
+   <Label fx:id="information" />
+   <Label fx:id="uri" />
 </fx:root>

@@ -130,7 +130,7 @@ class WebImageServer extends AbstractTileableImageServer implements PathObjectRe
     }
 
     private boolean setId() {
-        var id = RequestsUtilities.parseImageId(uri);
+        var id = RequestsUtilities.parseEntityId(uri);
 
         if (id.isPresent()) {
             this.id = id.get();

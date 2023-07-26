@@ -12,8 +12,6 @@ import qupath.lib.images.servers.omero.common.api.requests.entities.login.LoginR
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchResult;
 import qupath.lib.images.servers.omero.common.omeroentities.annotations.AnnotationGroup;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
-import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Dataset;
-import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Project;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.ServerEntity;
 import qupath.lib.objects.PathObject;
 
@@ -70,6 +68,37 @@ public class RequestsHandler {
      */
     public URI getHost() {
         return host;
+    }
+
+    /**
+     * <p>Returns a list of image URIs contained in the dataset identified by the provided ID.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @param datasetID  the ID of the dataset the returned images must belong to
+     * @return a list of URIs of images contained in the dataset
+     */
+    public CompletableFuture<List<URI>> getImagesURIOfDataset(int datasetID) {
+        return getImages(datasetID).thenApply(images -> images.stream()
+                .map(this::getItemURI)
+                .map(RequestsUtilities::createURI)
+                .flatMap(Optional::stream)
+                .toList()
+        );
+    }
+
+    /**
+     * <p>Returns a list of image URIs contained in the project identified by the provided ID.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @param projectID  the ID of the project the returned images must belong to
+     * @return a list of URIs of images contained in the project
+     */
+    public CompletableFuture<List<URI>> getImagesURIOfProject(int projectID) {
+        return getDatasets(projectID).thenApplyAsync(datasets -> datasets.stream()
+                .map(dataset -> getImagesURIOfDataset(dataset.getId()))
+                .map(CompletableFuture::join)
+                .flatMap(List::stream)
+                .toList());
     }
 
     /**
@@ -164,17 +193,17 @@ public class RequestsHandler {
     }
 
     /**
-     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi#getDatasets(Project)}.
+     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi#getDatasets(int)}.
      */
-    public CompletableFuture<List<ServerEntity>> getDatasets(Project project) {
-        return jsonApi.getDatasets(project);
+    public CompletableFuture<List<ServerEntity>> getDatasets(int projectID) {
+        return jsonApi.getDatasets(projectID);
     }
 
     /**
-     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi#getImages(Dataset)}.
+     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi#getImages(int)}.
      */
-    public CompletableFuture<List<ServerEntity>> getImages(Dataset dataset) {
-        return jsonApi.getImages(dataset);
+    public CompletableFuture<List<ServerEntity>> getImages(int datasetID) {
+        return jsonApi.getImages(datasetID);
     }
 
     /**

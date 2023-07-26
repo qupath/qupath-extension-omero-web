@@ -1,9 +1,9 @@
 package qupath.lib.images.servers.omero.browser.browseserver.browser;
 
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.*;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
+import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 import qupath.lib.images.servers.omero.common.omeroentities.permissions.Group;
 import qupath.lib.images.servers.omero.common.omeroentities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.Server;
@@ -44,46 +44,18 @@ public class BrowserModel {
      * @param client  the client whose properties and lists should be listened
      */
     public BrowserModel(WebClient client) {
-        authenticated.set(client.getAuthenticated().get());
-        client.getAuthenticated().addListener((p, o, n) -> Platform.runLater(() -> authenticated.set(n)));
+        UiUtilities.listenToPropertyInUIThread(authenticated, client.getAuthenticated());
+        UiUtilities.listenToPropertyInUIThread(username, client.getUsername());
+        UiUtilities.listenToPropertyInUIThread(numberOfEntitiesLoading, client.getRequestsHandler().getNumberOfEntitiesLoading());
+        UiUtilities.listenToPropertyInUIThread(areOrphanedImagesLoading, client.getRequestsHandler().getOrphanedImagesLoading());
+        UiUtilities.listenToPropertyInUIThread(numberOfOrphanedImages, client.getRequestsHandler().getNumberOfOrphanedImages());
+        UiUtilities.listenToPropertyInUIThread(numberOfOrphanedImagesLoaded, client.getRequestsHandler().getNumberOfOrphanedImagesLoaded());
+        UiUtilities.listenToPropertyInUIThread(numberOfThumbnailsLoading, client.getRequestsHandler().getNumberOfThumbnailsLoading());
 
-        username.set(client.getUsername().get());
-        client.getUsername().addListener((p, o, n) -> Platform.runLater(() -> username.set(n)));
+        UiUtilities.listenToSetInUIThread(openedImagesURIs, client.getOpenedImagesURIs());
 
-        openedImagesURIs.addAll(client.getOpenedImagesURIs());
-        client.getOpenedImagesURIs().addListener((SetChangeListener<? super URI>) change -> Platform.runLater(() -> {
-            if (change.wasAdded()) {
-                openedImagesURIs.add(change.getElementAdded());
-            }
-            if (change.wasRemoved()) {
-                openedImagesURIs.remove(change.getElementRemoved());
-            }
-        }));
-
-        numberOfEntitiesLoading.set(client.getRequestsHandler().getNumberOfEntitiesLoading().get());
-        client.getRequestsHandler().getNumberOfEntitiesLoading().addListener((p, o, n) -> Platform.runLater(() -> numberOfEntitiesLoading.set(n.intValue())));
-
-        areOrphanedImagesLoading.set(client.getRequestsHandler().getOrphanedImagesLoading().get());
-        client.getRequestsHandler().getOrphanedImagesLoading().addListener((p, o, n) -> Platform.runLater(() -> areOrphanedImagesLoading.set(n)));
-
-        numberOfOrphanedImages.set(client.getRequestsHandler().getNumberOfOrphanedImages().get());
-        client.getRequestsHandler().getNumberOfOrphanedImages().addListener((p, o, n) -> Platform.runLater(() -> numberOfOrphanedImages.set(n.intValue())));
-
-        numberOfOrphanedImagesLoaded.set(client.getRequestsHandler().getNumberOfOrphanedImagesLoaded().get());
-        client.getRequestsHandler().getNumberOfOrphanedImagesLoaded().addListener((p, o, n) -> Platform.runLater(() -> numberOfOrphanedImagesLoaded.set(n.intValue())));
-
-        numberOfThumbnailsLoading.set(client.getRequestsHandler().getNumberOfThumbnailsLoading().get());
-        client.getRequestsHandler().getNumberOfThumbnailsLoading().addListener((p, o, n) -> Platform.runLater(() -> numberOfThumbnailsLoading.set(n.intValue())));
-
-        owners.addAll(client.getServer().getOwners());
-        client.getServer().getOwners().addListener((ListChangeListener<? super Owner>) change -> Platform.runLater(() ->
-                owners.setAll(change.getList())
-        ));
-
-        groups.addAll(client.getServer().getGroups());
-        client.getServer().getGroups().addListener((ListChangeListener<? super Group>) change -> Platform.runLater(() ->
-                groups.setAll(change.getList())
-        ));
+        UiUtilities.listenToListInUIThread(owners, client.getServer().getOwners());
+        UiUtilities.listenToListInUIThread(groups, client.getServer().getGroups());
     }
 
     /**

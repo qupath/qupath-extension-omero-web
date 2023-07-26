@@ -96,7 +96,7 @@ public class Dataset extends ServerEntity {
 
     private void populateChildren() {
         if (requestsHandler != null) {
-            requestsHandler.getImages(this).thenAccept(this.children::addAll);
+            requestsHandler.getImages(getId()).thenAccept(this.children::addAll);
         }
     }
 }

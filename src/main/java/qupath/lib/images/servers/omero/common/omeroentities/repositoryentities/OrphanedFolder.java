@@ -9,19 +9,18 @@ import qupath.lib.images.servers.omero.common.omeroentities.permissions.Owner;
 import java.util.ResourceBundle;
 
 /**
- * An orphaned folder is a container for orphaned images and orphaned datasets (described in
+ * An orphaned folder is a container for orphaned images (described in
  * {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities server_entities}).
  */
 public class OrphanedFolder extends RepositoryEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();
     private final RequestsHandler requestsHandler;
     private boolean childrenPopulated = false;
-    private int numberOfDatasets = 0;
     private int numberOfImages = 0;
 
     /**
      * Creates a new orphaned folder.
-     * This will load orphaned datasets and the number of orphaned images in the background.
+     * This will load the number of orphaned images in the background.
      *
      * @param requestsHandler  the request handler of the browser
      */
@@ -33,7 +32,7 @@ public class OrphanedFolder extends RepositoryEntity {
 
     @Override
     public int getNumberOfChildren() {
-        return numberOfImages + numberOfDatasets;
+        return numberOfImages;
     }
 
     @Override
@@ -41,10 +40,7 @@ public class OrphanedFolder extends RepositoryEntity {
         if (!childrenPopulated) {
             childrenPopulated = true;
 
-            requestsHandler.getOrphanedDatasets().thenAccept(children -> {
-                this.children.addAll(children);
-                requestsHandler.populateOrphanedImagesIntoList(this.children);
-            });
+            requestsHandler.populateOrphanedImagesIntoList(children);
         }
         return childrenImmutable;
     }
@@ -60,10 +56,7 @@ public class OrphanedFolder extends RepositoryEntity {
     }
 
     private void setNumberOfChildren() {
-        requestsHandler.getOrphanedDatasets().thenCompose(datasets -> {
-            numberOfDatasets = children.size();
-            return requestsHandler.getOrphanedImagesURIs();
-        }).thenAccept(orphanedImagesURIs ->
+        requestsHandler.getOrphanedImagesURIs().thenAccept(orphanedImagesURIs ->
                 numberOfImages = orphanedImagesURIs.size()
         );
     }

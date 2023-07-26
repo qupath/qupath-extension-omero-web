@@ -1,12 +1,11 @@
 package qupath.lib.images.servers.omero.connectionsmanager.connectionsmanager;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.api.clients.ClientsPreferencesManager;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.api.clients.WebClients;
+import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
 /**
  * <p>
@@ -33,15 +32,8 @@ class ConnectionsManagerModel {
     }
 
     static {
-        storedServersURIs.setAll(ClientsPreferencesManager.getURIs());
-        ClientsPreferencesManager.getURIs().addListener((ListChangeListener<? super String>) change -> Platform.runLater(() ->
-                storedServersURIs.setAll(change.getList())
-        ));
-
-        clients.setAll(WebClients.getClients());
-        WebClients.getClients().addListener((ListChangeListener<? super WebClient>) change -> Platform.runLater(() ->
-                clients.setAll(change.getList())
-        ));
+        UiUtilities.listenToListInUIThread(storedServersURIs, ClientsPreferencesManager.getURIs());
+        UiUtilities.listenToListInUIThread(clients, WebClients.getClients());
     }
 
     /**

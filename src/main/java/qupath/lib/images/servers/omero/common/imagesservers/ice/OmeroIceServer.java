@@ -196,7 +196,7 @@ public class OmeroIceServer extends AbstractTileableImageServer {
 
 						var browse = gateway.getFacility(BrowseFacility.class);
 
-						imageID = RequestsUtilities.parseImageId(uri).get();
+						imageID = RequestsUtilities.parseEntityId(uri).get();
 						image = browse.getImage(ctx, imageID);
 						pixels = image.getDefaultPixels();
 

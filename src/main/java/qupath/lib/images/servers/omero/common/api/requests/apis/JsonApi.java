@@ -16,8 +16,6 @@ import qupath.lib.images.servers.omero.common.api.requests.entities.login.LoginR
 import qupath.lib.images.servers.omero.common.api.requests.entities.serverinformation.OmeroAPI;
 import qupath.lib.images.servers.omero.common.api.requests.entities.serverinformation.OmeroServerList;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
-import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Dataset;
-import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.Project;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.ServerEntity;
 import qupath.lib.images.servers.omero.common.omeroentities.shapes.Shape;
 import qupath.lib.objects.PathObject;
@@ -190,22 +188,22 @@ public class JsonApi {
      * <p>Attempt to retrieve all datasets of a project.</p>
      * <p>This function is asynchronous.</p>
      *
-     * @param project  the project whose datasets should be retrieved
+     * @param projectID  the project ID whose datasets should be retrieved
      * @return a CompletableFuture with the list containing all datasets of the project
      */
-    public CompletableFuture<List<ServerEntity>> getDatasets(Project project) {
-        return getChildren(String.format(DATASETS_URL, urls.get(PROJECTS_URL_KEY), project.getId()));
+    public CompletableFuture<List<ServerEntity>> getDatasets(int projectID) {
+        return getChildren(String.format(DATASETS_URL, urls.get(PROJECTS_URL_KEY), projectID));
     }
 
     /**
      * <p>Attempt to retrieve all images of a dataset.</p>
      * <p>This function is asynchronous.</p>
      *
-     * @param dataset  the dataset whose images should be retrieved
+     * @param datasetID  the dataset ID whose images should be retrieved
      * @return a CompletableFuture with the list containing all images of the dataset
      */
-    public CompletableFuture<List<ServerEntity>> getImages(Dataset dataset) {
-        return getChildren(String.format(IMAGES_URL, urls.get(DATASETS_URL_KEY), dataset.getId()));
+    public CompletableFuture<List<ServerEntity>> getImages(int datasetID) {
+        return getChildren(String.format(IMAGES_URL, urls.get(DATASETS_URL_KEY), datasetID));
     }
 
     /**

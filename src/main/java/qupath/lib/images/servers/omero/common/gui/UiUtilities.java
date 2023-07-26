@@ -1,5 +1,12 @@
 package qupath.lib.images.servers.omero.common.gui;
 
+import javafx.application.Platform;
+import javafx.beans.value.ObservableValue;
+import javafx.beans.value.WritableValue;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -162,6 +169,56 @@ public class UiUtilities {
                 promptToImportOmeroImages(uris);
             }
         }
+    }
+
+    /**
+     * <p>Propagates changes made to a property to another property.</p>
+     * <p>The listening property is updated in the UI thread.</p>
+     *
+     * @param listeningProperty  the property to update
+     * @param propertyToListen  the property to listen
+     * @param <T>  the type of the property
+     */
+    public static <T> void listenToPropertyInUIThread(WritableValue<T> listeningProperty, ObservableValue<T> propertyToListen) {
+        listeningProperty.setValue(propertyToListen.getValue());
+        propertyToListen.addListener((p, o, n) -> Platform.runLater(() -> listeningProperty.setValue(n)));
+    }
+
+    /**
+     * <p>Propagates changes made to an observable set to another observable set.</p>
+     * <p>The listening set is updated in the UI thread.</p>
+     *
+     * @param listeningSet  the set to update
+     * @param setToListen  the set to listen
+     * @param <T>  the type of the elements of the sets
+     */
+    public static <T> void listenToSetInUIThread(ObservableSet<T> listeningSet, ObservableSet<T> setToListen) {
+        listeningSet.addAll(setToListen);
+
+        setToListen.addListener((SetChangeListener<? super T>) change -> Platform.runLater(() -> {
+            if (change.wasAdded()) {
+                listeningSet.add(change.getElementAdded());
+            }
+            if (change.wasRemoved()) {
+                listeningSet.remove(change.getElementRemoved());
+            }
+        }));
+    }
+
+    /**
+     * <p>Propagates changes made to an observable list to another observable list.</p>
+     * <p>The listening list is updated in the UI thread.</p>
+     *
+     * @param listeningList  the list to update
+     * @param listToListen  the list to listen
+     * @param <T>  the type of the elements of the lists
+     */
+    public static <T> void listenToListInUIThread(ObservableList<T> listeningList, ObservableList<T> listToListen) {
+        listeningList.addAll(listToListen);
+
+        listToListen.addListener((ListChangeListener<? super T>) change -> Platform.runLater(() ->
+                listeningList.setAll(change.getList())
+        ));
     }
 
     private static void promptToImportOmeroImages(String... validUris) {

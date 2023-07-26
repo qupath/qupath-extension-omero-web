@@ -4,8 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 /**
@@ -13,7 +16,27 @@ import java.util.regex.Pattern;
  */
 public class RequestsUtilities {
     private final static Logger logger = LoggerFactory.getLogger(RequestsUtilities.class);
-    private final static Pattern showImagePattern = Pattern.compile("show=image-(\\d+)");
+    private final static Pattern webclientImagePattern = Pattern.compile("/webclient/\\?show=image-(\\d+)");
+    private final static Pattern webclientImagePatternAlternate = Pattern.compile("/webclient/img_detail/(\\d+)");
+    private final static Pattern webgatewayImagePattern = Pattern.compile("/webgateway/img_detail/(\\d+)");
+    private final static Pattern iviewerImagePattern = Pattern.compile("/iviewer/\\?images=(\\d+)");
+    private final static Pattern datasetPattern = Pattern.compile("/webclient/\\?show=dataset-(\\d+)");
+    private final static Pattern projectPattern = Pattern.compile("/webclient/\\?show=project-(\\d+)");
+    private final static List<Pattern> allPatterns = List.of(
+            webclientImagePattern,
+            webclientImagePatternAlternate,
+            webgatewayImagePattern,
+            iviewerImagePattern,
+            datasetPattern,
+            projectPattern
+    );
+    private final static List<Pattern> imagePatterns = List.of(
+            webclientImagePattern,
+            webclientImagePatternAlternate,
+            webgatewayImagePattern,
+            iviewerImagePattern
+    );
+
 
     private RequestsUtilities() {
         throw new RuntimeException("This class is not instantiable.");
@@ -36,27 +59,22 @@ public class RequestsUtilities {
     }
 
     /**
-     * Parse the OMERO image ID from a URI.
+     * Parse the OMERO entity ID from a URI.
      *
-     * @return the image ID, or empty Optional if it was not found
+     * @param uri  the URI that is supposed to contain the ID. It can be URL encoded
+     * @return the entity ID, or an empty Optional if it was not found
      */
-    public static Optional<Long> parseImageId(URI uri) {
-        String uriQuery = uri.getQuery();
-        String id = null;
+    public static Optional<Integer> parseEntityId(URI uri) {
+        for (Pattern pattern : allPatterns) {
+            var matcher = pattern.matcher(decodeURI(uri));
 
-        if (uriQuery != null && uriQuery.startsWith("show=image-")) {
-            Matcher matcher = showImagePattern.matcher(uriQuery);
-            if (matcher.find())
-                id = matcher.group(1);
+            if (matcher.find()) {
+                try {
+                    return Optional.of(Integer.parseInt(matcher.group(1)));
+                } catch (Exception ignored) {}
+            }
         }
-        if (id == null)
-            id = uri.getFragment();
-
-        try {
-            return Optional.of(Long.parseLong(id));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+        return Optional.empty();
     }
 
     /**
@@ -67,5 +85,45 @@ public class RequestsUtilities {
      */
     public static Optional<URI> getServerURI(URI uri) {
         return createURI(uri.getScheme() + "://" + uri.getAuthority());
+    }
+
+    /**
+     * <p>Attempt to retrieve the image URIs designed by the provided entity URI.</p>
+     * <ul>
+     *     <li>If the entity is a dataset, the URIs of the children of this dataset (which are images) are returned.</li>
+     *     <li>If the entity is a project, the URIs of each children of the datasets of this project are returned.</li>
+     *     <li>If the entity is an image, the input URI is returned.</li>
+     *     <li>Else, nothing is returned.</li>
+     * </ul>
+     * <p>This function is asynchronous.</p>
+     *
+     * @param entityURI  the URI of the entity whose images should be retrieved. It can be URL encoded
+     * @param requestsHandler  the request handler corresponding to the current server
+     * @return a CompletableFuture with the list described above
+     */
+    public static CompletableFuture<List<URI>> getImagesURIFromEntityURI(URI entityURI, RequestsHandler requestsHandler) {
+        String entityURL = decodeURI(entityURI);
+
+        if (datasetPattern.matcher(entityURL).find()) {
+            var datasetID = parseEntityId(entityURI);
+
+            if (datasetID.isPresent()) {
+                return requestsHandler.getImagesURIOfDataset(datasetID.get());
+            }
+        } else if (projectPattern.matcher(entityURL).find()) {
+            var projectID = parseEntityId(entityURI);
+
+            if (projectID.isPresent()) {
+                return requestsHandler.getImagesURIOfProject(projectID.get());
+            }
+        } else if (imagePatterns.stream().anyMatch(pattern -> pattern.matcher(entityURL).find())) {
+            return CompletableFuture.completedFuture(List.of(entityURI));
+        }
+
+        return CompletableFuture.completedFuture(List.of());
+    }
+
+    private static String decodeURI(URI uri) {
+        return URLDecoder.decode(uri.toString(), StandardCharsets.UTF_8);
     }
 }

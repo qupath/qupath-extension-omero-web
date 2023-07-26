@@ -1,11 +1,10 @@
 package qupath.lib.images.servers.omero.browser;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.api.clients.WebClients;
+import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
 /**
  * <p>
@@ -26,10 +25,7 @@ class BrowseMenuModel {
     private final static ObservableList<WebClient> clientsImmutable = FXCollections.unmodifiableObservableList(clients);
 
     static {
-        clients.setAll(WebClients.getClients());
-        WebClients.getClients().addListener((ListChangeListener<? super WebClient>) change -> Platform.runLater(() -> {
-            clients.setAll(change.getList());
-        }));
+        UiUtilities.listenToListInUIThread(clients, WebClients.getClients());
     }
 
     private BrowseMenuModel() {

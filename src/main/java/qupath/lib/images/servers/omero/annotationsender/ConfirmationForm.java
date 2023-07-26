@@ -1,7 +1,7 @@
 package qupath.lib.images.servers.omero.annotationsender;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.TextField;
+import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
@@ -14,9 +14,9 @@ import java.util.ResourceBundle;
  */
 class ConfirmationForm extends VBox {
     @FXML
-    private TextField information;
+    private Label information;
     @FXML
-    private TextField uri;
+    private Label uri;
 
     /**
      * Creates the confirmation form.

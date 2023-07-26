@@ -7,11 +7,13 @@ import qupath.lib.images.servers.ImageServerBuilder;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.common.api.clients.WebClients;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
+import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServerBuilder;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -27,14 +29,28 @@ public class WebImageServerBuilder implements ImageServerBuilder<BufferedImage>,
     }
 
     @Override
-    public UriImageSupport<BufferedImage> checkImageSupport(URI uri, String... args) {
-        var client = getClientAndCheckURIReachable(uri, args);
+    public UriImageSupport<BufferedImage> checkImageSupport(URI entityURI, String... args) {
+        var client = getClientAndCheckURIReachable(entityURI, args);
 
         if (client.isPresent()) {
-            try (var server = buildServer(uri, args)) {
-                return UriImageSupport.createInstance(this.getClass(), 4, List.of(server.getBuilder()));
+            try {
+                return UriImageSupport.createInstance(
+                        this.getClass(),
+                        4,
+                        RequestsUtilities.getImagesURIFromEntityURI(entityURI, client.get().getRequestsHandler()).get().stream()
+                                .map(uri -> {
+                                    try (var server = buildServer(uri, args)) {
+                                        return server.getBuilder();
+                                    } catch (Exception e) {
+                                        logger.warn("Unable to create OMERO server", e);
+                                        return null;
+                                    }
+                                })
+                                .filter(Objects::nonNull)
+                                .toList()
+                );
             } catch (Exception e) {
-                logger.warn("Unable to create OMERO server", e);
+                logger.error("Error when checking image support", e);
             }
         }
 

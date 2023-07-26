@@ -9,20 +9,16 @@ import qupath.lib.images.servers.omero.common.omeroentities.permissions.Group;
 import qupath.lib.images.servers.omero.common.omeroentities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.ServerEntity;
 
+import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * A server is the top element in the OMERO entity hierarchy.
- * It contains one {@link OrphanedFolder} and zero or more projects (described in
+ * It contains one {@link OrphanedFolder}, and zero or more projects and orphaned datasets (described in
  * {@link qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities server_entities}).
  */
 public class Server extends RepositoryEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();
-    private OrphanedFolder orphanedFolder;
     private final ObservableList<Owner> owners = FXCollections.observableArrayList(Owner.getAllMembersOwner());
     private final ObservableList<Owner> ownersImmutable = FXCollections.unmodifiableObservableList(owners);
     private final ObservableList<Group> groups = FXCollections.observableArrayList(Group.getAllGroupsGroup());
@@ -67,12 +63,12 @@ public class Server extends RepositoryEntity {
 
     /**
      * Initializes the server. This creates the orphaned folder and
-     * populates the children (projects) of the server.
+     * populates the children (projects and orphaned datasets) of the server.
      *
      * @param requestsHandler  the request handler of the browser
      */
     public void initialize(RequestsHandler requestsHandler) {
-        orphanedFolder = new OrphanedFolder(requestsHandler);
+        children.add(new OrphanedFolder(requestsHandler));
 
         populate(requestsHandler);
     }
@@ -152,32 +148,28 @@ public class Server extends RepositoryEntity {
     }
 
     private void populate(RequestsHandler requestsHandler) {
-        requestsHandler.getProjects().thenAccept(children -> {
-            this.children.addAll(children);
-            this.children.add(orphanedFolder);
+        requestsHandler.getProjects().thenCompose(projects -> {
+            addChildren(projects);
 
-            numberOfChildren = children.size() + 1;
-
-            groups.addAll(children.stream()
-                    .map(ServerEntity::getGroup)
-                    .filter(distinctByName(Group::getName))
-                    .filter(group -> !groups.contains(group))
-                    .toList());
-
-            owners.addAll(children.stream()
-                    .map(ServerEntity::getOwner)
-                    .filter(distinctByName(Owner::getName))
-                    .filter(owner -> !owners.contains(owner))
-                    .toList());
-        });
+            return requestsHandler.getOrphanedDatasets();
+        }).thenAccept(this::addChildren);
     }
 
-    /**
-     * Creates a predicate that filters an object by one of its property.
-     * See {@link "<a href="https://stackoverflow.com/questions/23699371/java-8-distinct-by-property">this link</a>."}
-     */
-    private static <T> Predicate<T> distinctByName(Function<? super T, ?> keyExtractor) {
-        Set<Object> seen = ConcurrentHashMap.newKeySet();
-        return t -> seen.add(keyExtractor.apply(t));
+    private void addChildren(List<ServerEntity> serverEntities) {
+        children.addAll(serverEntities);
+
+        numberOfChildren += serverEntities.size();
+
+        groups.addAll(serverEntities.stream()
+                .map(ServerEntity::getGroup)
+                .distinct()
+                .filter(group -> !groups.contains(group))
+                .toList());
+
+        owners.addAll(serverEntities.stream()
+                .map(ServerEntity::getOwner)
+                .distinct()
+                .filter(owner -> !owners.contains(owner))
+                .toList());
     }
 }

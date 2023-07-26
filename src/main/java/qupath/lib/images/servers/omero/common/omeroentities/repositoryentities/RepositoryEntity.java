@@ -5,8 +5,6 @@ import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.omeroentities.permissions.Group;
 import qupath.lib.images.servers.omero.common.omeroentities.permissions.Owner;
 
-import java.util.stream.Stream;
-
 /**
  * An element belonging to the OMERO entity hierarchy.
  */
@@ -47,11 +45,4 @@ public abstract class RepositoryEntity {
      * @return whether this entity matches all the filters
      */
     public abstract boolean isFilteredByGroupOwnerName(Group groupFilter, Owner ownerFilter, String nameFilter);
-
-    /**
-     * @return a stream containing this entity and all its descendants
-     */
-    public Stream<RepositoryEntity> getEntityAndDescendants() {
-        return children.stream().flatMap(repositoryEntity -> Stream.concat(Stream.of(repositoryEntity), repositoryEntity.getEntityAndDescendants()));
-    }
 }

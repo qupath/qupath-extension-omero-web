@@ -54,7 +54,7 @@ public class OmeroIceImageServerBuilder implements ImageServerBuilder<BufferedIm
 			return UriImageSupport.createInstance(this.getClass(), 0f, Collections.emptyList());
 		}
 
-		var id = RequestsUtilities.parseImageId(uri);
+		var id = RequestsUtilities.parseEntityId(uri);
 		float supportLevel = 0f;
 		if (id.isPresent()) {
 			supportLevel = RequestsUtilities.getServerURI(uri).isEmpty() ? 0f : 5f;

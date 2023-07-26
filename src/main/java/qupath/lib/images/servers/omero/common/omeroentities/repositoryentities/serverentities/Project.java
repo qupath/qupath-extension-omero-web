@@ -94,7 +94,7 @@ public class Project extends ServerEntity {
 
     private void populateChildren() {
         if (requestsHandler != null) {
-            requestsHandler.getDatasets(this).thenAccept(this.children::addAll);
+            requestsHandler.getDatasets(getId()).thenAccept(this.children::addAll);
         }
     }
 }

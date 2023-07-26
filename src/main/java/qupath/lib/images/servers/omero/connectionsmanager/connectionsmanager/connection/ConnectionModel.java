@@ -1,11 +1,10 @@
 package qupath.lib.images.servers.omero.connectionsmanager.connectionsmanager.connection;
 
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
-import javafx.collections.SetChangeListener;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
+import qupath.lib.images.servers.omero.common.gui.UiUtilities;
 
 import java.net.URI;
 
@@ -29,21 +28,10 @@ class ConnectionModel {
     private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
 
     public ConnectionModel(WebClient client) {
-        authenticated.set(client.getAuthenticated().get());
-        client.getAuthenticated().addListener((p, o, n) -> Platform.runLater(() -> authenticated.set(n)));
+        UiUtilities.listenToPropertyInUIThread(authenticated, client.getAuthenticated());
+        UiUtilities.listenToPropertyInUIThread(username, client.getUsername());
 
-        username.set(client.getUsername().get());
-        client.getUsername().addListener((p, o, n) -> Platform.runLater(() -> username.set(n)));
-
-        openedImagesURIs.addAll(client.getOpenedImagesURIs());
-        client.getOpenedImagesURIs().addListener((SetChangeListener<? super URI>) change -> Platform.runLater(() -> {
-            if (change.wasAdded()) {
-                openedImagesURIs.add(change.getElementAdded());
-            }
-            if (change.wasRemoved()) {
-                openedImagesURIs.remove(change.getElementRemoved());
-            }
-        }));
+        UiUtilities.listenToSetInUIThread(openedImagesURIs, client.getOpenedImagesURIs());
     }
 
     /**
