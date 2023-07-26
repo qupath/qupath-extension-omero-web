@@ -316,7 +316,7 @@ public class WebClient {
 
     private synchronized void setAuthenticationInformation(LoginResponse loginResponse) {
         server.setDefaultGroup(loginResponse.getGroup());
-        server.setDefaultOwnerId(loginResponse.getUserId());
+        server.setDefaultUserId(loginResponse.getUserId());
 
         sessionUUID = loginResponse.getSessionUUID();
         setUsername(loginResponse.getUsername());

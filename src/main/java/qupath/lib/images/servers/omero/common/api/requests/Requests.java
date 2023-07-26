@@ -140,8 +140,7 @@ public class Requests {
         return httpClient
                 .sendAsync(getGETRequest(uri), HttpResponse.BodyHandlers.ofByteArray())
                 .handle((response, error) -> {
-                    boolean requestFailed = hasRequestFailed(uri, response, error);
-                    if (requestFailed) {
+                    if (hasRequestFailed(uri, response, error)) {
                         return Optional.empty();
                     } else {
                         try (InputStream targetStream = new ByteArrayInputStream(response.body())) {
@@ -262,10 +261,9 @@ public class Requests {
                         request,
                         HttpResponse.BodyHandlers.ofString()
                 )
-                .handle((response, error) -> {
-                    boolean requestFailed = hasRequestFailed(request.uri(), response, error);
-                    return requestFailed ? Optional.empty() : Optional.ofNullable(response.body());
-                });
+                .handle((response, error) ->
+                        hasRequestFailed(request.uri(), response, error) ? Optional.empty() : Optional.ofNullable(response.body())
+                );
     }
 
     private static HttpRequest getGETRequest(URI uri) {

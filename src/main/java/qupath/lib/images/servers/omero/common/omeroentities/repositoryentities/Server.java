@@ -1,5 +1,8 @@
 package qupath.lib.images.servers.omero.common.omeroentities.repositoryentities;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.StringConverter;
@@ -21,8 +24,10 @@ public class Server extends RepositoryEntity {
     private static final ResourceBundle resources = UiUtilities.getResources();
     private final ObservableList<Owner> owners = FXCollections.observableArrayList(Owner.getAllMembersOwner());
     private final ObservableList<Owner> ownersImmutable = FXCollections.unmodifiableObservableList(owners);
+    private final ObjectProperty<Owner> defaultUser = new SimpleObjectProperty<>(owners.get(0));
     private final ObservableList<Group> groups = FXCollections.observableArrayList(Group.getAllGroupsGroup());
     private final ObservableList<Group> groupsImmutable = FXCollections.unmodifiableObservableList(groups);
+    private final ObjectProperty<Group> defaultGroup = new SimpleObjectProperty<>(groups.get(0));
     private final StringConverter<Owner> ownerStringConverter = new StringConverter<>() {
         @Override
         public String toString(Owner owner) {
@@ -38,8 +43,7 @@ public class Server extends RepositoryEntity {
         }
     };
     private int numberOfChildren = 1;       // the server has at least an orphaned folder as a child
-    private Group defaultGroup = null;
-    private int defaultUserId = -1;
+    private int defaultUserId;
 
     @Override
     public int getNumberOfChildren() {
@@ -67,6 +71,7 @@ public class Server extends RepositoryEntity {
      *
      * @param requestsHandler  the request handler of the browser
      */
+    //TODO: remove
     public void initialize(RequestsHandler requestsHandler) {
         children.add(new OrphanedFolder(requestsHandler));
 
@@ -79,8 +84,8 @@ public class Server extends RepositoryEntity {
      *
      * @param group  the new default group
      */
-    public void setDefaultGroup(Group group) {
-        defaultGroup = group;
+    public synchronized void setDefaultGroup(Group group) {
+        defaultGroup.set(group);
 
         if (!groups.contains(group)) {
             groups.add(group);
@@ -88,11 +93,13 @@ public class Server extends RepositoryEntity {
     }
 
     /**
-     * @return the default group of this server. This is usually the group
-     * of the connected user.
+     * <p>Get the default group of this server. This is usually the group of the connected user.</p>
+     * <p>This property may be updated from any thread.</p>
+     *
+     * @return the default group of this server
      */
-    public Group getDefaultGroup() {
-        return defaultGroup == null ? Group.getAllGroupsGroup() : defaultGroup;
+    public ReadOnlyObjectProperty<Group> getDefaultGroup() {
+        return defaultGroup;
     }
 
     /**
@@ -100,18 +107,19 @@ public class Server extends RepositoryEntity {
      *
      * @param userId  the ID of the default owner of this server
      */
-    public void setDefaultOwnerId(int userId) {
-        this.defaultUserId = userId;
+    public synchronized void setDefaultUserId(int userId) {
+        defaultUserId = userId;
+        updateDefaultUser();
     }
 
     /**
-     * @return the default user of this server. This is usually the connected user
+     * <p>Get the default user of this server. This is usually the connected user.</p>
+     * <p>This property may be updated from any thread.</p>
+     *
+     * @return the default user of this server
      */
-    public Owner getDefaultUser() {
-        return owners.stream()
-                .filter(owner -> owner.getId() == defaultUserId)
-                .findAny()
-                .orElse(Owner.getAllMembersOwner());
+    public ReadOnlyObjectProperty<Owner> getDefaultUser() {
+        return defaultUser;
     }
 
     /**
@@ -171,5 +179,13 @@ public class Server extends RepositoryEntity {
                 .distinct()
                 .filter(owner -> !owners.contains(owner))
                 .toList());
+        updateDefaultUser();
+    }
+
+    private synchronized void updateDefaultUser() {
+        owners.stream()
+                .filter(owner -> owner.getId() == defaultUserId)
+                .findAny()
+                .ifPresent(defaultUser::set);
     }
 }

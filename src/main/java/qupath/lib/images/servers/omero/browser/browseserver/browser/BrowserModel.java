@@ -26,13 +26,15 @@ import java.net.URI;
 public class BrowserModel {
     private final BooleanProperty authenticated = new SimpleBooleanProperty();
     private final StringProperty username = new SimpleStringProperty();
-    private final ObservableSet<URI> openedImagesURIs = FXCollections.observableSet();
-    private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
     private final IntegerProperty numberOfEntitiesLoading = new SimpleIntegerProperty();
     private final BooleanProperty areOrphanedImagesLoading = new SimpleBooleanProperty(false);
     private final IntegerProperty numberOfOrphanedImages = new SimpleIntegerProperty();
     private final IntegerProperty numberOfOrphanedImagesLoaded = new SimpleIntegerProperty(0);
     private final IntegerProperty numberOfThumbnailsLoading = new SimpleIntegerProperty(0);
+    private final ObjectProperty<Owner> defaultUser = new SimpleObjectProperty<>();
+    private final ObjectProperty<Group> defaultGroup = new SimpleObjectProperty<>();
+    private final ObservableSet<URI> openedImagesURIs = FXCollections.observableSet();
+    private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
     private final ObservableList<Owner> owners = FXCollections.observableArrayList();
     private final ObservableList<Owner> ownersImmutable = FXCollections.unmodifiableObservableList(owners);
     private final ObservableList<Group> groups = FXCollections.observableArrayList();
@@ -51,6 +53,8 @@ public class BrowserModel {
         UiUtilities.listenToPropertyInUIThread(numberOfOrphanedImages, client.getRequestsHandler().getNumberOfOrphanedImages());
         UiUtilities.listenToPropertyInUIThread(numberOfOrphanedImagesLoaded, client.getRequestsHandler().getNumberOfOrphanedImagesLoaded());
         UiUtilities.listenToPropertyInUIThread(numberOfThumbnailsLoading, client.getRequestsHandler().getNumberOfThumbnailsLoading());
+        UiUtilities.listenToPropertyInUIThread(defaultUser, client.getServer().getDefaultUser());
+        UiUtilities.listenToPropertyInUIThread(defaultGroup, client.getServer().getDefaultGroup());
 
         UiUtilities.listenToSetInUIThread(openedImagesURIs, client.getOpenedImagesURIs());
 
@@ -70,13 +74,6 @@ public class BrowserModel {
      */
     public ReadOnlyStringProperty getUsername() {
         return username;
-    }
-
-    /**
-     * See {@link WebClient#getOpenedImagesURIs()}.
-     */
-    public ObservableSet<URI> getOpenedImagesURIs() {
-        return openedImagesURIsImmutable;
     }
 
     /**
@@ -112,6 +109,27 @@ public class BrowserModel {
      */
     public ReadOnlyIntegerProperty getNumberOfThumbnailsLoading() {
         return numberOfThumbnailsLoading;
+    }
+
+    /**
+     * See {@link Server#getDefaultUser()}.
+     */
+    public ReadOnlyObjectProperty<Owner> getDefaultUser() {
+        return defaultUser;
+    }
+
+    /**
+     * See {@link Server#getDefaultGroup()}.
+     */
+    public ReadOnlyObjectProperty<Group> getDefaultGroup() {
+        return defaultGroup;
+    }
+
+    /**
+     * See {@link WebClient#getOpenedImagesURIs()}.
+     */
+    public ObservableSet<URI> getOpenedImagesURIs() {
+        return openedImagesURIsImmutable;
     }
 
     /**

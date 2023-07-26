@@ -219,10 +219,10 @@ public class Browser extends Stage {
 
         ownerFilter.setItems(browserModel.getOwners());
         ownerFilter.setConverter(client.getServer().getOwnerStringConverter());
-        ownerFilter.getSelectionModel().select(client.getServer().getDefaultUser());
+        ownerFilter.getSelectionModel().select(browserModel.getDefaultUser().get());
 
         groupFilter.setItems(browserModel.getGroups());
-        groupFilter.getSelectionModel().select(client.getServer().getDefaultGroup());
+        groupFilter.getSelectionModel().select(browserModel.getDefaultGroup().get());
 
         hierarchy.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         hierarchy.setRoot(new HierarchyItem(
@@ -291,11 +291,17 @@ public class Browser extends Stage {
         loadingThumbnail.visibleProperty().bind(Bindings.notEqual(browserModel.getNumberOfThumbnailsLoading(), 0));
 
         ownerFilter.getItems().addListener((ListChangeListener<? super Owner>) change ->
-                ownerFilter.getSelectionModel().selectFirst()
+                ownerFilter.getSelectionModel().select(browserModel.getDefaultUser().get())
+        );
+        browserModel.getDefaultUser().addListener((p, o, n) ->
+                ownerFilter.getSelectionModel().select(n)
         );
 
         groupFilter.getItems().addListener((ListChangeListener<? super Group>) change ->
-                groupFilter.getSelectionModel().selectFirst()
+                groupFilter.getSelectionModel().select(browserModel.getDefaultGroup().get())
+        );
+        browserModel.getDefaultGroup().addListener((p, o, n) ->
+                groupFilter.getSelectionModel().select(n)
         );
 
         hierarchy.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
