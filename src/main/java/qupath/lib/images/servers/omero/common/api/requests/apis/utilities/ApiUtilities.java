@@ -1,4 +1,4 @@
-package qupath.lib.images.servers.omero.common.api.requests.apis;
+package qupath.lib.images.servers.omero.common.api.requests.apis.utilities;
 
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Utility methods used by the different APIs.
  */
-class ApiUtilities {
+public class ApiUtilities {
     private ApiUtilities() {
         throw new RuntimeException("This class is not instantiable.");
     }
@@ -35,9 +35,32 @@ class ApiUtilities {
     /**
      * <p>Concatenate and convert two char arrays to a byte array using the UTF 8 encoding.</p>
      * <p>The input parameters are cleared (filled with zeros) once processed.</p>
+     *
+     * @param arr1  the array that will be concatenated on the left
+     * @param arr2  the array that will be concatenated on the right
+     * @return the concatenation of the two arrays in the byte format
      */
     public static byte[] concatAndConvertToBytes(char[] arr1, char[] arr2) {
         return toBytes(concatChars(arr1, arr2));
+    }
+
+    /**
+     * <p>
+     *     Converts a char array to the application/x-www-form-urlencoded MIME format
+     *     (see the <a href="http://www.w3.org/TR/html4/">HTML specifications</a>).
+     * </p>
+     * <p>The input array is cleared (filled with zeros) once processed.</p>
+     *
+     * @param text  the array to convert
+     * @return the encoded char array
+     */
+    public static char[] urlEncode(char[] text) {
+        char[] encodedText = CharArrayURLEncoder.encode(text, StandardCharsets.UTF_8);
+
+        // Clear sensitive data
+        Arrays.fill(text, (char) 0);
+
+        return encodedText;
     }
 
     private static byte[] toBytes(char[] chars) {

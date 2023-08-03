@@ -9,6 +9,7 @@ import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
 import qupath.lib.images.servers.omero.common.api.requests.entities.login.LoginResponse;
+import qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServer;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.OrphanedFolder;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.Server;
@@ -47,12 +48,13 @@ public class WebClient {
     private final BooleanProperty authenticated = new SimpleBooleanProperty(false);
     private final ObservableSet<URI> openedImagesURIs = FXCollections.observableSet();
     private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
-    private final Map<Integer, BufferedImage> thumbnails = new ConcurrentHashMap<>();
+    private final Map<Long, BufferedImage> thumbnails = new ConcurrentHashMap<>();
     private final Map<Class<? extends RepositoryEntity>, BufferedImage> omeroIcons = new ConcurrentHashMap<>();
     private final Server server = new Server();
     private RequestsHandler requestsHandler;
     private Timer timeoutTimer;
     private String sessionUUID;
+    private char[] password;
 
     /**
      * <p>
@@ -151,11 +153,27 @@ public class WebClient {
         openedImagesURIs.add(imageURI);
     }
 
+    //TODO: remove
     /**
      * @return the session UUID of this connection
      */
     public String getSessionUUID() {
         return sessionUUID;
+    }
+
+    /**
+     * @return the password of the authenticated user, or an empty Optional if
+     * there is no authentication
+     */
+    public Optional<char[]> getPassword() {
+        return Optional.ofNullable(password);
+    }
+
+    /**
+     * @return the server port of this session
+     */
+    public int getPort() {
+        return requestsHandler.getPort();
     }
 
     /**
@@ -195,6 +213,7 @@ public class WebClient {
     void logout() {
         if (authenticated.get()) {
             requestsHandler.logout();
+            OmeroImageServer.closeImageServersOfClient(this);
 
             setAuthenticated(false);
             setUsername("");
@@ -209,7 +228,7 @@ public class WebClient {
      * @param id  the id of the image whose thumbnail is to be retrieved
      * @return a CompletableFuture with the thumbnail if the operation succeeded, or an empty Optional otherwise
      */
-    public CompletableFuture<Optional<BufferedImage>> getThumbnail(int id) {
+    public CompletableFuture<Optional<BufferedImage>> getThumbnail(long id) {
         if (thumbnails.containsKey(id)) {
             return CompletableFuture.completedFuture(Optional.of(thumbnails.get(id)));
         } else {
@@ -320,6 +339,7 @@ public class WebClient {
 
         sessionUUID = loginResponse.getSessionUUID();
         setUsername(loginResponse.getUsername());
+        password = loginResponse.getPassword();
     }
 
     private synchronized void startTimer() {

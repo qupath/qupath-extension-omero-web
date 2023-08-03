@@ -3,6 +3,7 @@ package qupath.lib.images.servers.omero.common.api.requests.apis;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qupath.lib.images.servers.omero.common.api.requests.apis.utilities.ApiUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchQuery;
 import qupath.lib.images.servers.omero.common.api.requests.entities.search.SearchResult;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;

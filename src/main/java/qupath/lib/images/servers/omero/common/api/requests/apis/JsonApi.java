@@ -12,6 +12,7 @@ import qupath.lib.images.servers.omero.common.api.authenticators.Authenticator;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsHandler;
+import qupath.lib.images.servers.omero.common.api.requests.apis.utilities.ApiUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.entities.login.LoginResponse;
 import qupath.lib.images.servers.omero.common.api.requests.entities.serverinformation.OmeroAPI;
 import qupath.lib.images.servers.omero.common.api.requests.entities.serverinformation.OmeroServerList;
@@ -54,6 +55,7 @@ public class JsonApi {
     private final RequestsHandler requestsHandler;
     private Map<String, String> urls;
     private int serverID;
+    private int port;
     private String token;
 
     private JsonApi(RequestsHandler requestsHandler, URI host) {
@@ -69,7 +71,7 @@ public class JsonApi {
      * @param host  the base server URI (e.g. <a href="https://idr.openmicroscopy.org">https://idr.openmicroscopy.org</a>)
      * @return a CompletableFuture with the JSON API client, an empty Optional if an error occurred
      */
-    public static CompletableFuture<Optional<JsonApi>> createJsonApi(RequestsHandler requestsHandler, URI host) {
+    public static CompletableFuture<Optional<JsonApi>> create(RequestsHandler requestsHandler, URI host) {
         JsonApi jsonApi = new JsonApi(requestsHandler, host);
 
         return jsonApi.initialize().thenApply(initialized -> {
@@ -86,6 +88,13 @@ public class JsonApi {
      */
     public String getToken() {
         return token;
+    }
+
+    /**
+     * @return the server port of this session
+     */
+    public int getPort() {
+        return port;
     }
 
     /**
@@ -146,9 +155,12 @@ public class JsonApi {
         if (uri.isEmpty() || authentication == null) {
             return CompletableFuture.completedFuture(LoginResponse.createFailedLoginResponse());
         } else {
+            char[] password = Arrays.copyOf(authentication.getPassword(), authentication.getPassword().length);
+            char[] encodedPassword = ApiUtilities.urlEncode(authentication.getPassword());
+
             byte[] body = ApiUtilities.concatAndConvertToBytes(
                     String.join("&", "server=" + serverID, "username=" + authentication.getUserName(), "password=").toCharArray(),
-                    authentication.getPassword()
+                    encodedPassword
             );
 
             return Requests.post(
@@ -159,7 +171,12 @@ public class JsonApi {
             ).thenApply(response -> {
                 Arrays.fill(body, (byte) 0);
 
-                return response.map(LoginResponse::createLoginResponse).orElseGet(LoginResponse::createFailedLoginResponse);
+                if (response.isPresent()) {
+                    return LoginResponse.createLoginResponse(response.get(), password);
+                } else {
+                    Arrays.fill(password, (char) 0);
+                    return LoginResponse.createFailedLoginResponse();
+                }
             });
         }
     }
@@ -191,7 +208,7 @@ public class JsonApi {
      * @param projectID  the project ID whose datasets should be retrieved
      * @return a CompletableFuture with the list containing all datasets of the project
      */
-    public CompletableFuture<List<ServerEntity>> getDatasets(int projectID) {
+    public CompletableFuture<List<ServerEntity>> getDatasets(long projectID) {
         return getChildren(String.format(DATASETS_URL, urls.get(PROJECTS_URL_KEY), projectID));
     }
 
@@ -202,7 +219,7 @@ public class JsonApi {
      * @param datasetID  the dataset ID whose images should be retrieved
      * @return a CompletableFuture with the list containing all images of the dataset
      */
-    public CompletableFuture<List<ServerEntity>> getImages(int datasetID) {
+    public CompletableFuture<List<ServerEntity>> getImages(long datasetID) {
         return getChildren(String.format(IMAGES_URL, urls.get(DATASETS_URL_KEY), datasetID));
     }
 
@@ -334,7 +351,7 @@ public class JsonApi {
                             logger.error("Could not find API URL in " + uri.get());
                             return false;
                         } else {
-                            if (setServerID(urls).join() && setToken(urls).join()) {
+                            if (setServerIDAndPort(urls).join() && setToken(urls).join()) {
                                 this.urls = urls;
 
                                 return true;
@@ -360,7 +377,7 @@ public class JsonApi {
         this.numberOfOrphanedImages.set(numberOfOrphanedImages);
     }
 
-    private CompletableFuture<Boolean> setServerID(Map<String, String> urls) {
+    private CompletableFuture<Boolean> setServerIDAndPort(Map<String, String> urls) {
         String url = SERVERS_URL_KEY;
 
         if (urls.containsKey(url)) {
@@ -371,8 +388,9 @@ public class JsonApi {
                         uri.get(),
                         OmeroServerList.class
                 ).thenApply(serverList -> {
-                    if (serverList.isPresent() && serverList.get().getServerId().isPresent()) {
+                    if (serverList.isPresent() && serverList.get().getServerId().isPresent() && serverList.get().getServerPort().isPresent()) {
                         serverID = serverList.get().getServerId().get();
+                        port = serverList.get().getServerPort().get();
                         return true;
                     } else {
                         logger.error("Couldn't get id. The server response doesn't contain the required information.");

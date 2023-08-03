@@ -21,7 +21,7 @@ import java.util.stream.Stream;
  */
 public abstract class ServerEntity extends RepositoryEntity {
     private final static Logger logger = LoggerFactory.getLogger(ServerEntity.class);
-    @SerializedName(value = "@id") protected int id;
+    @SerializedName(value = "@id") protected long id;
     @SerializedName(value = "Name") protected String name;
     private Owner owner = Owner.getAllMembersOwner();
     private Group group = Group.getAllGroupsGroup();
@@ -101,7 +101,7 @@ public abstract class ServerEntity extends RepositoryEntity {
     /**
      * @return the OMERO ID associated with this entity
      */
-    public int getId() {
+    public long getId() {
         return id;
     }
 

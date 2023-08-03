@@ -15,6 +15,7 @@ import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.images.servers.omero.common.api.clients.WebClient;
 import qupath.lib.images.servers.omero.browser.browseserver.browser.hierarchy.HierarchyCellFactory;
+import qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServer;
 import qupath.lib.images.servers.omero.common.omeroentities.permissions.Group;
 import qupath.lib.images.servers.omero.common.omeroentities.permissions.Owner;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
@@ -55,8 +56,9 @@ import java.util.stream.IntStream;
  * </p>
  */
 public class Browser extends Stage {
-    private final ResourceBundle resources;
     private static final float DESCRIPTION_ATTRIBUTE_PROPORTION = 0.25f;
+    private static final String RAW_PIXEL_ACCESS_HELP_LINK = "https://github.com/qupath/qupath-extension-omero";
+    private final ResourceBundle resources;
     private final WebClient client;
     private final BrowserModel browserModel;
     @FXML
@@ -65,6 +67,8 @@ public class Browser extends Stage {
     private Label username;
     @FXML
     private Label numberOpenImages;
+    @FXML
+    private Label rawPixelAccess;
     @FXML
     private Label loadingObjects;
     @FXML
@@ -216,6 +220,16 @@ public class Browser extends Stage {
 
     private void initUI() {
         serverHost.setText(client.getServerURI().getHost());
+
+        if (OmeroImageServer.canReadAllImages()) {
+            rawPixelAccess.setText(resources.getString("Browser.Browser.accessRawPixels"));
+            rawPixelAccess.setGraphic(UiUtilities.createStateNode(true));
+        } else {
+            rawPixelAccess.setText(resources.getString("Browser.Browser.noAccessRawPixels"));
+            rawPixelAccess.setGraphic(UiUtilities.createStateNode(false));
+            rawPixelAccess.setTooltip(new Tooltip(resources.getString("Browser.Browser.moreInformation")));
+            rawPixelAccess.setOnMouseClicked(event -> QuPathGUI.launchBrowserWindow(RAW_PIXEL_ACCESS_HELP_LINK));
+        }
 
         ownerFilter.setItems(browserModel.getOwners());
         ownerFilter.setConverter(client.getServer().getOwnerStringConverter());

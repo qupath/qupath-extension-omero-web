@@ -22,12 +22,29 @@ public class OmeroServerList {
             return Optional.of(serverInfos.get(0).getId());
         }
     }
+
+    /**
+     * @return the port of the first server we can connect to,
+     * or an empty Optional if it was not found
+     */
+    public Optional<Integer> getServerPort() {
+        if (serverInfos == null || serverInfos.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(serverInfos.get(0).getPort());
+        }
+    }
 }
 
 class OmeroServerInfo {
     @SerializedName("id") private int id;
+    @SerializedName("port") private int port;
 
     public int getId() {
         return id;
+    }
+
+    public int getPort() {
+        return port;
     }
 }

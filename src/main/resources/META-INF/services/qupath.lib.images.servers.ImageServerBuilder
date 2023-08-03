@@ -1,2 +1,1 @@
-qupath.lib.images.servers.omero.common.imagesservers.ice.OmeroIceImageServerBuilder
-qupath.lib.images.servers.omero.common.imagesservers.web.WebImageServerBuilder
+qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServerBuilder

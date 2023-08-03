@@ -3,6 +3,7 @@ package qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.
 import com.google.gson.annotations.SerializedName;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.common.gui.UiUtilities;
+import qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServer;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.RepositoryEntity;
 import qupath.lib.images.servers.omero.common.omeroentities.repositoryentities.serverentities.ServerEntity;
 
@@ -105,7 +106,7 @@ public class Image extends ServerEntity {
      * @return whether this image can be opened within QuPath
      */
     public boolean isSupported() {
-        return isUint8() && has3Channels();
+        return OmeroImageServer.canReadAllImages() || (isUint8() && has3Channels());
     }
 
     /**

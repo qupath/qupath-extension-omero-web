@@ -12,8 +12,8 @@ import java.util.concurrent.CompletableFuture;
  * Utility classes that monitors all active connections to servers.
  */
 public class WebClients {
-    final private static ObservableList<WebClient> clients = FXCollections.observableArrayList();
-    final private static ObservableList<WebClient> clientsImmutable = FXCollections.unmodifiableObservableList(clients);
+    private final static ObservableList<WebClient> clients = FXCollections.observableArrayList();
+    private final static ObservableList<WebClient> clientsImmutable = FXCollections.unmodifiableObservableList(clients);
 
     private WebClients() {
         throw new AssertionError("This class is not instantiable.");

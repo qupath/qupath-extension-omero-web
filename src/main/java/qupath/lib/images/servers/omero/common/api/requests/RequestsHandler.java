@@ -53,7 +53,7 @@ public class RequestsHandler {
     public static CompletableFuture<Optional<RequestsHandler>> create(URI host) {
         RequestsHandler requestsHandler = new RequestsHandler(host);
 
-        return JsonApi.createJsonApi(requestsHandler, host).thenApply(jsonApi -> {
+        return JsonApi.create(requestsHandler, host).thenApply(jsonApi -> {
             if (jsonApi.isPresent()) {
                 requestsHandler.jsonApi = jsonApi.get();
                 return Optional.of(requestsHandler);
@@ -71,13 +71,20 @@ public class RequestsHandler {
     }
 
     /**
+     * @return the server port of this session
+     */
+    public int getPort() {
+        return jsonApi.getPort();
+    }
+
+    /**
      * <p>Returns a list of image URIs contained in the dataset identified by the provided ID.</p>
      * <p>This function is asynchronous.</p>
      *
      * @param datasetID  the ID of the dataset the returned images must belong to
      * @return a list of URIs of images contained in the dataset
      */
-    public CompletableFuture<List<URI>> getImagesURIOfDataset(int datasetID) {
+    public CompletableFuture<List<URI>> getImagesURIOfDataset(long datasetID) {
         return getImages(datasetID).thenApply(images -> images.stream()
                 .map(this::getItemURI)
                 .map(RequestsUtilities::createURI)
@@ -93,7 +100,7 @@ public class RequestsHandler {
      * @param projectID  the ID of the project the returned images must belong to
      * @return a list of URIs of images contained in the project
      */
-    public CompletableFuture<List<URI>> getImagesURIOfProject(int projectID) {
+    public CompletableFuture<List<URI>> getImagesURIOfProject(long projectID) {
         return getDatasets(projectID).thenApplyAsync(datasets -> datasets.stream()
                 .map(dataset -> getImagesURIOfDataset(dataset.getId()))
                 .map(CompletableFuture::join)
@@ -193,16 +200,16 @@ public class RequestsHandler {
     }
 
     /**
-     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi#getDatasets(int)}.
+     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi#getDatasets(long)}.
      */
-    public CompletableFuture<List<ServerEntity>> getDatasets(int projectID) {
+    public CompletableFuture<List<ServerEntity>> getDatasets(long projectID) {
         return jsonApi.getDatasets(projectID);
     }
 
     /**
-     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi#getImages(int)}.
+     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.JsonApi#getImages(long)}.
      */
-    public CompletableFuture<List<ServerEntity>> getImages(int datasetID) {
+    public CompletableFuture<List<ServerEntity>> getImages(long datasetID) {
         return jsonApi.getImages(datasetID);
     }
 
@@ -256,9 +263,9 @@ public class RequestsHandler {
     }
 
     /**
-     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.WebGatewayApi#getThumbnail(int, int)}.
+     * See {@link qupath.lib.images.servers.omero.common.api.requests.apis.WebGatewayApi#getThumbnail(long, int)}.
      */
-    public CompletableFuture<Optional<BufferedImage>> getThumbnail(int id, int size) {
+    public CompletableFuture<Optional<BufferedImage>> getThumbnail(long id, int size) {
         return webGatewayApi.getThumbnail(id, size);
     }
 

@@ -1,13 +1,11 @@
 /**
  * <p>
- *     This package contains all {@link qupath.lib.images.servers.ImageServer image servers} and
- *     {@link qupath.lib.images.servers.ImageServerBuilder image builders} of this extension.
+ *     This package contains the {@link qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServer image server} and the
+ *     {@link qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServerBuilder image builder} of this extension.
  * </p>
  * <p>
- *     Each image server of this extension implements the
- *     {@link qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServer OmeroImageServer} interface,
- *     and each image server builder implements the
- *     {@link qupath.lib.images.servers.omero.common.imagesservers.OmeroImageServerBuilder OmeroImageServerBuilder} interface.
+ *     The {@link qupath.lib.images.servers.omero.common.imagesservers.pixelsapis pixelsapis} package
+ *     contains different ways of reading pixel values of an image.
  * </p>
  */
 package qupath.lib.images.servers.omero.common.imagesservers;

@@ -8,6 +8,7 @@ import qupath.lib.awt.common.BufferedImageTools;
 import qupath.lib.images.servers.TileRequest;
 import qupath.lib.images.servers.omero.common.api.requests.RequestsUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.Requests;
+import qupath.lib.images.servers.omero.common.api.requests.apis.utilities.ApiUtilities;
 import qupath.lib.images.servers.omero.common.api.requests.entities.imagemetadata.ImageMetadataResponse;
 
 import java.awt.image.BufferedImage;
@@ -102,7 +103,7 @@ public class WebGatewayApi {
      * @param size  the width and height the thumbnail should have
      * @return a CompletableFuture with the thumbnail, or an empty Optional if an error occurred
      */
-    public CompletableFuture<Optional<BufferedImage>> getThumbnail(int id, int size) {
+    public CompletableFuture<Optional<BufferedImage>> getThumbnail(long id, int size) {
         changeNumberOfThumbnailsLoading(true);
 
         return ApiUtilities.getImage(String.format(THUMBNAIL_URL, host, id, size)).thenApply(thumbnail -> {

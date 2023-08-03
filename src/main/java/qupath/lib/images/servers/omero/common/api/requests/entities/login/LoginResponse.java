@@ -23,17 +23,19 @@ public class LoginResponse {
     private int userId;
     private String sessionUUID;
     private String username;
+    private char[] password;
 
     private LoginResponse(boolean success) {
         this.success = success;
     }
 
-    private LoginResponse(Group group, int userId, String sessionUUID, String username) {
+    private LoginResponse(Group group, int userId, String sessionUUID, String username, char[] password) {
         this(true);
         this.group = group;
         this.userId = userId;
         this.sessionUUID = sessionUUID;
         this.username = username;
+        this.password = password;
     }
 
     /**
@@ -50,7 +52,7 @@ public class LoginResponse {
      * @return a successful LoginResponse if all necessary information was correctly
      * parsed, or a response with a failed status
      */
-    public static LoginResponse createLoginResponse(String serverResponse) {
+    public static LoginResponse createLoginResponse(String serverResponse, char[] password) {
         try {
             JsonElement element = JsonParser.parseString(serverResponse);
 
@@ -58,7 +60,8 @@ public class LoginResponse {
                     GsonTools.getInstance().fromJson(element.getAsJsonObject().get("eventContext"), Group.class),
                     element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userId").getAsInt(),
                     element.getAsJsonObject().get("eventContext").getAsJsonObject().get("sessionUuid").getAsString(),
-                    element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userName").getAsString()
+                    element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userName").getAsString(),
+                    password
             );
         } catch (Exception e) {
             logger.error("Error when reading login response", e);
@@ -103,5 +106,13 @@ public class LoginResponse {
      */
     public String getUsername() {
         return username;
+    }
+
+    /**
+     * @return the password of the authenticated user, or null if the login
+     * attempt failed
+     */
+    public char[] getPassword() {
+        return password;
     }
 }
