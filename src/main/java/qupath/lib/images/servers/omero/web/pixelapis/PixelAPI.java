@@ -2,7 +2,6 @@ package qupath.lib.images.servers.omero.web.pixelapis;
 
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.PixelType;
-import qupath.lib.images.servers.omero.web.WebClient;
 
 import java.io.IOException;
 

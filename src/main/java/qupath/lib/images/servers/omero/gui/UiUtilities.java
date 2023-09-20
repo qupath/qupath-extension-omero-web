@@ -30,7 +30,6 @@ import qupath.lib.images.servers.omero.imagesserver.OmeroImageServerBuilder;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.ResourceBundle;
 
 /**

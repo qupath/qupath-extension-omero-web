@@ -3,8 +3,6 @@ package qupath.lib.images.servers.omero.web.apis;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.omero.web.WebUtilities;
 import qupath.lib.images.servers.omero.web.RequestSender;
 import qupath.lib.images.servers.omero.web.entities.shapes.Shape;

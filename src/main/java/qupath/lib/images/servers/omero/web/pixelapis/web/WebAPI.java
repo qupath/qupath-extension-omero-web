@@ -2,7 +2,6 @@ package qupath.lib.images.servers.omero.web.pixelapis.web;
 
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.WebClients;
 import qupath.lib.images.servers.omero.web.pixelapis.PixelAPI;
 import qupath.lib.images.servers.omero.web.pixelapis.PixelAPIReader;
 

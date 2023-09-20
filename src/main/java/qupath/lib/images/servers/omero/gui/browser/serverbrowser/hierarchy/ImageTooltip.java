@@ -47,9 +47,7 @@ class ImageTooltip extends VBox {
         name.setText(image.getName());
 
         setErrorLine(image);
-        image.isSupported().addListener(change -> {
-            setErrorLine(image);
-        });
+        image.isSupported().addListener(change -> setErrorLine(image));
 
         client.getThumbnail(image.getId()).thenAccept(thumbnail -> Platform.runLater(() ->
                 thumbnail.ifPresent(bufferedImage -> UiUtilities.paintBufferedImageOnCanvas(bufferedImage, canvas)))

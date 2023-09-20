@@ -33,13 +33,13 @@ import java.util.concurrent.ExecutionException;
 class IceReader implements PixelAPIReader {
 
     private final Gateway gateway;
+    private final RawPixelsStorePrx reader;
+    private final int numberOfResolutionLevels;
+    private final int nChannels;
+    private final int effectiveNChannels;
+    private final PixelType pixelType;
+    private final ColorModel colorModel;
     private SecurityContext context;
-    private RawPixelsStorePrx reader;
-    private int numberOfResolutionLevels;
-    private int nChannels;
-    private int effectiveNChannels;
-    private PixelType pixelType;
-    private ColorModel colorModel;
 
 
     /**
@@ -62,8 +62,30 @@ class IceReader implements PixelAPIReader {
 
             context = new SecurityContext(user.getGroupId());
 
-            setImage(imageID, channels);
+            var imageData = getImage(imageID);
+            if (imageData.isPresent()) {
+                PixelsData pixelsData = imageData.get().getDefaultPixels();
 
+                reader = gateway.getPixelsStore(context);
+                reader.setPixelsId(pixelsData.getId(), false);
+                numberOfResolutionLevels = reader.getResolutionLevels();
+                nChannels = channels.size();
+                effectiveNChannels = pixelsData.getSizeC();
+                pixelType = switch (pixelsData.getPixelType()) {
+                    case PixelsData.INT8_TYPE -> PixelType.INT8;
+                    case PixelsData.UINT8_TYPE -> PixelType.UINT8;
+                    case PixelsData.INT16_TYPE -> PixelType.INT16;
+                    case PixelsData.UINT16_TYPE -> PixelType.UINT16;
+                    case PixelsData.UINT32_TYPE -> PixelType.UINT32;
+                    case PixelsData.INT32_TYPE -> PixelType.INT32;
+                    case PixelsData.FLOAT_TYPE -> PixelType.FLOAT32;
+                    case PixelsData.DOUBLE_TYPE -> PixelType.FLOAT64;
+                    default -> throw new IllegalArgumentException("Unsupported pixel type " + pixelsData.getPixelType());
+                };
+                colorModel = ColorModelFactory.createColorModel(pixelType, channels);
+            } else {
+                throw new IOException("Couldn't find requested image of ID " + imageID);
+            }
         } catch (DSOutOfServiceException | ExecutionException | ServerError e) {
             throw new IOException(e);
         }
@@ -121,33 +143,6 @@ class IceReader implements PixelAPIReader {
     @Override
     public String toString() {
         return String.format("Ice reader for %s", context.getServerInformation());
-    }
-
-    private void setImage(long imageID, List<ImageChannel> channels) throws IOException, ServerError, DSOutOfServiceException, ExecutionException {
-        var imageData = getImage(imageID);
-        if (imageData.isPresent()) {
-            PixelsData pixelsData = imageData.get().getDefaultPixels();
-
-            reader = gateway.getPixelsStore(context);
-            reader.setPixelsId(pixelsData.getId(), false);
-            numberOfResolutionLevels = reader.getResolutionLevels();
-            nChannels = channels.size();
-            effectiveNChannels = pixelsData.getSizeC();
-            pixelType = switch (pixelsData.getPixelType()) {
-                case PixelsData.INT8_TYPE -> PixelType.INT8;
-                case PixelsData.UINT8_TYPE -> PixelType.UINT8;
-                case PixelsData.INT16_TYPE -> PixelType.INT16;
-                case PixelsData.UINT16_TYPE -> PixelType.UINT16;
-                case PixelsData.UINT32_TYPE -> PixelType.UINT32;
-                case PixelsData.INT32_TYPE -> PixelType.INT32;
-                case PixelsData.FLOAT_TYPE -> PixelType.FLOAT32;
-                case PixelsData.DOUBLE_TYPE -> PixelType.FLOAT64;
-                default -> throw new IllegalArgumentException("Unsupported pixel type " + pixelsData.getPixelType());
-            };
-            colorModel = ColorModelFactory.createColorModel(pixelType, channels);
-        } else {
-            throw new IOException("Couldn't find requested image of ID " + imageID);
-        }
     }
 
     private Optional<ImageData> getImage(long imageID) throws ExecutionException, DSOutOfServiceException, ServerError {
