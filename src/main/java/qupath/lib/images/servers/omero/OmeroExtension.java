@@ -25,15 +25,15 @@ import javafx.scene.control.SeparatorMenuItem;
 import org.controlsfx.control.action.Action;
 
 import qupath.lib.common.Version;
-import qupath.lib.gui.ActionTools;
+import qupath.lib.gui.actions.ActionTools;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
 import qupath.lib.gui.tools.MenuTools;
-import qupath.lib.images.servers.omero.annotationsender.AnnotationSender;
-import qupath.lib.images.servers.omero.common.gui.UiUtilities;
-import qupath.lib.images.servers.omero.connectionsmanager.ConnectionsManagerCommand;
-import qupath.lib.images.servers.omero.browser.BrowseMenu;
+import qupath.lib.images.servers.omero.gui.annotationsender.AnnotationSender;
+import qupath.lib.images.servers.omero.gui.UiUtilities;
+import qupath.lib.images.servers.omero.gui.connectionsmanager.ConnectionsManagerCommand;
+import qupath.lib.images.servers.omero.gui.browser.BrowseMenu;
 
 import java.util.ResourceBundle;
 
@@ -41,22 +41,24 @@ import java.util.ResourceBundle;
  * <p>Install the OMERO extension.</p>
  * It adds 3 menus to the Extensions menu:
  * <ul>
- *     <li>A browse menu, described in {@link qupath.lib.images.servers.omero.browser browser}.</li>
- *     <li>A connection manager action, described in {@link qupath.lib.images.servers.omero.connectionsmanager connection manager}.</li>
- *     <li>An annotation sender action, described in {@link qupath.lib.images.servers.omero.annotationsender annotation sender}.</li>
+ *     <li>A browse menu, described in {@link qupath.lib.images.servers.omero.gui.browser browser}.</li>
+ *     <li>A connection manager action, described in {@link qupath.lib.images.servers.omero.gui.connectionsmanager connection manager}.</li>
+ *     <li>An annotation sender action, described in {@link qupath.lib.images.servers.omero.gui.annotationsender annotation sender}.</li>
  * </ul>
  */
 public class OmeroExtension implements QuPathExtension, GitHubProject {
-	private final static ResourceBundle resources = UiUtilities.getResources();
-	private final static Version EXTENSION_QUPATH_VERSION = Version.parse("v0.4.0");
+
+	private static final ResourceBundle resources = UiUtilities.getResources();
+	private static final Version EXTENSION_QUPATH_VERSION = Version.parse("v0.4.0");
 	private static boolean alreadyInstalled = false;
+	private static BrowseMenu browseMenu;
 
 	@Override
 	public void installExtension(QuPathGUI qupath) {
 		if (!alreadyInstalled) {
 			alreadyInstalled = true;
 
-			BrowseMenu browseMenu = new BrowseMenu();
+			browseMenu = new BrowseMenu();
 			Action connectionManager = ActionTools.createAction(new ConnectionsManagerCommand(qupath.getStage()), ConnectionsManagerCommand.getMenuTitle());
 			Action actionSendAnnotations = ActionTools.createAction(AnnotationSender::sendAnnotations, AnnotationSender.getMenuTitle());
 			actionSendAnnotations.disabledProperty().bind(qupath.imageDataProperty().isNull());
@@ -90,5 +92,9 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 	@Override
 	public GitHubRepo getRepository() {
 		return GitHubRepo.create(getName(), "qupath", "qupath-extension-omero");
+	}
+
+	public static BrowseMenu getBrowseMenu() {
+		return browseMenu;
 	}
 }

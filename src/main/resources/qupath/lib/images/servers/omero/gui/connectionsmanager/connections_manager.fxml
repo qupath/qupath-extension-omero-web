@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.Scene?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.stage.Stage?>
+
+<fx:root title="%ConnectionsManager.ConnectionManager.webClients" type="Stage" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
+    <scene>
+        <Scene stylesheets="@../../styles.css">
+            <ScrollPane>
+                <content>
+                    <VBox fx:id="container" alignment="CENTER" spacing="10.0">
+                        <children>
+                            <Label text="%ConnectionsManager.ConnectionManager.noClients" />
+                        </children>
+                    </VBox>
+                </content>
+            </ScrollPane>
+        </Scene>
+    </scene>
+</fx:root>

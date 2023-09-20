@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<fx:root maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" stylesheets="@../../../../styles.css" type="VBox" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <HBox>
+         <children>
+            <Canvas fx:id="canvas" height="100.0" width="100.0" />
+            <Label fx:id="name" />
+         </children>
+      </HBox>
+      <HBox fx:id="errorLine">
+         <children>
+            <Label styleClass="invalid-image" text="Image not supported:" />
+            <Label fx:id="uint8" />
+            <Label fx:id="has3Channels" />
+         </children>
+      </HBox>
+   </children>
+</fx:root>

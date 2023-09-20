@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Scene?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.stage.Stage?>
+
+<fx:root title="%Browser.Browser.omeroWebServer" type="Stage" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
+    <scene>
+        <Scene stylesheets="@../../../styles.css">
+            <BorderPane prefHeight="600.0" prefWidth="800.0">
+            <top>
+               <HBox alignment="CENTER" BorderPane.alignment="CENTER">
+                  <children>
+                     <GridPane hgap="10.0">
+                       <columnConstraints>
+                         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+                         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+                       </columnConstraints>
+                       <rowConstraints>
+                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                           <RowConstraints />
+                       </rowConstraints>
+                        <children>
+                           <Label text="%Browser.Browser.server" />
+                           <Label fx:id="serverHost" GridPane.columnIndex="1">
+                              <font>
+                                 <Font name="System Bold" size="13.0" />
+                              </font>
+                           </Label>
+                           <Label text="%Browser.Browser.username" GridPane.rowIndex="1" />
+                           <Label fx:id="username" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                              <font>
+                                 <Font name="System Bold" size="13.0" />
+                              </font>
+                           </Label>
+                           <Label text="%Browser.Browser.openedImages" GridPane.rowIndex="2" />
+                           <Label fx:id="numberOpenImages" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                              <font>
+                                 <Font name="System Bold" size="13.0" />
+                              </font>
+                           </Label>
+                            <Label layoutX="10.0" layoutY="16.0" text="%Browser.Browser.pixelAPI" GridPane.rowIndex="3" />
+                           <ComboBox fx:id="pixelAPI" maxWidth="1.7976931348623157E308" GridPane.rowIndex="4" />
+                            <Label fx:id="rawPixelAccess" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                        </children>
+                     </GridPane>
+                     <Region HBox.hgrow="ALWAYS" />
+                     <VBox alignment="CENTER">
+                        <children>
+                           <Label fx:id="loadingObjects" text="%Browser.Browser.loadingEntities">
+                              <graphic>
+                                 <ProgressIndicator prefHeight="15.0" prefWidth="15.0" />
+                              </graphic>
+                              <tooltip>
+                                 <Tooltip text="%Browser.Browser.entitiesLoadedBackground" />
+                              </tooltip>
+                           </Label>
+                           <Label fx:id="loadingOrphaned">
+                              <graphic>
+                                 <ProgressIndicator prefHeight="15.0" prefWidth="15.0" />
+                              </graphic>
+                              <tooltip>
+                                 <Tooltip text="%Browser.Browser.orphanedImagesLoadedBackground" />
+                              </tooltip>
+                           </Label>
+                           <Label fx:id="loadingThumbnail" text="%Browser.Browser.loadingThumbnails">
+                              <graphic>
+                                 <ProgressIndicator prefHeight="15.0" prefWidth="15.0" />
+                              </graphic>
+                              <tooltip>
+                                 <Tooltip text="%Browser.Browser.thumbnailsLoadedBackground" />
+                              </tooltip>
+                           </Label>
+                        </children>
+                     </VBox>
+                  </children>
+                  <BorderPane.margin>
+                     <Insets />
+                  </BorderPane.margin>
+                  <padding>
+                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                  </padding>
+               </HBox>
+            </top>
+            <center>
+               <SplitPane dividerPositions="0.5" BorderPane.alignment="CENTER">
+                 <items>
+                     <VBox>
+                        <children>
+                           <HBox>
+                              <children>
+                                 <ComboBox fx:id="groupFilter" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
+                                    <tooltip>
+                                       <Tooltip text="%Browser.Browser.filterByGroup" />
+                                    </tooltip>
+                                 </ComboBox>
+                                 <ComboBox fx:id="ownerFilter" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
+                                    <tooltip>
+                                       <Tooltip text="%Browser.Browser.filterByOwner" />
+                                    </tooltip>
+                                 </ComboBox>
+                              </children>
+                           </HBox>
+                           <TreeView fx:id="hierarchy" onMouseClicked="#onImagesTreeClicked" showRoot="false" VBox.vgrow="ALWAYS">
+                              <contextMenu>
+                                 <ContextMenu>
+                                    <items>
+                                       <MenuItem fx:id="moreInfo" mnemonicParsing="false" onAction="#onMoreInformationMenuClicked" text="%Browser.Browser.moreInfo" />
+                                       <MenuItem fx:id="openBrowser" mnemonicParsing="false" onAction="#onOpenInBrowserMenuClicked" text="%Browser.Browser.openInBrowser" />
+                                       <MenuItem fx:id="copyToClipboard" mnemonicParsing="false" onAction="#onCopyToClipboardMenuClicked" text="%Browser.Browser.copyToClipboard" />
+                                       <MenuItem fx:id="collapseAllItems" mnemonicParsing="false" onAction="#onCollapseAllItemsMenuClicked" text="%Browser.Browser.collapseAllItems" />
+                                    </items>
+                                 </ContextMenu>
+                              </contextMenu>
+                           </TreeView>
+                            <HBox>
+                                <TextField fx:id="nameFilter" maxWidth="1.7976931348623157E308" promptText="%Browser.Browser.filterProjectNames" HBox.hgrow="ALWAYS" />
+                                <Button fx:id="advanced" mnemonicParsing="false" onAction="#onAdvancedClicked" text="%Browser.Browser.advanced" />
+                            </HBox>
+                           <Button fx:id="importImage" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onImportButtonClicked" text="%Browser.Browser.importImagesToQuPath" />
+                        </children>
+                     </VBox>
+                     <VBox alignment="CENTER">
+                         <Canvas fx:id="canvas" height="256.0" style="-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 4, 0, 1, 1);" width="256.0" />
+                         <TableView fx:id="description" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
+                             <columns>
+                                 <TableColumn fx:id="attributeColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0" text="%Browser.Browser.attribute" />
+                                 <TableColumn fx:id="valueColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0" text="%Browser.Browser.value" />
+                             </columns>
+                         </TableView>
+                     </VBox>
+                 </items>
+               </SplitPane>
+            </center></BorderPane>
+        </Scene>
+    </scene>
+</fx:root>
