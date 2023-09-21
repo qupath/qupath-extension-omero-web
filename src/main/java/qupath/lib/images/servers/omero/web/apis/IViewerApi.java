@@ -3,6 +3,8 @@ package qupath.lib.images.servers.omero.web.apis;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.omero.web.WebUtilities;
 import qupath.lib.images.servers.omero.web.RequestSender;
 import qupath.lib.images.servers.omero.web.entities.shapes.Shape;
@@ -23,6 +25,7 @@ import java.util.stream.Stream;
  */
 class IViewerApi {
 
+    private static final Logger logger = LoggerFactory.getLogger(IViewerApi.class);
     private static final String ROIS_URL = "%s/iviewer/persist_rois/";
     private static final String ROIS_BODY = """
         {"imageId":%d,
@@ -68,7 +71,18 @@ class IViewerApi {
                     String.format(ROIS_BODY, id, rois.size(), String.join(", ", rois)),
                     String.format(ROIS_REFERER_URL, host, id),
                     token
-            ).thenApply(response -> response.isPresent() && !response.get().toLowerCase().contains("error"));
+            ).thenApply(response -> {
+                if (response.isPresent()) {
+                    if (response.get().toLowerCase().contains("error")) {
+                        logger.error("Error when sending ROIs: " + response.get());
+                        return false;
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
+            });
         } else {
             return CompletableFuture.completedFuture(false);
         }

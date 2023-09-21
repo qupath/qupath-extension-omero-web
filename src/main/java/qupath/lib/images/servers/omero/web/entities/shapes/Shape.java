@@ -33,6 +33,7 @@ public abstract class Shape {
     @SerializedName(value = "Locked", alternate = "locked") private Boolean locked;
     @SerializedName(value = "FillColor", alternate = "fillColor") private int fillColor;
     @SerializedName(value = "StrokeColor", alternate = "strokeColor") private Integer strokeColor;
+    @SerializedName(value = "oldId") private String oldId = "-1:-1";
 
     /**
      * @return the ROI that corresponds to this shape
