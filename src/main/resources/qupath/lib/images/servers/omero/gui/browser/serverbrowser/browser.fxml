@@ -141,7 +141,7 @@
                                 <TextField fx:id="nameFilter" maxWidth="1.7976931348623157E308" promptText="%Browser.Browser.filterProjectNames" HBox.hgrow="ALWAYS" />
                                 <Button fx:id="advanced" mnemonicParsing="false" onAction="#onAdvancedClicked" text="%Browser.Browser.advanced" />
                             </HBox>
-                           <Button fx:id="importImage" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onImportButtonClicked" text="%Browser.Browser.importImagesToQuPath" />
+                           <Button fx:id="importImage" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onImportButtonClicked" />
                         </children>
                      </VBox>
                      <VBox alignment="CENTER">

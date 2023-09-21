@@ -24,6 +24,8 @@ import qupath.lib.images.servers.omero.gui.browser.serverbrowser.hierarchy.Hiera
 import qupath.lib.images.servers.omero.web.entities.permissions.Group;
 import qupath.lib.images.servers.omero.web.entities.permissions.Owner;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.RepositoryEntity;
+import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.Dataset;
+import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.Project;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.ServerEntity;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.image.Image;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.OrphanedFolder;
@@ -360,6 +362,7 @@ public class Browser extends Stage {
         hierarchy.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
             updateCanvas();
             updateDescription();
+            updateImportButtonLabel();
         });
 
         BooleanBinding isSelectedItemOrphanedFolderBinding = Bindings.createBooleanBinding(() ->
@@ -413,6 +416,35 @@ public class Browser extends Stage {
             );
         } else {
             description.getItems().clear();
+        }
+    }
+
+    private void updateImportButtonLabel() {
+        var importableEntities = hierarchy.getSelectionModel().getSelectedItems().stream()
+                .map(TreeItem::getValue)
+                .filter(repositoryEntity -> {
+                    if (repositoryEntity instanceof Image image) {
+                        return client.getSelectedPixelAPI().get().canReadImage(image.isUint8(), image.has3Channels());
+                    } else {
+                        return repositoryEntity instanceof Dataset || repositoryEntity instanceof Project;
+                    }
+                })
+                .toList();
+
+        importImage.setDisable(importableEntities.isEmpty());
+
+        if (importableEntities.isEmpty()) {
+            importImage.setText(resources.getString("Browser.Browser.cantImportSelectedToQuPath"));
+        } else if (importableEntities.size() == 1) {
+            if (importableEntities.get(0) instanceof Image) {
+                importImage.setText(resources.getString("Browser.Browser.importImageToQuPath"));
+            } else if (importableEntities.get(0) instanceof Dataset) {
+                importImage.setText(resources.getString("Browser.Browser.importDatasetToQuPath"));
+            } else if (importableEntities.get(0) instanceof Project) {
+                importImage.setText(resources.getString("Browser.Browser.importProjectToQuPath"));
+            }
+        } else {
+            importImage.setText(resources.getString("Browser.Browser.importSelectedToQuPath"));
         }
     }
 }
