@@ -9,7 +9,7 @@
 <fx:root title="%ConnectionsManager.ConnectionManager.webClients" type="Stage" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
     <scene>
         <Scene stylesheets="@../../styles.css">
-            <ScrollPane>
+            <ScrollPane fitToHeight="true" fitToWidth="true">
                 <content>
                     <VBox fx:id="container" alignment="CENTER" spacing="10.0">
                         <children>

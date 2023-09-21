@@ -362,7 +362,7 @@ public class Browser extends Stage {
         hierarchy.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
             updateCanvas();
             updateDescription();
-            updateImportButtonLabel();
+            updateImportButton();
         });
 
         BooleanBinding isSelectedItemOrphanedFolderBinding = Bindings.createBooleanBinding(() ->
@@ -385,6 +385,8 @@ public class Browser extends Stage {
                         hierarchy.getSelectionModel().getSelectedItems().size() == 1 &&
                                 hierarchy.getSelectionModel().getSelectedItems().get(0).getValue() instanceof Image,
                 hierarchy.getSelectionModel().getSelectedItems()));
+
+        client.getSelectedPixelAPI().addListener(change -> updateImportButton());
     }
 
     private static void collapseTreeView(TreeItem<RepositoryEntity> item){
@@ -419,7 +421,7 @@ public class Browser extends Stage {
         }
     }
 
-    private void updateImportButtonLabel() {
+    private void updateImportButton() {
         var importableEntities = hierarchy.getSelectionModel().getSelectedItems().stream()
                 .map(TreeItem::getValue)
                 .filter(repositoryEntity -> {

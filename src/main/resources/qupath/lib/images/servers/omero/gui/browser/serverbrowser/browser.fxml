@@ -28,7 +28,7 @@
 <fx:root title="%Browser.Browser.omeroWebServer" type="Stage" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
     <scene>
         <Scene stylesheets="@../../../styles.css">
-            <BorderPane prefHeight="600.0" prefWidth="800.0">
+            <BorderPane>
             <top>
                <HBox alignment="CENTER" BorderPane.alignment="CENTER">
                   <children>
@@ -125,7 +125,7 @@
                                  </ComboBox>
                               </children>
                            </HBox>
-                           <TreeView fx:id="hierarchy" onMouseClicked="#onImagesTreeClicked" showRoot="false" VBox.vgrow="ALWAYS">
+                           <TreeView fx:id="hierarchy" onMouseClicked="#onImagesTreeClicked" prefWidth="600.0" showRoot="false" VBox.vgrow="ALWAYS">
                               <contextMenu>
                                  <ContextMenu>
                                     <items>
