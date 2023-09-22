@@ -212,6 +212,16 @@ public class ImageMetadataResponse {
     }
 
     /**
+     * Convert a pixel type returned by OMERO to a QuPath {@link PixelType}
+     *
+     * @param pixelType  the OMERO pixel type
+     * @return the QuPath pixel type, or an empty Optional if the OMERO pixel type was not recognized
+     */
+    public static Optional<PixelType> getPixelType(String pixelType) {
+        return Optional.ofNullable(PIXEL_TYPE_MAP.get(pixelType));
+    }
+
+    /**
      * @return the image name
      */
     public String getImageName() {

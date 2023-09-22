@@ -88,7 +88,7 @@ public class Project extends ServerEntity {
      * @param type  the OMERO entity type
      * @return whether this type refers to a project
      */
-    public static boolean isOfType(String type) {
+    public static boolean isProject(String type) {
         return "http://www.openmicroscopy.org/Schemas/OME/2016-06#Project".equalsIgnoreCase(type) || "Project".equalsIgnoreCase(type);
     }
 

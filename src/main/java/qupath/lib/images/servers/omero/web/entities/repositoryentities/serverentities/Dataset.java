@@ -90,7 +90,7 @@ public class Dataset extends ServerEntity {
      * @param type  the OMERO entity type
      * @return whether this type refers to a dataset
      */
-    public static boolean isOfType(String type) {
+    public static boolean isDataset(String type) {
         return "http://www.openmicroscopy.org/Schemas/OME/2016-06#Dataset".equalsIgnoreCase(type) || "Dataset".equalsIgnoreCase(type);
     }
 

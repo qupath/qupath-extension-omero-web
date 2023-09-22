@@ -127,13 +127,13 @@ public abstract class ServerEntity extends RepositoryEntity {
                 String type = json.getAsJsonObject().get("@type").getAsString().toLowerCase();
 
                 ServerEntity serverEntity = null;
-                if (Image.isOfType(type)) {
+                if (Image.isImage(type)) {
                     serverEntity = context.deserialize(json, Image.class);
                     ((Image) serverEntity).setWebClient(apisHandler.getClient());
-                } else if (Dataset.isOfType(type)) {
+                } else if (Dataset.isDataset(type)) {
                     serverEntity = context.deserialize(json, Dataset.class);
                     ((Dataset) serverEntity).setApisHandler(apisHandler);
-                } else if (Project.isOfType(type)) {
+                } else if (Project.isProject(type)) {
                     serverEntity = context.deserialize(json, Project.class);
                     ((Project) serverEntity).setApisHandler(apisHandler);
                 } else {

@@ -8,6 +8,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 import qupath.lib.images.servers.omero.web.WebClient;
+import qupath.lib.images.servers.omero.web.entities.imagemetadata.ImageMetadataResponse;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.OrphanedFolder;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.RepositoryEntity;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.ServerEntity;
@@ -38,6 +39,7 @@ public class Image extends ServerEntity {
             resources.getString("Web.Entities.Image.acquisitionDate"),
             resources.getString("Web.Entities.Image.imageWidth"),
             resources.getString("Web.Entities.Image.imageHeight"),
+            resources.getString("Web.Entities.Image.uncompressedSize"),
             resources.getString("Web.Entities.Image.nbChannels"),
             resources.getString("Web.Entities.Image.nbZSlices"),
             resources.getString("Web.Entities.Image.nbTimePoints"),
@@ -84,13 +86,41 @@ public class Image extends ServerEntity {
             case 4 -> acquisitionDate == 0 ? "-" : new Date(acquisitionDate * 1000).toString();
             case 5 -> getImageDimensions().map(d -> d[0] + " px").orElse("-");
             case 6 -> getImageDimensions().map(d -> d[1] + " px").orElse("-");
-            case 7 -> getImageDimensions().map(d -> String.valueOf(d[2])).orElse("-");
-            case 8 -> getImageDimensions().map(d -> String.valueOf(d[3])).orElse("-");
-            case 9 -> getImageDimensions().map(d -> String.valueOf(d[4])).orElse("-");
-            case 10 -> getPhysicalSizeX().map(x -> x.getValue() + " " + x.getSymbol().orElse("")).orElse("-");
-            case 11 -> getPhysicalSizeY().map(x -> x.getValue() + " " + x.getSymbol().orElse("")).orElse("-");
-            case 12 -> getPhysicalSizeZ().map(x -> x.getValue() + " " + x.getSymbol().orElse("")).orElse("-");
-            case 13 -> getPixelType().orElse("-");
+            case 7 -> {
+                var dimensions = getImageDimensions();
+                var pixelType = getPixelType();
+
+                if (dimensions.isPresent() && pixelType.isPresent()) {
+                    var quPathPixelType = ImageMetadataResponse.getPixelType(pixelType.get());
+
+                    if (quPathPixelType.isPresent()) {
+                        int width = dimensions.get()[0];
+                        int height = dimensions.get()[1];
+                        int bytesPerPixel = quPathPixelType.get().getBytesPerPixel();
+                        int nChannels = dimensions.get()[2];
+                        int zSlices = dimensions.get()[3];
+                        int timePoints = dimensions.get()[4];
+
+                        double size = width / 1024.0 * height / 1024.0 *
+                                bytesPerPixel * nChannels *
+                                zSlices * timePoints;
+                        String unit = "MB";
+                        if (size > 1000) {
+                            size /= 1024;
+                            unit = "GB";
+                        }
+                        yield String.format("%.1f %s", size, unit);
+                    }
+                }
+                yield "-";
+            }
+            case 8 -> getImageDimensions().map(d -> String.valueOf(d[2])).orElse("-");
+            case 9 -> getImageDimensions().map(d -> String.valueOf(d[3])).orElse("-");
+            case 10 -> getImageDimensions().map(d -> String.valueOf(d[4])).orElse("-");
+            case 11 -> getPhysicalSizeX().map(x -> x.getValue() + " " + x.getSymbol().orElse("")).orElse("-");
+            case 12 -> getPhysicalSizeY().map(x -> x.getValue() + " " + x.getSymbol().orElse("")).orElse("-");
+            case 13 -> getPhysicalSizeZ().map(x -> x.getValue() + " " + x.getSymbol().orElse("")).orElse("-");
+            case 14 -> getPixelType().orElse("-");
             default -> "";
         };
     }
@@ -111,7 +141,7 @@ public class Image extends ServerEntity {
      * @param type  the OMERO entity type
      * @return whether this type refers to an image
      */
-    public static boolean isOfType(String type) {
+    public static boolean isImage(String type) {
         return "http://www.openmicroscopy.org/Schemas/OME/2016-06#Image".equalsIgnoreCase(type) || "Image".equalsIgnoreCase(type);
     }
 
