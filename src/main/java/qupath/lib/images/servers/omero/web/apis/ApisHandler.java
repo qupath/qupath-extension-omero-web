@@ -74,7 +74,7 @@ public class ApisHandler implements AutoCloseable {
 
     @Override
     public String toString() {
-        return String.format("APIs handler of %s", client);
+        return String.format("APIs handler of %s", host);
     }
 
     /**

@@ -84,6 +84,6 @@ public class IceAPI implements PixelAPI {
 
     @Override
     public String toString() {
-        return String.format("Ice API of %s", client);
+        return String.format("Ice API of %s", client.getServerURI());
     }
 }

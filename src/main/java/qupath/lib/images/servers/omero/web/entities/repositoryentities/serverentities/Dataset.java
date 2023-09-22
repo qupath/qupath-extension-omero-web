@@ -81,7 +81,7 @@ public class Dataset extends ServerEntity {
 
     @Override
     public String toString() {
-        return String.format("Dataset %s of ID %d: %s", name, id, description);
+        return String.format("Dataset %s of ID %d", name, id);
     }
 
     /**

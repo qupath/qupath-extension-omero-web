@@ -48,7 +48,7 @@ public class Server extends RepositoryEntity {
 
     @Override
     public String toString() {
-        return String.format("Server containing %s", children);
+        return String.format("Server containing %d children", numberOfChildren);
     }
 
     @Override

@@ -79,7 +79,7 @@ public class Project extends ServerEntity {
 
     @Override
     public String toString() {
-        return String.format("Project %s of ID %d: %s", name, id, description);
+        return String.format("Project %s of ID %d", name, id);
     }
 
     /**

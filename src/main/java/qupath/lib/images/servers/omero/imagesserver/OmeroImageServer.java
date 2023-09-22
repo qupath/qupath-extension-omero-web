@@ -126,7 +126,7 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
 
     @Override
     public String toString() {
-        return String.format("OMERO image server of %s for the image whose id is %d", client, id);
+        return String.format("OMERO image server of %s", uri);
     }
 
     /**

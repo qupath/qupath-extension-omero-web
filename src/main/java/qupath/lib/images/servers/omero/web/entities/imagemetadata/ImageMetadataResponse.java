@@ -82,7 +82,7 @@ public class ImageMetadataResponse {
 
     @Override
     public String toString() {
-        return String.format("ImageMetadataResponse of %s which is of type %s. Its channels are %s", imageName, pixelType, channels);
+        return String.format("ImageMetadataResponse of %s which is of type %s.", imageName, pixelType);
     }
 
     /**

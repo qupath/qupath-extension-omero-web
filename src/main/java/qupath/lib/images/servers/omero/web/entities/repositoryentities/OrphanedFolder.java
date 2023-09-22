@@ -33,7 +33,7 @@ public class OrphanedFolder extends RepositoryEntity {
 
     @Override
     public String toString() {
-        return String.format("Orphaned folder containing %s", children);
+        return String.format("Orphaned folder containing %d children", numberOfImages);
     }
 
     @Override

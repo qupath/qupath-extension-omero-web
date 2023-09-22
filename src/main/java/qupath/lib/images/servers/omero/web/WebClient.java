@@ -132,12 +132,12 @@ public class WebClient implements AutoCloseable {
     @Override
     public String toString() {
         return String.format("""
-                "Web client of:
-                    status %s"
-                    username %s
-                    authenticated %s
-                    selectedPixelAPI %s
-                """, status, username.get(), authenticated.get(), selectedPixelAPI);
+                Web client of:
+                    status: %s
+                    username: %s
+                    authenticated: %s
+                    selectedPixelAPI: %s
+                """, status, username.get().isEmpty() ? "no username" : username.get(), authenticated.get(), selectedPixelAPI.get());
     }
 
     /**

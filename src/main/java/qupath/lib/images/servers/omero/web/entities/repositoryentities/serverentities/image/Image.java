@@ -132,7 +132,7 @@ public class Image extends ServerEntity {
 
     @Override
     public String toString() {
-        return String.format("Image %s of ID %d: %s", name, id, pixels);
+        return String.format("Image %s of ID %d", name, id);
     }
 
     /**
