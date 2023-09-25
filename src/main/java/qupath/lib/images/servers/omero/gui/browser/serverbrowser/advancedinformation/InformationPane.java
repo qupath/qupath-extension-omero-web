@@ -25,7 +25,7 @@ class InformationPane extends TitledPane {
      * @throws IOException if an error occurs while creating the pane
      */
     public InformationPane(String title) throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("information_pane.fxml"));
+        UiUtilities.loadFXML(this, InformationPane.class.getResource("information_pane.fxml"));
 
         setText(title);
     }

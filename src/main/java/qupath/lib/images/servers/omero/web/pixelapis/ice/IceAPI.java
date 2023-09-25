@@ -18,7 +18,7 @@ import java.io.IOException;
 public class IceAPI implements PixelAPI {
 
     private static final Logger logger = LoggerFactory.getLogger(IceAPI.class);
-    static final String NAME = "Ice API";
+    static final String NAME = "Ice";
     private static Boolean gatewayAvailable;
     private final WebClient client;
 

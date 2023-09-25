@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.*;
 import qupath.lib.images.servers.omero.web.WebClient;
 import qupath.lib.images.servers.omero.web.WebUtilities;
+import qupath.lib.images.servers.omero.web.pixelapis.PixelAPI;
 import qupath.lib.images.servers.omero.web.pixelapis.PixelAPIReader;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.PathObjectReader;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <p>{@link qupath.lib.images.servers.ImageServer Image server} of the extension.</p>
@@ -22,10 +24,10 @@ import java.util.concurrent.CompletableFuture;
 public class OmeroImageServer extends AbstractTileableImageServer implements PathObjectReader  {
 
     private static final Logger logger = LoggerFactory.getLogger(OmeroImageServer.class);
-    private static final List<String> INVALID_PARAMETERS = List.of("--password",  "-password", "-p", "-u", "--username", "-username");
+    private static final String PIXEL_API_ARGUMENT = "--pixelAPI";
     private final URI uri;
     private final WebClient client;
-    private final String[] args;
+    private String[] args;
     private PixelAPIReader pixelAPIReader;
     private long id;
     private ImageServerMetadata originalMetadata;
@@ -46,10 +48,20 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
      */
     public static Optional<OmeroImageServer> create(URI uri, WebClient client, String... args) {
         OmeroImageServer omeroImageServer = new OmeroImageServer(uri, client, args);
-        if (omeroImageServer.setId() && omeroImageServer.checkArguments(args) && omeroImageServer.setOriginalMetadata()) {
+        if (omeroImageServer.setId() && omeroImageServer.setOriginalMetadata()) {
             try {
-                if (client.getSelectedPixelAPI().get().canReadImage(omeroImageServer.getMetadata())) {
-                    omeroImageServer.pixelAPIReader = client.getSelectedPixelAPI().get().createReader(
+                PixelAPI pixelAPI;
+                var pixelAPIFromArgs = getPixelAPIFromArgs(client, args);
+
+                if (pixelAPIFromArgs.isPresent()) {
+                    pixelAPI = pixelAPIFromArgs.get();
+                } else {
+                    pixelAPI = client.getSelectedPixelAPI().get();
+                    omeroImageServer.savePixelAPIToArgs(pixelAPI);
+                }
+
+                if (pixelAPI.canReadImage(omeroImageServer.getMetadata())) {
+                    omeroImageServer.pixelAPIReader = pixelAPI.createReader(
                             omeroImageServer.id,
                             omeroImageServer.getMetadata(),
                             omeroImageServer.allowSmoothInterpolation(),
@@ -57,7 +69,7 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
                             args
                     );
                 } else {
-                    logger.error("The selected pixel API can't read the provided image");
+                    logger.error("The selected pixel API (" + pixelAPI + ") can't read the provided image");
                     return Optional.empty();
                 }
             } catch (IOException e) {
@@ -75,6 +87,19 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
     @Override
     protected BufferedImage readTile(TileRequest tileRequest) throws IOException {
         return pixelAPIReader.readTile(tileRequest);
+    }
+
+    @Override
+    public BufferedImage getDefaultThumbnail(int z, int t) throws IOException {
+        if (isRGB()) {
+            try {
+                return client.getThumbnail(id).get().orElse(null);
+            } catch (InterruptedException | ExecutionException e) {
+                throw new IOException(e);
+            }
+        } else {
+            return super.getDefaultThumbnail(z, t);
+        }
     }
 
     @Override
@@ -209,15 +234,33 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
         }
     }
 
-    private boolean checkArguments(String... args) {
-        for (String s : args) {
-            String arg = s.toLowerCase().strip();
-
-            if (INVALID_PARAMETERS.contains(arg)) {
-                logger.error("Cannot build server with arg " + arg + ". Consider removing such sensitive data.");
-                return false;
+    private static Optional<PixelAPI> getPixelAPIFromArgs(WebClient client, String... args) {
+        String pixelAPIName = null;
+        int i = 0;
+        while (i < args.length-1) {
+            String parameter = args[i++];
+            if (PIXEL_API_ARGUMENT.equalsIgnoreCase(parameter)) {
+                pixelAPIName = args[i++];
             }
         }
-        return true;
+
+        if (pixelAPIName != null) {
+            for (PixelAPI pixelAPI: client.getAvailablePixelAPIs()) {
+                if (pixelAPI.getName().equalsIgnoreCase(pixelAPIName)) {
+                    return Optional.of(pixelAPI);
+                }
+            }
+            logger.warn(
+                    "The provided pixel API " + pixelAPIName + " was not recognized, or the corresponding OMERO server doesn't support it."
+            );
+        }
+
+        return Optional.empty();
+    }
+
+    private void savePixelAPIToArgs(PixelAPI pixelAPI) {
+        args = Arrays.copyOf(args, args.length + 2);
+        args[args.length - 2] = PIXEL_API_ARGUMENT;
+        args[args.length - 1] = pixelAPI.getName();
     }
 }

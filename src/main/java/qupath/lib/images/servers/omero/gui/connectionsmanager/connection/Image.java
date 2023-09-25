@@ -34,7 +34,7 @@ class Image extends HBox {
      * @throws IOException if an error occurs while creating the window
      */
     public Image(WebClient client, URI imageUri) throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("image.fxml"));
+        UiUtilities.loadFXML(this, Image.class.getResource("image.fxml"));
 
         var imageID = WebUtilities.parseEntityId(imageUri);
         if (imageID.isPresent()) {

@@ -28,7 +28,7 @@ class ConfirmationForm extends VBox {
      * @throws IOException if an error occurs while creating the form
      */
     public ConfirmationForm(int numberOfAnnotations, String imageURI) throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("confirmation_form.fxml"));
+        UiUtilities.loadFXML(this, ConfirmationForm.class.getResource("confirmation_form.fxml"));
         ResourceBundle resources = UiUtilities.getResources();
 
         if (numberOfAnnotations == 1) {

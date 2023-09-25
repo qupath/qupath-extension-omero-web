@@ -42,7 +42,7 @@ class ImageTooltip extends VBox {
      * @throws IOException if an error occurs while creating the tooltip
      */
     public ImageTooltip(Image image, WebClient client) throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("image_tooltip.fxml"));
+        UiUtilities.loadFXML(this, ImageTooltip.class.getResource("image_tooltip.fxml"));
 
         name.setText(image.getName());
 

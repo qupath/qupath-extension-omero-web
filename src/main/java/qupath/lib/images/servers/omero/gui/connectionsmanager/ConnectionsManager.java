@@ -46,7 +46,7 @@ public class ConnectionsManager extends Stage {
     }
 
     private void initUI(Stage owner) throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("connections_manager.fxml"));
+        UiUtilities.loadFXML(this, ConnectionsManager.class.getResource("connections_manager.fxml"));
 
         if (owner != null) {
             initOwner(owner);

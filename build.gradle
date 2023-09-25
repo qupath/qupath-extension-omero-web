@@ -13,6 +13,8 @@ ext.qupathJavaVersion = 17
 
 dependencies {
     shadow "io.github.qupath:qupath-gui-fx:${qupathVersion}"
+    shadow "io.github.qupath:qupath-extension-bioformats:${qupathVersion}"
+    shadow libs.qupath.fxtras
 
     shadow libs.slf4j
 

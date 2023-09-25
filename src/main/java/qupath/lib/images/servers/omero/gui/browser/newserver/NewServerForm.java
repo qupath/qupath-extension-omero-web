@@ -21,7 +21,7 @@ public class NewServerForm extends VBox {
      * @throws IOException if an error occurs while creating the form
      */
     public NewServerForm() throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("new_server_form.fxml"));
+        UiUtilities.loadFXML(this, NewServerForm.class.getResource("new_server_form.fxml"));
 
         url.setText(ClientsPreferencesManager.getLastServerURI());
     }

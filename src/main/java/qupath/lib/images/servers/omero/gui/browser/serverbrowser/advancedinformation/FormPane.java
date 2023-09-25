@@ -21,7 +21,7 @@ class FormPane extends TitledPane {
      * @throws IOException if an error occurs while creating the pane
      */
     public FormPane() throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("form_pane.fxml"));
+        UiUtilities.loadFXML(this, FormPane.class.getResource("form_pane.fxml"));
     }
 
     /**

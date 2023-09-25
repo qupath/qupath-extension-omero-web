@@ -123,7 +123,7 @@ public class Browser extends Stage {
         this.client = client;
         this.browserModel = new BrowserModel(client);
 
-        UiUtilities.loadFXML(this, getClass().getResource("browser.fxml"));
+        UiUtilities.loadFXML(this, Browser.class.getResource("browser.fxml"));
 
         initUI();
         setUpListeners();

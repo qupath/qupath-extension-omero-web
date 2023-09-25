@@ -14,7 +14,7 @@ import qupath.lib.images.servers.omero.web.pixelapis.PixelAPIReader;
  */
 public class WebAPI implements PixelAPI {
 
-    static final String NAME = "Web API";
+    static final String NAME = "Web";
     private final WebClient client;
 
     /**

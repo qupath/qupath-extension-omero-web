@@ -187,7 +187,7 @@ public class Connection extends VBox {
     }
 
     private void initUI() throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("connection.fxml"));
+        UiUtilities.loadFXML(this, Connection.class.getResource("connection.fxml"));
 
         uri.setText(serverURI);
         uri.setGraphic(UiUtilities.createStateNode(client != null));

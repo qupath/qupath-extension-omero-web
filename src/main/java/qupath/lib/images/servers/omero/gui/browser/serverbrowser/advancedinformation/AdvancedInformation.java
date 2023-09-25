@@ -51,7 +51,7 @@ public class AdvancedInformation extends Stage {
     public AdvancedInformation(Stage owner, ServerEntity serverEntity, AnnotationGroup annotationGroup) throws IOException {
         this.serverEntity = serverEntity;
 
-        UiUtilities.loadFXML(this, getClass().getResource("advanced_information.fxml"));
+        UiUtilities.loadFXML(this, AdvancedInformation.class.getResource("advanced_information.fxml"));
 
         setTitle(serverEntity.getName());
 

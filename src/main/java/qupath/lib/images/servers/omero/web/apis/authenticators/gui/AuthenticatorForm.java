@@ -33,7 +33,7 @@ class AuthenticatorForm extends GridPane {
      * @throws IOException if an error occurs while creating the form
      */
     public AuthenticatorForm(String prompt, String host, String username) throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("authenticator_form.fxml"));
+        UiUtilities.loadFXML(this, AuthenticatorForm.class.getResource("authenticator_form.fxml"));
 
         if (prompt != null) {
             this.prompt.setText(prompt);

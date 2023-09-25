@@ -152,7 +152,7 @@ public class AdvancedSearch extends Stage {
     }
 
     private void initUI(Stage ownerWindow) throws IOException {
-        UiUtilities.loadFXML(this, getClass().getResource("advanced_search.fxml"));
+        UiUtilities.loadFXML(this, AdvancedSearch.class.getResource("advanced_search.fxml"));
 
         owner.setItems(browserModel.getOwners());
         owner.getSelectionModel().selectFirst();
