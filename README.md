@@ -1,3 +1,8 @@
+[![Extension docs](https://img.shields.io/badge/docs-qupath_omero-red)](https://qupath.readthedocs.io/en/stable/docs/advanced/omero.html)
+[![Forum](https://img.shields.io/badge/forum-image.sc-green)](https://forum.image.sc/tag/qupath)
+[![Downloads (latest release)](https://img.shields.io/github/downloads-pre/qupath/qupath-extension-omero/latest/total)](https://github.com/qupath/qupath-extension-omero/releases/latest)
+[![Downloads (all releases)](https://img.shields.io/github/downloads/qupath/qupath-extension-omero/total)](https://github.com/qupath/qupath-extension-omero/releases)
+
 # QuPath OMERO extension
 
 Welcome to the OMERO extension for [QuPath](http://qupath.github.io)!
