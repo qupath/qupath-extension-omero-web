@@ -14,10 +14,6 @@ ext.qupathVersion = gradle.ext.qupathVersion
 ext.qupathJavaVersion = 17
 
 dependencies {
-    //TODO: don't push those lines to git
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-
     shadow "io.github.qupath:qupath-gui-fx:${qupathVersion}"
     shadow "io.github.qupath:qupath-extension-bioformats:${qupathVersion}"
     shadow libs.qupath.fxtras
