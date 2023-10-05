@@ -3,15 +3,21 @@ plugins {
     id 'java-library'
     // To create a shadow/fat jar that bundle up all dependencies
     id 'com.github.johnrengelman.shadow' version '7.1.2'
+    // Add JavaFX dependencies
+    alias(libs.plugins.javafx)
 }
 
 ext.moduleName = 'qupath.extension.omero'
 version = "0.4.0-SNAPSHOT"
-description = "QuPath extension to support image reading using OMERO's web API."
+description = "QuPath extension to support image reading using OMERO APIs."
 ext.qupathVersion = gradle.ext.qupathVersion
 ext.qupathJavaVersion = 17
 
 dependencies {
+    //TODO: don't push those lines to git
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+
     shadow "io.github.qupath:qupath-gui-fx:${qupathVersion}"
     shadow "io.github.qupath:qupath-extension-bioformats:${qupathVersion}"
     shadow libs.qupath.fxtras

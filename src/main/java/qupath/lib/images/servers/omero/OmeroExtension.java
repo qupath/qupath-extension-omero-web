@@ -49,7 +49,7 @@ import java.util.ResourceBundle;
 public class OmeroExtension implements QuPathExtension, GitHubProject {
 
 	private static final ResourceBundle resources = UiUtilities.getResources();
-	private static final Version EXTENSION_QUPATH_VERSION = Version.parse("v0.4.0");
+	private static final Version EXTENSION_QUPATH_VERSION = Version.parse("v0.5.0");
 	private static boolean alreadyInstalled = false;
 	private static BrowseMenu browseMenu;
 
