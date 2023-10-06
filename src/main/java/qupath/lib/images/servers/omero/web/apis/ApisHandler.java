@@ -6,6 +6,8 @@ import qupath.lib.images.servers.omero.web.WebClient;
 import qupath.lib.images.servers.omero.web.WebUtilities;
 import qupath.lib.images.servers.omero.web.entities.imagemetadata.ImageMetadataResponse;
 import qupath.lib.images.servers.omero.web.entities.login.LoginResponse;
+import qupath.lib.images.servers.omero.web.entities.permissions.Group;
+import qupath.lib.images.servers.omero.web.entities.permissions.Owner;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.image.Image;
 import qupath.lib.images.servers.omero.web.entities.search.SearchQuery;
 import qupath.lib.images.servers.omero.web.entities.search.SearchResult;
@@ -197,6 +199,20 @@ public class ApisHandler implements AutoCloseable {
      */
     public CompletableFuture<List<URI>> getOrphanedImagesURIs() {
         return jsonApi.getOrphanedImagesURIs();
+    }
+
+    /**
+     * See {@link JsonApi#getGroups()} ()}.
+     */
+    public CompletableFuture<List<Group>> getGroups() {
+        return jsonApi.getGroups();
+    }
+
+    /**
+     * See {@link JsonApi#getOwners()} ()} ()}.
+     */
+    public CompletableFuture<List<Owner>> getOwners() {
+        return jsonApi.getOwners();
     }
 
     /**

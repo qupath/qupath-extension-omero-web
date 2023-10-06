@@ -26,6 +26,7 @@ public class LoginResponse {
     public enum Status {
         CANCELED,
         FAILED,
+        UNAUTHENTICATED,
         SUCCESS
     }
 
@@ -47,18 +48,18 @@ public class LoginResponse {
     }
 
     /**
-     * Create a new login response with a failed or canceled status.
+     * Create a new login response with an unauthenticated, failed, or canceled status.
      * It is not possible to call this function with a successful login.
      *
-     * @param reason  the reason why the login failed
+     * @param status  the status of the login
      * @return a response with the given status
-     * @throws IllegalArgumentException when {@code reason} is {@code Status.SUCCESS}
+     * @throws IllegalArgumentException when {@code status} is {@code Status.SUCCESS}
      */
-    public static LoginResponse createFailedLoginResponse(Status reason) {
-        if (reason.equals(Status.SUCCESS)) {
-            throw new IllegalArgumentException("You cannot create a failed login response with a success status");
+    public static LoginResponse createNonSuccessfulLoginResponse(Status status) {
+        if (status.equals(Status.SUCCESS)) {
+            throw new IllegalArgumentException("You cannot create a non successful login response with a success status");
         }
-        return new LoginResponse(reason);
+        return new LoginResponse(status);
     }
 
     /**

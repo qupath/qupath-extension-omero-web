@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
@@ -85,9 +84,7 @@ public class Browser extends Stage {
     @FXML
     private Label loadingThumbnail;
     @FXML
-    private ComboBox<Group> groupFilter;
-    @FXML
-    private ComboBox<Owner> ownerFilter;
+    private MenuButton groupOwner;
     @FXML
     private TreeView<RepositoryEntity> hierarchy;
     @FXML
@@ -260,18 +257,40 @@ public class Browser extends Stage {
         });
         pixelAPI.getSelectionModel().select(client.getSelectedPixelAPI().get());
 
-        ownerFilter.setItems(browserModel.getOwners());
-        ownerFilter.setConverter(client.getServer().getOwnerStringConverter());
-        ownerFilter.getSelectionModel().select(browserModel.getDefaultUser().get());
+        groupOwner.getItems().addAll(client.getServer().getGroups().stream()
+                .map(group -> {
+                    List<Owner> owners = group.equals(Group.getAllGroupsGroup()) ?
+                            client.getServer().getOwners() :
+                            group.getOwners();
 
-        groupFilter.setItems(browserModel.getGroups());
-        groupFilter.getSelectionModel().select(browserModel.getDefaultGroup().get());
+                    if (!owners.isEmpty()) {
+                        Menu menu = new Menu(group.getName());
+                        menu.getItems().addAll(
+                                owners.stream()
+                                        .map(owner -> {
+                                            MenuItem ownerItem = new MenuItem(owner.getName());
+                                            ownerItem.setOnAction(ignoredEvent -> {
+                                                browserModel.getSelectedGroup().set(group);
+                                                browserModel.getSelectedOwner().set(owner);
+                                            });
+                                            return ownerItem;
+                                        })
+                                        .toList()
+                        );
+                        return menu;
+                    } else {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList()
+        );
 
         hierarchy.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         hierarchy.setRoot(new HierarchyItem(
                 client.getServer(),
-                ownerFilter.getSelectionModel().selectedItemProperty(),
-                groupFilter.getSelectionModel().selectedItemProperty(),
+                browserModel.getSelectedOwner(),
+                browserModel.getSelectedGroup(),
                 nameFilter.textProperty()
         ));
         hierarchy.setCellFactory(n -> new HierarchyCellFactory(client, browserModel));
@@ -345,19 +364,10 @@ public class Browser extends Stage {
 
         loadingThumbnail.visibleProperty().bind(Bindings.notEqual(browserModel.getNumberOfThumbnailsLoading(), 0));
 
-        ownerFilter.getItems().addListener((ListChangeListener<? super Owner>) change ->
-                ownerFilter.getSelectionModel().select(browserModel.getDefaultUser().get())
-        );
-        browserModel.getDefaultUser().addListener((p, o, n) ->
-                ownerFilter.getSelectionModel().select(n)
-        );
-
-        groupFilter.getItems().addListener((ListChangeListener<? super Group>) change ->
-                groupFilter.getSelectionModel().select(browserModel.getDefaultGroup().get())
-        );
-        browserModel.getDefaultGroup().addListener((p, o, n) ->
-                groupFilter.getSelectionModel().select(n)
-        );
+        groupOwner.textProperty().bind(Bindings.createStringBinding(
+                () -> String.format("%s     %s", browserModel.getSelectedGroup().get().getName(), browserModel.getSelectedOwner().get().getName()),
+                browserModel.getSelectedGroup(), browserModel.getSelectedOwner()
+        ));
 
         hierarchy.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
             updateCanvas();

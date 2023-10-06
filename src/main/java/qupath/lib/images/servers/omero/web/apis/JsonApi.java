@@ -1,16 +1,15 @@
 package qupath.lib.images.servers.omero.web.apis;
 
 import com.google.common.collect.Lists;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import javafx.beans.property.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.omero.web.apis.authenticators.Authenticator;
 import qupath.lib.images.servers.omero.web.entities.login.LoginResponse;
+import qupath.lib.images.servers.omero.web.entities.permissions.Group;
+import qupath.lib.images.servers.omero.web.entities.permissions.Owner;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.image.Image;
 import qupath.lib.images.servers.omero.web.entities.serverinformation.OmeroAPI;
 import qupath.lib.images.servers.omero.web.entities.serverinformation.OmeroServerList;
@@ -25,6 +24,7 @@ import java.net.PasswordAuthentication;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <p>The OMERO <a href="https://docs.openmicroscopy.org/omero/5.6.0/developers/json-api.html">JSON API</a>.</p>
@@ -36,12 +36,14 @@ import java.util.concurrent.CompletableFuture;
 class JsonApi {
 
     private static final Logger logger = LoggerFactory.getLogger(JsonApi.class);
-    private static final String SERVERS_URL_KEY = "url:servers";
-    private static final String TOKEN_URL_KEY = "url:token";
-    private static final String LOGIN_URL_KEY = "url:login";
+    private static final String OWNERS_URL_KEY = "url:experimenters";
+    private static final String GROUPS_URL_KEY = "url:experimentergroups";
     private static final String PROJECTS_URL_KEY = "url:projects";
     private static final String DATASETS_URL_KEY = "url:datasets";
     private static final String IMAGES_URL_KEY = "url:images";
+    private static final String TOKEN_URL_KEY = "url:token";
+    private static final String SERVERS_URL_KEY = "url:servers";
+    private static final String LOGIN_URL_KEY = "url:login";
     private static final String API_URL = "%s/api/";
     private static final String PROJECTS_URL = "%s?childCount=true";
     private static final String DATASETS_URL = "%s%d/datasets/?childCount=true";
@@ -159,7 +161,7 @@ class JsonApi {
         );
 
         if (uri.isEmpty() || authentication == null) {
-            return CompletableFuture.completedFuture(LoginResponse.createFailedLoginResponse(LoginResponse.Status.CANCELED));
+            return CompletableFuture.completedFuture(LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.CANCELED));
         } else {
             char[] password = Arrays.copyOf(authentication.getPassword(), authentication.getPassword().length);
             char[] encodedPassword = ApiUtilities.urlEncode(authentication.getPassword());
@@ -181,9 +183,64 @@ class JsonApi {
                     return LoginResponse.createSuccessLoginResponse(response.get(), password);
                 } else {
                     Arrays.fill(password, (char) 0);
-                    return LoginResponse.createFailedLoginResponse(LoginResponse.Status.FAILED);
+                    return LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.FAILED);
                 }
             });
+        }
+    }
+
+    /**
+     * <p>Attempt to retrieve all groups of the server.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @return a CompletableFuture with the list containing all groups of this server,
+     * or an empty list if the request failed
+     */
+    public CompletableFuture<List<Group>> getGroups() {
+        var uri = WebUtilities.createURI(urls.get(GROUPS_URL_KEY));
+
+        if (uri.isPresent()) {
+            return RequestSender.getPaginated(uri.get()).thenApplyAsync(jsonElements -> {
+                List<Group> groups = jsonElements.stream()
+                        .map(jsonElement -> new Gson().fromJson(jsonElement, Group.class))
+                        .toList();
+
+                for (Group group: groups) {
+                    var experimenterLink = WebUtilities.createURI(group.getExperimentersLink());
+                    if (experimenterLink.isPresent()) {
+                        try {
+                            group.setOwners(RequestSender.getPaginated(experimenterLink.get()).get().stream()
+                                    .map(jsonElement -> new Gson().fromJson(jsonElement, Owner.class))
+                                    .toList());
+                        } catch (InterruptedException | ExecutionException e) {
+                            logger.warn("Couldn't retrieve owners of " + group, e);
+                        }
+                    }
+                }
+
+                return groups;
+            });
+        } else {
+            return CompletableFuture.completedFuture(List.of());
+        }
+    }
+
+    /**
+     * <p>Attempt to retrieve all owners of the server.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @return a CompletableFuture with the list containing all owners of this server,
+     * or an empty list if the request failed
+     */
+    public CompletableFuture<List<Owner>> getOwners() {
+        var uri = WebUtilities.createURI(urls.get(OWNERS_URL_KEY));
+
+        if (uri.isPresent()) {
+            return RequestSender.getPaginated(uri.get()).thenApply(jsonElements ->
+                    jsonElements.stream().map(jsonElement -> new Gson().fromJson(jsonElement, Owner.class)).toList()
+            );
+        } else {
+            return CompletableFuture.completedFuture(List.of());
         }
     }
 

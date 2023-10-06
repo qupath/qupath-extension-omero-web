@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -154,12 +155,20 @@ public class AdvancedSearch extends Stage {
     private void initUI(Stage ownerWindow) throws IOException {
         UiUtilities.loadFXML(this, AdvancedSearch.class.getResource("advanced_search.fxml"));
 
-        owner.setItems(browserModel.getOwners());
-        owner.getSelectionModel().selectFirst();
+        owner.setItems(FXCollections.observableList(client.getServer().getOwners()));
         owner.setConverter(client.getServer().getOwnerStringConverter());
+        if (client.getServer().getDefaultOwner().isPresent()) {
+            owner.getSelectionModel().select(client.getServer().getDefaultOwner().get());
+        } else {
+            owner.getSelectionModel().selectFirst();
+        }
 
-        group.setItems(browserModel.getGroups());
-        group.getSelectionModel().selectFirst();
+        group.setItems(FXCollections.observableList(client.getServer().getGroups()));
+        if (client.getServer().getDefaultGroup().isPresent()) {
+            group.getSelectionModel().select(client.getServer().getDefaultGroup().get());
+        } else {
+            group.getSelectionModel().selectFirst();
+        }
 
         results.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 

@@ -7,6 +7,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.SplitPane?>
@@ -113,16 +114,11 @@
                         <children>
                            <HBox>
                               <children>
-                                 <ComboBox fx:id="groupFilter" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
+                                 <MenuButton fx:id="groupOwner" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" HBox.hgrow="ALWAYS">
                                     <tooltip>
-                                       <Tooltip text="%Browser.Browser.filterByGroup" />
+                                       <Tooltip text="%Browser.Browser.filterByGroupAndOwner" />
                                     </tooltip>
-                                 </ComboBox>
-                                 <ComboBox fx:id="ownerFilter" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
-                                    <tooltip>
-                                       <Tooltip text="%Browser.Browser.filterByOwner" />
-                                    </tooltip>
-                                 </ComboBox>
+                                 </MenuButton>
                               </children>
                            </HBox>
                            <TreeView fx:id="hierarchy" onMouseClicked="#onImagesTreeClicked" prefWidth="600.0" showRoot="false" VBox.vgrow="ALWAYS">

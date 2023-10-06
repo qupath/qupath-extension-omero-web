@@ -56,7 +56,7 @@ public class WebClient implements AutoCloseable {
     private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
     private final Map<Long, BufferedImage> thumbnails = new ConcurrentHashMap<>();
     private final Map<Class<? extends RepositoryEntity>, BufferedImage> omeroIcons = new ConcurrentHashMap<>();
-    private final Server server = new Server();
+    private Server server;
     private List<PixelAPI> availablePixelAPIs;
     private ApisHandler apisHandler;
     private Timer timeoutTimer;
@@ -307,30 +307,46 @@ public class WebClient implements AutoCloseable {
             if (apisHandler.isPresent()) {
                 this.apisHandler = apisHandler.get();
                 try {
-                    if (apisHandler.get().canSkipAuthentication().get()) {
-                        return Status.SUCCESS;
+                    if (this.apisHandler.canSkipAuthentication().get()) {
+                        return LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.UNAUTHENTICATED);
                     } else {
-                        return switch (login(args).get().getStatus()) {
-                            case CANCELED -> Status.CANCELED;
-                            case FAILED -> Status.FAILED;
-                            case SUCCESS -> Status.SUCCESS;
-                        };
+                        return login(args).get();
                     }
                 } catch (ExecutionException | InterruptedException e) {
                     logger.error("Error initializing client", e);
-                    return Status.FAILED;
+                    return LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.FAILED);
                 }
             } else {
-                return Status.FAILED;
+                return LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.FAILED);
             }
-        }).thenApply(status -> {
-            if (status.equals(Status.SUCCESS)) {
-                populateIcons();
-                server.initialize(apisHandler);
-            }
-            this.status = status;
+        }).thenApplyAsync(loginResponse -> {
+            LoginResponse.Status status = loginResponse.getStatus();
+            if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
+                try {
+                    var server = status.equals(LoginResponse.Status.SUCCESS) ?
+                            Server.create(apisHandler, loginResponse.getGroup(), loginResponse.getUserId()).get() :
+                            Server.create(apisHandler).get();
 
-            setUpPixelAPIs();
+                    if (server.isPresent()) {
+                        this.server = server.get();
+                    } else {
+                        status = LoginResponse.Status.FAILED;
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    logger.error("Error initializing client", e);
+                    status = LoginResponse.Status.FAILED;
+                }
+            }
+            if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
+                populateIcons();
+                setUpPixelAPIs();
+            }
+            this.status = switch (status) {
+                case SUCCESS, UNAUTHENTICATED -> Status.SUCCESS;
+                case FAILED -> Status.FAILED;
+                case CANCELED -> Status.CANCELED;
+            };
+
             return this;
         });
     }
@@ -342,20 +358,36 @@ public class WebClient implements AutoCloseable {
             if (apisHandler.isPresent()) {
                 this.apisHandler = apisHandler.get();
 
-                status = Status.SUCCESS;
-                if (!this.apisHandler.canSkipAuthentication().get()) {
-                    status = switch (login(args).get().getStatus()) {
-                        case CANCELED -> Status.CANCELED;
-                        case FAILED -> Status.FAILED;
-                        case SUCCESS -> Status.SUCCESS;
-                    };
-                }
+                LoginResponse loginResponse = this.apisHandler.canSkipAuthentication().get() ?
+                        LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.UNAUTHENTICATED) :
+                        login(args).get();
 
-                if (status.equals(Status.SUCCESS)) {
+                LoginResponse.Status status = loginResponse.getStatus();
+                if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
+                    try {
+                        var server = status.equals(LoginResponse.Status.SUCCESS) ?
+                                Server.create(this.apisHandler, loginResponse.getGroup(), loginResponse.getUserId()).get() :
+                                Server.create(this.apisHandler).get();
+
+                        if (server.isPresent()) {
+                            this.server = server.get();
+                        } else {
+                            status = LoginResponse.Status.FAILED;
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        logger.error("Error initializing client", e);
+                        status = LoginResponse.Status.FAILED;
+                    }
+                }
+                if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
                     populateIcons();
-                    server.initialize(apisHandler.get());
                     setUpPixelAPIs();
                 }
+                this.status = switch (status) {
+                    case SUCCESS, UNAUTHENTICATED -> Status.SUCCESS;
+                    case FAILED -> Status.FAILED;
+                    case CANCELED -> Status.CANCELED;
+                };
             } else {
                 status = Status.FAILED;
             }
@@ -371,9 +403,6 @@ public class WebClient implements AutoCloseable {
 
     private synchronized void setAuthenticationInformation(LoginResponse loginResponse) {
         this.authenticated.set(true);
-
-        server.setDefaultGroup(loginResponse.getGroup());
-        server.setDefaultUserId(loginResponse.getUserId());
 
         setUsername(loginResponse.getUsername());
         password = loginResponse.getPassword();

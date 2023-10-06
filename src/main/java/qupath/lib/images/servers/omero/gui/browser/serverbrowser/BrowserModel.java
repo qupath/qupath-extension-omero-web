@@ -7,7 +7,6 @@ import qupath.lib.images.servers.omero.web.apis.ApisHandler;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 import qupath.lib.images.servers.omero.web.entities.permissions.Group;
 import qupath.lib.images.servers.omero.web.entities.permissions.Owner;
-import qupath.lib.images.servers.omero.web.entities.repositoryentities.Server;
 
 import java.net.URI;
 
@@ -17,7 +16,7 @@ import java.net.URI;
  *     parts of the UI rendered by the browser.
  * </p>
  * <p>
- *     In effect, this class acts as an intermediate between a browser and a
+ *     Part of the goal of this class is to act as an intermediate between a browser and a
  *     {@link WebClient WebClient}.
  *     Properties and lists of a WebClient can be updated from any thread but the browser can
  *     only be accessed from the UI thread, so this class propagates changes made to these elements
@@ -33,14 +32,10 @@ public class BrowserModel {
     private final IntegerProperty numberOfOrphanedImages = new SimpleIntegerProperty();
     private final IntegerProperty numberOfOrphanedImagesLoaded = new SimpleIntegerProperty(0);
     private final IntegerProperty numberOfThumbnailsLoading = new SimpleIntegerProperty(0);
-    private final ObjectProperty<Owner> defaultUser = new SimpleObjectProperty<>();
-    private final ObjectProperty<Group> defaultGroup = new SimpleObjectProperty<>();
     private final ObservableSet<URI> openedImagesURIs = FXCollections.observableSet();
     private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
-    private final ObservableList<Owner> owners = FXCollections.observableArrayList();
-    private final ObservableList<Owner> ownersImmutable = FXCollections.unmodifiableObservableList(owners);
-    private final ObservableList<Group> groups = FXCollections.observableArrayList();
-    private final ObservableList<Group> groupsImmutable = FXCollections.unmodifiableObservableList(groups);
+    private final ObjectProperty<Owner> selectedOwner;
+    private final ObjectProperty<Group> selectedGroup;
 
     /**
      * Creates a new browser model
@@ -55,13 +50,24 @@ public class BrowserModel {
         UiUtilities.bindPropertyInUIThread(numberOfOrphanedImages, client.getApisHandler().getNumberOfOrphanedImages());
         UiUtilities.bindPropertyInUIThread(numberOfOrphanedImagesLoaded, client.getApisHandler().getNumberOfOrphanedImagesLoaded());
         UiUtilities.bindPropertyInUIThread(numberOfThumbnailsLoading, client.getApisHandler().getNumberOfThumbnailsLoading());
-        UiUtilities.bindPropertyInUIThread(defaultUser, client.getServer().getDefaultUser());
-        UiUtilities.bindPropertyInUIThread(defaultGroup, client.getServer().getDefaultGroup());
 
         UiUtilities.bindSetInUIThread(openedImagesURIs, client.getOpenedImagesURIs());
 
-        UiUtilities.bindListInUIThread(owners, client.getServer().getOwners());
-        UiUtilities.bindListInUIThread(groups, client.getServer().getGroups());
+        if (client.getServer().getDefaultOwner().isPresent()) {
+            selectedOwner = new SimpleObjectProperty<>(client.getServer().getDefaultOwner().get());
+        } else if (!client.getServer().getOwners().isEmpty()) {
+            selectedOwner = new SimpleObjectProperty<>(client.getServer().getOwners().get(0));
+        } else {
+            selectedOwner = new SimpleObjectProperty<>(null);
+        }
+
+        if (client.getServer().getDefaultGroup().isPresent()) {
+            selectedGroup = new SimpleObjectProperty<>(client.getServer().getDefaultGroup().get());
+        } else if (!client.getServer().getGroups().isEmpty()) {
+            selectedGroup = new SimpleObjectProperty<>(client.getServer().getGroups().get(0));
+        } else {
+            selectedGroup = new SimpleObjectProperty<>(null);
+        }
     }
 
     /**
@@ -114,20 +120,6 @@ public class BrowserModel {
     }
 
     /**
-     * See {@link Server#getDefaultUser()}.
-     */
-    public ReadOnlyObjectProperty<Owner> getDefaultUser() {
-        return defaultUser;
-    }
-
-    /**
-     * See {@link Server#getDefaultGroup()}.
-     */
-    public ReadOnlyObjectProperty<Group> getDefaultGroup() {
-        return defaultGroup;
-    }
-
-    /**
      * See {@link WebClient#getOpenedImagesURIs()}.
      */
     public ObservableSet<URI> getOpenedImagesURIs() {
@@ -135,16 +127,16 @@ public class BrowserModel {
     }
 
     /**
-     * See {@link Server#getOwners()}}.
+     * @return the currently selected owner of the browser
      */
-    public ObservableList<Owner> getOwners() {
-        return ownersImmutable;
+    public ObjectProperty<Owner> getSelectedOwner() {
+        return selectedOwner;
     }
 
     /**
-     * See {@link Server#getGroups()}}.
+     * @return the currently selected group of the browser
      */
-    public ObservableList<Group> getGroups() {
-        return groupsImmutable;
+    public ObjectProperty<Group> getSelectedGroup() {
+        return selectedGroup;
     }
 }

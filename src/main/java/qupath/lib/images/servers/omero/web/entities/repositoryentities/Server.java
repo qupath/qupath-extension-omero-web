@@ -1,9 +1,5 @@
 package qupath.lib.images.servers.omero.web.entities.repositoryentities;
 
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.StringConverter;
 import qupath.lib.images.servers.omero.web.apis.ApisHandler;
@@ -12,8 +8,8 @@ import qupath.lib.images.servers.omero.web.entities.permissions.Group;
 import qupath.lib.images.servers.omero.web.entities.permissions.Owner;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.ServerEntity;
 
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A server is the top element in the OMERO entity hierarchy.
@@ -23,12 +19,8 @@ import java.util.ResourceBundle;
 public class Server extends RepositoryEntity {
 
     private static final ResourceBundle resources = UiUtilities.getResources();
-    private final ObservableList<Owner> owners = FXCollections.observableArrayList(Owner.getAllMembersOwner());
-    private final ObservableList<Owner> ownersImmutable = FXCollections.unmodifiableObservableList(owners);
-    private final ObjectProperty<Owner> defaultUser = new SimpleObjectProperty<>(owners.get(0));
-    private final ObservableList<Group> groups = FXCollections.observableArrayList(Group.getAllGroupsGroup());
-    private final ObservableList<Group> groupsImmutable = FXCollections.unmodifiableObservableList(groups);
-    private final ObjectProperty<Group> defaultGroup = new SimpleObjectProperty<>(groups.get(0));
+    private final List<Owner> owners = new ArrayList<>();
+    private final List<Group> groups = new ArrayList<>();
     private final StringConverter<Owner> ownerStringConverter = new StringConverter<>() {
         @Override
         public String toString(Owner owner) {
@@ -43,8 +35,16 @@ public class Server extends RepositoryEntity {
                     .orElse(null);
         }
     };
+    private Owner defaultOwner = null;
+    private Group defaultGroup = null;
     private int numberOfChildren = 1;       // the server has at least an orphaned folder as a child
-    private int defaultUserId;
+
+    private Server(ApisHandler apisHandler) {
+        owners.add(Owner.getAllMembersOwner());
+        groups.add(Group.getAllGroupsGroup());
+
+        children.add(new OrphanedFolder(apisHandler));
+    }
 
     @Override
     public String toString() {
@@ -72,61 +72,84 @@ public class Server extends RepositoryEntity {
     }
 
     /**
-     * Initializes the server. This creates the orphaned folder and
-     * populates the children (projects and orphaned datasets) of the server,
-     * so this function must be called after that the connection to the server
-     * is established.
+     * <p>
+     *     Create the server. This creates the orphaned folder and populates the
+     *     children (projects and orphaned datasets) of the server.
+     * </p>
+     * <p>
+     *     Call {@link #create(ApisHandler, Group, int)} if you want to specify a default group
+     *     and a default user.
+     * </p>
      *
-     * @param apisHandler  the request handler of the browser
+     * @param apisHandler  the APIs handler of the browser
+     * @return the new server, or an empty Optional if the creation failed
      */
-    public void initialize(ApisHandler apisHandler) {
-        children.add(new OrphanedFolder(apisHandler));
-
-        populate(apisHandler);
+    public static CompletableFuture<Optional<Server>> create(ApisHandler apisHandler) {
+        return create(apisHandler, null, -1);
     }
 
     /**
-     * Set the default group of this server. This is usually the group
-     * of the connected user.
+     * Same as {@link #create(ApisHandler)}, but by specifying a default group
+     * and a default user.
      *
-     * @param group  the new default group
+     * @param apisHandler  the APIs handler of the browser
+     * @param defaultGroup  the default group of this server. This is usually the group
+     *                      of the connected user
+     * @param defaultUserId  the ID of the default owner of this server. This is usually the connected user
+     * @return the new server, or an empty Optional if the creation failed
      */
-    public synchronized void setDefaultGroup(Group group) {
-        defaultGroup.set(group);
+    public static CompletableFuture<Optional<Server>> create(ApisHandler apisHandler, Group defaultGroup, int defaultUserId) {
+        Server server = new Server(apisHandler);
 
-        if (!groups.contains(group)) {
-            groups.add(group);
-        }
+        return apisHandler.getGroups().thenCompose(groups -> {
+            server.groups.addAll(groups);
+
+            if (groups.isEmpty() || (defaultGroup != null && !groups.contains(defaultGroup))) {
+                return CompletableFuture.completedFuture(List.of());
+            } else {
+                server.defaultGroup = defaultGroup;
+                return apisHandler.getOwners();
+            }
+        }).thenApply(owners -> {
+            server.owners.addAll(owners);
+
+            boolean serverCreated = !owners.isEmpty();
+            Owner defaultOwner = null;
+            if (defaultUserId > -1) {
+                defaultOwner = server.owners.stream()
+                        .filter(owner -> owner.getId() == defaultUserId)
+                        .findAny()
+                        .orElse(null);
+
+                serverCreated = serverCreated && defaultOwner != null;
+            }
+
+            if (serverCreated) {
+                server.populate(apisHandler);
+                server.defaultOwner = defaultOwner;
+                return Optional.of(server);
+            } else {
+                return Optional.empty();
+            }
+        });
     }
 
     /**
      * <p>Get the default group of this server. This is usually the group of the connected user.</p>
-     * <p>This property may be updated from any thread.</p>
      *
-     * @return the default group of this server
+     * @return the default group of this server, or an empty Optional if no default group was set
      */
-    public ReadOnlyObjectProperty<Group> getDefaultGroup() {
-        return defaultGroup;
+    public Optional<Group> getDefaultGroup() {
+        return Optional.ofNullable(defaultGroup);
     }
 
     /**
-     * Set the ID of the default owner of this server. This is usually the connected user.
+     * <p>Get the default owner of this server. This is usually the connected user.</p>
      *
-     * @param userId  the ID of the default owner of this server
+     * @return the default owner of this server, or an empty Optional if no default owner was set
      */
-    public synchronized void setDefaultUserId(int userId) {
-        defaultUserId = userId;
-        updateDefaultUser();
-    }
-
-    /**
-     * <p>Get the default user of this server. This is usually the connected user.</p>
-     * <p>This property may be updated from any thread.</p>
-     *
-     * @return the default user of this server
-     */
-    public ReadOnlyObjectProperty<Owner> getDefaultUser() {
-        return defaultUser;
+    public Optional<Owner> getDefaultOwner() {
+        return Optional.ofNullable(defaultOwner);
     }
 
     /**
@@ -137,29 +160,17 @@ public class Server extends RepositoryEntity {
     }
 
     /**
-     * <p>
-     *     Returns a list of owners of this server.
-     *     It is populated by looking at the owners of all projects.
-     * </p>
-     * <p>This list may be updated from any thread.</p>
-     *
      * @return an unmodifiable list of owners of this server
      */
-    public ObservableList<Owner> getOwners() {
-        return ownersImmutable;
+    public List<Owner> getOwners() {
+        return Collections.unmodifiableList(owners);
     }
 
     /**
-     * <p>
-     *     Returns a list of groups of this server.
-     *     It is populated by looking at the groups of all projects.
-     * </p>
-     * <p>This list may be updated from any thread.</p>
-     *
      * @return an unmodifiable list of groups of this server
      */
-    public ObservableList<Group> getGroups() {
-        return groupsImmutable;
+    public List<Group> getGroups() {
+        return Collections.unmodifiableList(groups);
     }
 
     private void populate(ApisHandler apisHandler) {
@@ -174,25 +185,5 @@ public class Server extends RepositoryEntity {
         children.addAll(serverEntities);
 
         numberOfChildren += serverEntities.size();
-
-        groups.addAll(serverEntities.stream()
-                .map(ServerEntity::getGroup)
-                .distinct()
-                .filter(group -> !groups.contains(group))
-                .toList());
-
-        owners.addAll(serverEntities.stream()
-                .map(ServerEntity::getOwner)
-                .distinct()
-                .filter(owner -> !owners.contains(owner))
-                .toList());
-        updateDefaultUser();
-    }
-
-    private synchronized void updateDefaultUser() {
-        owners.stream()
-                .filter(owner -> owner.getId() == defaultUserId)
-                .findAny()
-                .ifPresent(defaultUser::set);
     }
 }
