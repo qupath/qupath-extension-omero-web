@@ -2,6 +2,8 @@ package qupath.lib.images.servers.omero.web.entities.repositoryentities;
 
 import javafx.collections.ObservableList;
 import javafx.util.StringConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.omero.web.apis.ApisHandler;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 import qupath.lib.images.servers.omero.web.entities.permissions.Group;
@@ -18,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class Server extends RepositoryEntity {
 
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
     private static final ResourceBundle resources = UiUtilities.getResources();
     private final List<Owner> owners = new ArrayList<>();
     private final List<Group> groups = new ArrayList<>();
@@ -105,6 +108,11 @@ public class Server extends RepositoryEntity {
             server.groups.addAll(groups);
 
             if (groups.isEmpty() || (defaultGroup != null && !groups.contains(defaultGroup))) {
+                if (groups.isEmpty()) {
+                    logger.error("The server didn't return any group");
+                } else {
+                    logger.error("The default group was not found in the list returned by the server");
+                }
                 return CompletableFuture.completedFuture(List.of());
             } else {
                 server.defaultGroup = defaultGroup;
@@ -129,6 +137,11 @@ public class Server extends RepositoryEntity {
                 server.defaultOwner = defaultOwner;
                 return Optional.of(server);
             } else {
+                if (owners.isEmpty()) {
+                    logger.error("The server didn't return any owner");
+                } else {
+                    logger.error("The provided owner was not found in the list returned by the server");
+                }
                 return Optional.empty();
             }
         });

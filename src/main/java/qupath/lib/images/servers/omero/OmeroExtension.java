@@ -30,6 +30,7 @@ import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
 import qupath.lib.gui.tools.MenuTools;
+import qupath.lib.images.servers.omero.gui.annotationimporter.AnnotationImporter;
 import qupath.lib.images.servers.omero.gui.annotationsender.AnnotationSender;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 import qupath.lib.images.servers.omero.gui.connectionsmanager.ConnectionsManagerCommand;
@@ -59,16 +60,22 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 			alreadyInstalled = true;
 
 			browseMenu = new BrowseMenu();
+
 			Action connectionManager = ActionTools.createAction(new ConnectionsManagerCommand(qupath.getStage()), ConnectionsManagerCommand.getMenuTitle());
+
 			Action actionSendAnnotations = ActionTools.createAction(AnnotationSender::sendAnnotations, AnnotationSender.getMenuTitle());
 			actionSendAnnotations.disabledProperty().bind(qupath.imageDataProperty().isNull());
+
+			Action actionImportAnnotations = ActionTools.createAction(AnnotationImporter::importAnnotations, AnnotationImporter.getMenuTitle());
+			actionImportAnnotations.disabledProperty().bind(qupath.imageDataProperty().isNull());
 
 			MenuTools.addMenuItems(qupath.getMenu("Extensions", false),
 					MenuTools.createMenu("OMERO",
 							browseMenu,
 							connectionManager,
 							new SeparatorMenuItem(),
-							actionSendAnnotations
+							actionSendAnnotations,
+							actionImportAnnotations
 					)
 			);
 		}

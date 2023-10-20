@@ -26,7 +26,10 @@ import java.util.ResourceBundle;
  *     Here, an annotation refers to a QuPath annotation (a path object)
  *     and <b>not</b> an OMERO annotation (some metadata attached to images for example).
  * </p>
- * <p>This class uses a {@link ConfirmationForm} to prompt the user for confirmation.</p>
+ * <p>
+ *     This class uses a {@link AnnotationForm} to prompt the user for parameters
+ *     and a {@link ConfirmationForm} to prompt the user for confirmation.
+ * </p>
  */
 public class AnnotationSender {
 
@@ -45,61 +48,85 @@ public class AnnotationSender {
     }
 
     /**
-     * <p>
-     *     Attempt to send selected annotations of the currently opened image to the corresponding OMERO server.
-     *     This method doesn't return anything but will show a dialog indicating the success of the operation.
-     * </p>
-     * <p>If no annotation is selected, all annotations will be sent to the server.</p>
+     * Attempt to send annotations of the currently opened image to the corresponding OMERO server.
+     * This method doesn't return anything but will show a dialog indicating the success of the operation.
      */
     public static void sendAnnotations() {
         var viewer = QuPathGUI.getInstance().getViewer();
 
         if (viewer.getServer() instanceof OmeroImageServer omeroImageServer) {
-            var annotations = getAnnotations(viewer);
+            try {
+                AnnotationForm annotationForm = new AnnotationForm();
+                boolean requestCanceled = !Dialogs.showConfirmDialog(
+                        resources.getString("AnnotationsSender.dataToSend"),
+                        annotationForm
+                );
 
-            if (annotations.isEmpty()) {
+                if (!requestCanceled) {
+                    var annotations = getAnnotations(viewer, annotationForm.areOnlySelectedAnnotationsSelected());
+                    if (annotations.isEmpty()) {
+                        Dialogs.showErrorMessage(
+                                resources.getString("AnnotationsSender.sendAnnotations"),
+                                resources.getString("AnnotationsSender.noAnnotations")
+                        );
+                    } else {
+                        URI uri = viewer.getServer().getURIs().iterator().next();
+
+                        boolean dialogConfirmed = true;
+                        try {
+                            dialogConfirmed = Dialogs.showConfirmDialog(
+                                    annotations.size() == 1 ?
+                                            resources.getString("AnnotationsSender.send1Annotation") :
+                                            MessageFormat.format(resources.getString("AnnotationsSender.sendXAnnotations"), annotations.size()),
+                                    new ConfirmationForm(annotations.size(), uri.toString(), annotationForm.deleteExistingDataSelected())
+                            );
+                        } catch (IOException e) {
+                            logger.error("Error while creating the confirmation form", e);
+                        }
+                        if (dialogConfirmed) {
+                            omeroImageServer.getClient().getApisHandler().writeROIs(
+                                    omeroImageServer.getId(),
+                                    annotations,
+                                    annotationForm.deleteExistingDataSelected()
+                            ).thenAccept(success -> Platform.runLater(() -> {
+                                if (success) {
+                                    String title;
+                                    String message = "";
+
+                                    if (annotationForm.deleteExistingDataSelected()) {
+                                        message += resources.getString("AnnotationsSender.existingAnnotationsDeleted") + "\n";
+                                    }
+
+                                    if (annotations.size() == 1) {
+                                        title = resources.getString("AnnotationsSender.1WrittenSuccessfully");
+                                        message += resources.getString("AnnotationsSender.1AnnotationWrittenSuccessfully");
+                                    } else {
+                                        title = resources.getString("AnnotationsSender.XWrittenSuccessfully");
+                                        message += MessageFormat.format(resources.getString("AnnotationsSender.XAnnotationsWrittenSuccessfully"), annotations.size());
+                                    }
+
+                                    Dialogs.showInfoNotification(
+                                            title,
+                                            message
+                                    );
+                                } else {
+                                    Dialogs.showErrorNotification(
+                                            annotations.size() == 1 ?
+                                                    resources.getString("AnnotationsSender.1AnnotationFailed") :
+                                                    MessageFormat.format(resources.getString("AnnotationsSender.XAnnotationFailed"), annotations.size()),
+                                            resources.getString("AnnotationsSender.seeLogs")
+                                    );
+                                }
+                            }));
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                logger.error("Error when creating the annotation form", e);
                 Dialogs.showErrorMessage(
                         resources.getString("AnnotationsSender.sendAnnotations"),
-                        resources.getString("AnnotationsSender.noAnnotations")
+                        e.getLocalizedMessage()
                 );
-            } else {
-                URI uri = viewer.getServer().getURIs().iterator().next();
-
-                boolean dialogConfirmed = true;
-                try {
-                    dialogConfirmed = Dialogs.showConfirmDialog(
-                            annotations.size() == 1 ?
-                                    resources.getString("AnnotationsSender.send1Annotation") :
-                                    MessageFormat.format(resources.getString("AnnotationsSender.sendXAnnotations"), annotations.size()),
-                            new ConfirmationForm(annotations.size(), uri.toString())
-                    );
-                } catch (IOException e) {
-                    logger.error("Error while creating the confirmation form", e);
-                }
-                if (dialogConfirmed) {
-                    omeroImageServer.sendAnnotations(annotations).thenAccept(success -> Platform.runLater(() -> {
-                        if (success) {
-                            if (annotations.size() == 1) {
-                                Dialogs.showInfoNotification(
-                                        resources.getString("AnnotationsSender.1WrittenSuccessfully"),
-                                        resources.getString("AnnotationsSender.1AnnotationWrittenSuccessfully")
-                                );
-                            } else {
-                                Dialogs.showInfoNotification(
-                                        resources.getString("AnnotationsSender.XWrittenSuccessfully"),
-                                        MessageFormat.format(resources.getString("AnnotationsSender.XAnnotationsWrittenSuccessfully"), annotations.size())
-                                );
-                            }
-                        } else {
-                            Dialogs.showErrorNotification(
-                                    annotations.size() == 1 ?
-                                            resources.getString("AnnotationsSender.1AnnotationFailed") :
-                                            MessageFormat.format(resources.getString("AnnotationsSender.XAnnotationFailed"), annotations.size()),
-                                    resources.getString("AnnotationsSender.seeLogs")
-                            );
-                        }
-                    }));
-                }
             }
         } else {
             Dialogs.showErrorMessage(
@@ -109,21 +136,11 @@ public class AnnotationSender {
         }
     }
 
-    private static Collection<PathObject> getAnnotations(QuPathViewer viewer) {
-        var selectedObjects = viewer.getAllSelectedObjects();
-
-        if (selectedObjects.isEmpty()) {
-            boolean confirm = Dialogs.showConfirmDialog(
-                    resources.getString("AnnotationsSender.sendAnnotations"),
-                    resources.getString("AnnotationsSender.nothingSelected")
-            );
-            if (confirm && viewer.getHierarchy() != null) {
-                return viewer.getHierarchy().getAnnotationObjects();
-            } else {
-                return List.of();
-            }
+    private static Collection<PathObject> getAnnotations(QuPathViewer viewer, boolean onlySelected) {
+        if (onlySelected) {
+            return viewer.getAllSelectedObjects();
         } else {
-            return selectedObjects;
+            return viewer.getHierarchy() == null ? List.of() : viewer.getHierarchy().getAnnotationObjects();
         }
     }
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.layout.VBox?>
+
+<fx:root alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" type="VBox" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <CheckBox fx:id="deleteAnnotations" mnemonicParsing="false" selected="true" text="%AnnotationsImporter.deleteCurrentAnnotations" />
+      <CheckBox fx:id="deleteDetections" mnemonicParsing="false" selected="true" text="%AnnotationsImporter.deleteCurrentDetections" />
+   </children>
+</fx:root>

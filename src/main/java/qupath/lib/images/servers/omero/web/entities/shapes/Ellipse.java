@@ -1,6 +1,7 @@
 package qupath.lib.images.servers.omero.web.entities.shapes;
 
 import com.google.gson.annotations.SerializedName;
+import qupath.lib.objects.PathObject;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
 
@@ -9,6 +10,7 @@ import qupath.lib.roi.interfaces.ROI;
  */
 class Ellipse extends Shape {
 
+    public static final String TYPE = TYPE_URL + "Ellipse";
     @SerializedName(value = "X", alternate = "x") private final double x;
     @SerializedName(value = "Y", alternate = "y") private final double y;
     @SerializedName(value = "RadiusX", alternate = "radiusX") private final double radiusX;
@@ -17,16 +19,20 @@ class Ellipse extends Shape {
     /**
      * Creates an ellipse.
      *
+     * @param pathObject  the path object corresponding to this shape
      * @param x  x-coordinate of the center of the ellipse
      * @param y  y-coordinate of the center of the ellipse
      * @param radiusX  radius along the x-axis
      * @param radiusY  radius along the y-axis
      */
-    public Ellipse(double x, double y, double radiusX, double radiusY) {
+    public Ellipse(PathObject pathObject, double x, double y, double radiusX, double radiusY) {
+        super(pathObject);
+
         this.x = x;
         this.y = y;
         this.radiusX = radiusX;
         this.radiusY = radiusY;
+        this.type = TYPE;
     }
 
     @Override

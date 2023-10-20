@@ -1,6 +1,7 @@
 package qupath.lib.images.servers.omero.web.entities.shapes;
 
 import com.google.gson.annotations.SerializedName;
+import qupath.lib.objects.PathObject;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
 
@@ -9,6 +10,7 @@ import qupath.lib.roi.interfaces.ROI;
  */
 class Rectangle extends Shape {
 
+    public static final String TYPE = TYPE_URL + "Rectangle";
     @SerializedName(value = "X", alternate = "x") private final double x;
     @SerializedName(value = "Y", alternate = "y") private final double y;
     @SerializedName(value = "Width", alternate = "width") private final double width;
@@ -17,16 +19,20 @@ class Rectangle extends Shape {
     /**
      * Creates a rectangle.
      *
+     * @param pathObject  the path object corresponding to this shape
      * @param x  the x-coordinate of the top left point of the rectangle
      * @param y  the y-coordinate of the top left point of the rectangle
      * @param width  the width of the rectangle
      * @param height  the height of the rectangle
      */
-    public Rectangle(double x, double y, double width, double height) {
+    public Rectangle(PathObject pathObject, double x, double y, double width, double height) {
+        super(pathObject);
+
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+        this.type = TYPE;
     }
 
     @Override

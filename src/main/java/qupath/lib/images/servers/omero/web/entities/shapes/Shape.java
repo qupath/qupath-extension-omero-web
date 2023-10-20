@@ -17,6 +17,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -25,29 +26,92 @@ import java.util.stream.Collectors;
 public abstract class Shape {
 
     private static final Logger logger = LoggerFactory.getLogger(Shape.class);
+    protected static String TYPE_URL = "http://www.openmicroscopy.org/Schemas/OME/2016-06#";
+    @SerializedName(value = "@id") private int id;
     @SerializedName(value = "TheC") private Integer c;
     @SerializedName(value = "TheZ") private int z;
     @SerializedName(value = "TheT") private int t;
-    @SerializedName(value = "@type") private String type;
-    @SerializedName(value = "Text", alternate = "text") private String text;
+    @SerializedName(value = "@type") protected String type;
+    @SerializedName(value = "Text", alternate = "text") protected String text;
     @SerializedName(value = "Locked", alternate = "locked") private Boolean locked;
     @SerializedName(value = "FillColor", alternate = "fillColor") private int fillColor;
     @SerializedName(value = "StrokeColor", alternate = "strokeColor") private Integer strokeColor;
     @SerializedName(value = "oldId") private String oldId = "-1:-1";
 
-    /**
-     * @return the ROI that corresponds to this shape
-     */
-    abstract ROI createROI();
+    public Shape(PathObject pathObject) {
+        this.text = String.format(
+                "%s:%s:%s:%s",
+                pathObject.isDetection() ? "Detection" : "Annotation",
+                pathObject.getPathClass() == null ? "NoClass" : pathObject.getPathClass().toString().replaceAll(":","&"),
+                pathObject.getID().toString(),
+                pathObject.getParent() == null ? "NoParent" : pathObject.getParent().getID().toString()
+        );
+    }
 
     /**
-     * @return a PathObject build from the ROI corresponding to this shape
+     * @return a PathObject built from the ROI corresponding to this shape
      */
     public PathObject createAnnotation() {
-        var pathObject = PathObjects.createAnnotationObject(createROI());
-        initializeObject(pathObject);
+        String[] parsedComment = parseROIComment();
+        PathClass classes = PathClass.fromCollection(Arrays.stream(parsedComment[1].split("&")).toList());
+
+        PathObject pathObject;
+        if (parsedComment[0].equals("Detection")) {
+            pathObject = PathObjects.createDetectionObject(createROI(), classes);
+        } else {
+            pathObject = PathObjects.createAnnotationObject(createROI(), classes);
+        }
+
+        try {
+            pathObject.setID(UUID.fromString(parsedComment[2]));
+        } catch (IllegalArgumentException e) {
+            logger.warn(String.format("%s is not a valid UUID", parsedComment[2]));
+        }
+
+        if (strokeColor != null)
+            pathObject.setColor(strokeColor >> 8);
+
+        if (locked != null)
+            pathObject.setLocked(locked);
 
         return pathObject;
+    }
+
+    /**
+     * @return the ID of the QuPath annotation corresponding to this shape
+     */
+    public String getQuPathId() {
+        return parseROIComment()[2];
+    }
+
+    /**
+     * @return the ID of the QuPath annotation corresponding to the parent of this shape
+     */
+    public String getQuPathParentId() {
+        return parseROIComment()[3];
+    }
+
+    /**
+     * <p>
+     *     Set the {@code oldId} field of this shape.
+     * </p>
+     * <p>
+     *     This corresponds to "roiID:shapeID" (see
+     *     <a href="https://docs.openmicroscopy.org/omero/latest/developers/json-api.html#rois-and-shapes">here</a>
+     *     for the difference between ROI ID and shape ID).
+     * </p>
+     *
+     * @param roiID the ROI ID (as explained above)
+     */
+    public void setOldId(int roiID) {
+        oldId = String.format("\"%d:%d\"", roiID, id);
+    }
+
+    /**
+     * @return the {@code oldId} field of this shape (see {@link #setOldId(int)})
+     */
+    public String getOldId() {
+        return oldId;
     }
 
     /**
@@ -57,21 +121,21 @@ public abstract class Shape {
         @Override
         public Shape deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
             try {
-                String type = json.getAsJsonObject().get("@type").getAsString().toLowerCase();
+                String type = json.getAsJsonObject().get("@type").getAsString();
 
-                if (type.endsWith("#rectangle"))
+                if (type.equalsIgnoreCase(Rectangle.TYPE))
                     return context.deserialize(json, Rectangle.class);
-                if (type.endsWith("#ellipse"))
+                if (type.equalsIgnoreCase(Ellipse.TYPE))
                     return context.deserialize(json, Ellipse.class);
-                if (type.endsWith("#line"))
+                if (type.equalsIgnoreCase(Line.TYPE))
                     return context.deserialize(json, Line.class);
-                if (type.endsWith("#polygon"))
+                if (type.equalsIgnoreCase(Polygon.TYPE))
                     return context.deserialize(json, Polygon.class);
-                if (type.endsWith("#polyline"))
+                if (type.equalsIgnoreCase(Polyline.TYPE))
                     return context.deserialize(json, Polyline.class);
-                if (type.endsWith("#point"))
+                if (type.equalsIgnoreCase(Point.TYPE))
                     return context.deserialize(json, Point.class);
-                if (type.endsWith("#label"))
+                if (type.equalsIgnoreCase(Label.TYPE))
                     return context.deserialize(json, Label.class);
 
                 logger.warn("Unsupported type {}", type);
@@ -95,33 +159,26 @@ public abstract class Shape {
 
             if (roi instanceof RectangleROI) {
                 type = Rectangle.class;
-                shape = new Rectangle(roi.getBoundsX(), roi.getBoundsY(), roi.getBoundsWidth(), roi.getBoundsHeight());
-                shape.setType("Rectangle");
+                shape = new Rectangle(src, roi.getBoundsX(), roi.getBoundsY(), roi.getBoundsWidth(), roi.getBoundsHeight());
             } else if (roi instanceof EllipseROI) {
                 type = Ellipse.class;
-                shape = new Ellipse(roi.getCentroidX(), roi.getCentroidY(), roi.getBoundsWidth()/2, roi.getBoundsHeight()/2);
-                shape.setType("Ellipse");
+                shape = new Ellipse(src, roi.getCentroidX(), roi.getCentroidY(), roi.getBoundsWidth()/2, roi.getBoundsHeight()/2);
             } else if (roi instanceof LineROI lineRoi) {
                 type = Line.class;
-                shape = new Line(lineRoi.getX1(), lineRoi.getY1(), lineRoi.getX2(), lineRoi.getY2());
-                shape.setType("Line");
+                shape = new Line(src, lineRoi.getX1(), lineRoi.getY1(), lineRoi.getX2(), lineRoi.getY2());
             } else if (roi instanceof PolylineROI) {
                 type = Polyline.class;
-                shape = new Polyline(pointsToString(roi.getAllPoints()));
-                shape.setType("Polyline");
+                shape = new Polyline(src, pointsToString(roi.getAllPoints()));
             } else if (roi instanceof PolygonROI) {
                 type = Polygon.class;
-                shape = new Polygon(pointsToString(roi.getAllPoints()));
-                shape.setType("Polygon");
+                shape = new Polygon(src, pointsToString(roi.getAllPoints()));
             } else if (roi instanceof PointsROI) {
                 JsonElement[] points = new JsonElement[roi.getNumPoints()];
                 List<Point2> roiPoints = roi.getAllPoints();
                 PathClass pathClass = src.getPathClass();
 
                 for (int i = 0; i < roiPoints.size(); i++) {
-                    shape = new Point(roiPoints.get(i).getX(), roiPoints.get(i).getY());
-                    shape.setType("Point");
-                    shape.text = src.getName() != null ? src.getName() : "";
+                    shape = new Point(src, roiPoints.get(i).getX(), roiPoints.get(i).getY());
                     shape.fillColor = pathClass != null ? ARGBToRGBA(src.getPathClass().getColor()) : -256;
                     points[i] = context.serialize(shape, Point.class);
                 }
@@ -137,9 +194,7 @@ public abstract class Shape {
                 JsonElement[] polygons = new JsonElement[rois.size()];
 
                 for (int i = 0; i < polygons.length; i++) {
-                    shape = new Polygon(pointsToString(rois.get(i).getAllPoints()));
-                    shape.setType("Polygon");
-                    shape.text = src.getName() != null ? src.getName() : "";
+                    shape = new Polygon(src, pointsToString(rois.get(i).getAllPoints()));
                     shape.fillColor = pathClass != null ? ARGBToRGBA(pathClass.getColor()) : -256;
                     polygons[i] = context.serialize(shape, Polygon.class);
                 }
@@ -151,18 +206,21 @@ public abstract class Shape {
 
             // Set the appropriate colors
             if (src.getPathClass() != null) {
-                int classColor = ARGBToRGBA(src.getPathClass().getColor());
-                shape.fillColor = classColor;
-                shape.strokeColor = classColor;
+                shape.fillColor = -256;	// Transparent
+                shape.strokeColor = ARGBToRGBA(src.getPathClass().getColor());
             } else {
                 shape.fillColor = -256;	// Transparent
-                shape.strokeColor = ARGBToRGBA(PathPrefs.colorDefaultObjectsProperty().get()); // Default Qupath object color
+                shape.strokeColor = ARGBToRGBA(PathPrefs.colorDefaultObjectsProperty().get());
             }
 
-            shape.text = src.getName() != null ? src.getName() : "";
             return context.serialize(shape, type);
         }
     }
+
+    /**
+     * @return the ROI that corresponds to this shape
+     */
+    protected abstract ROI createROI();
 
     /**
      * Parse the OMERO string representing points into a list.
@@ -192,17 +250,22 @@ public abstract class Shape {
         return c == null ? ImagePlane.getPlane(z, t) : ImagePlane.getPlaneWithChannel(c, z, t);
     }
 
-    private void initializeObject(PathObject pathObject) {
-        if (text != null && !text.isBlank())
-            pathObject.setName(text);
-        if (strokeColor != null)
-            pathObject.setColor(strokeColor >> 8);
-        if (locked != null)
-            pathObject.setLocked(locked);
-    }
+    private String[] parseROIComment() {
+        String[] parsedComment = {
+                "Annotation",
+                "NoClass",
+                "",
+                "NoParent"
+        };
+        String[] tokens = text.split(":");
 
-    private void setType(String type) {
-        this.type = "http://www.openmicroscopy.org/Schemas/OME/2016-06#" + type;
+        for (int i=0; i<4; ++i) {
+            if (tokens.length > i && !tokens[i].isEmpty()) {
+                parsedComment[i] = tokens[i];
+            }
+        }
+
+        return parsedComment;
     }
 
     /**

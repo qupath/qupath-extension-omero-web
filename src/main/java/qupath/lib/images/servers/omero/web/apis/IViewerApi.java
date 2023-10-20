@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -28,12 +29,17 @@ class IViewerApi {
     private static final Logger logger = LoggerFactory.getLogger(IViewerApi.class);
     private static final String ROIS_URL = "%s/iviewer/persist_rois/";
     private static final String ROIS_BODY = """
-        {"imageId":%d,
-        "rois":{"count":%d,
-        "empty_rois":{},
-        "new_and_deleted":[],
-        "deleted":{},
-        "new":[%s],"modified":[]}}
+        {
+            "imageId":%d,
+            "rois": {
+                "count":%d,
+                "empty_rois":{%s},
+                "new_and_deleted":[],
+                "deleted":{},
+                "new":[%s],
+                "modified":[]
+            }
+        }
         """;
     private static final String ROIS_REFERER_URL = "%s/iviewer/?images=%d";
     private final URI host;
@@ -53,22 +59,38 @@ class IViewerApi {
     }
 
     /**
-     * <p>Attempt to send ROIs to the server.</p>
+     * <p>Attempt to write and delete ROIs to the server.</p>
      * <p>This function is asynchronous.</p>
      *
      * @param id  the OMERO image id
-     * @param pathObjects  the list of ROIs
+     * @param pathObjectsToAdd  the list of ROIs to add. Detections from this list will be skipped.
+     * @param shapesToRemove the list of ROIs to remove
      * @param token  the OMERO <a href="https://docs.openmicroscopy.org/omero/5.6.0/developers/json-api.html#get-csrf-token">CSRF token</a>
      * @return a CompletableFuture indicating the success of the operation
      */
-    public CompletableFuture<Boolean> writeROIs(long id, Collection<PathObject> pathObjects, String token) {
+    public CompletableFuture<Boolean> writeROIs(long id, Collection<PathObject> pathObjectsToAdd, Collection<Shape> shapesToRemove, String token) {
         var uri = WebUtilities.createURI(String.format(ROIS_URL, host));
-        List<String> rois = pathObjectsToString(pathObjects);
 
         if (uri.isPresent()) {
+            var detections = pathObjectsToAdd.stream().filter(PathObject::isDetection).toList();
+            if (!detections.isEmpty()) {
+                logger.warn(detections.size() + " detections have been detected and won't be sent.");
+            }
+
+            List<String> roisToAdd = pathObjectsToString(pathObjectsToAdd.stream().filter(e -> !e.isDetection()).toList());
+            String roisToRemove = shapesToRemove.stream()
+                    .map(shape ->String.format("%s\":[%s]", shape.getOldId().split(":")[0], shape.getOldId()))
+                    .collect(Collectors.joining(","));
+
             return RequestSender.post(
                     uri.get(),
-                    String.format(ROIS_BODY, id, rois.size(), String.join(", ", rois)),
+                    String.format(
+                            ROIS_BODY,
+                            id,
+                            roisToAdd.size() + shapesToRemove.size(),
+                            roisToRemove,
+                            String.join(", ", roisToAdd)
+                    ),
                     String.format(ROIS_REFERER_URL, host, id),
                     token
             ).thenApply(response -> {

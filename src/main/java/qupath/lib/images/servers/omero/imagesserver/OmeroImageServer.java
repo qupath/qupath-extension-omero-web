@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.*;
 import qupath.lib.images.servers.omero.web.WebClient;
 import qupath.lib.images.servers.omero.web.WebUtilities;
+import qupath.lib.images.servers.omero.web.entities.shapes.Shape;
 import qupath.lib.images.servers.omero.web.pixelapis.PixelAPI;
 import qupath.lib.images.servers.omero.web.pixelapis.PixelAPIReader;
 import qupath.lib.objects.PathObject;
@@ -14,7 +15,6 @@ import java.awt.image.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -135,8 +135,27 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
     @Override
     public Collection<PathObject> readPathObjects() {
         try {
-            return client.getApisHandler().getROIs(id).get();
-        } catch (Exception e) {
+            List<Shape> shapes = client.getApisHandler().getROIs(id).get();
+
+            Map<String, String> childToParentId = new HashMap<>();
+            Map<String, PathObject> idToPathObject = new HashMap<>();
+            for (Shape shape: shapes) {
+                String id = shape.getQuPathId();
+                idToPathObject.put(id, shape.createAnnotation());
+                childToParentId.put(id, shape.getQuPathParentId());
+            }
+
+            List<PathObject> pathObjects = new ArrayList<>();
+            for (Map.Entry<String, String> entry: childToParentId.entrySet()) {
+                if (idToPathObject.containsKey(entry.getValue())) {
+                    idToPathObject.get(entry.getValue()).addChildObject(idToPathObject.get(entry.getKey()));
+                } else {
+                    pathObjects.add(idToPathObject.get(entry.getKey()));
+                }
+            }
+
+            return pathObjects;
+        } catch (InterruptedException | ExecutionException e) {
             logger.error("Error reading path objects", e);
             return Collections.emptyList();
         }
@@ -155,27 +174,17 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
     }
 
     /**
-     * <p>Send annotations to the server of this image.</p>
-     * <p>Detections are not supported by OMERO and won't be sent to the server.</p>
-     * <p>This function is asynchronous.</p>
-     *
-     * @param pathObjects  the annotations to send
-     * @return a CompletableFuture indicating the success of the operation
-     */
-    public CompletableFuture<Boolean> sendAnnotations(Collection<PathObject> pathObjects) {
-        var detections = pathObjects.stream().filter(PathObject::isDetection).toList();
-        if (!detections.isEmpty()) {
-            logger.warn(detections.size() + " detections have been detected and won't be sent.");
-        }
-
-        return client.getApisHandler().writeROIs(id, pathObjects.stream().filter(e -> !e.isDetection()).toList());
-    }
-
-    /**
      * @return the client owning this image server
      */
     public WebClient getClient() {
         return client;
+    }
+
+    /**
+     * @return the ID of the image
+     */
+    public long getId() {
+        return id;
     }
 
     private boolean setId() {

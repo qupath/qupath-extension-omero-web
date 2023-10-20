@@ -18,7 +18,6 @@ import qupath.lib.images.servers.omero.web.RequestSender;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.RepositoryEntity;
 import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.ServerEntity;
 import qupath.lib.images.servers.omero.web.entities.shapes.Shape;
-import qupath.lib.objects.PathObject;
 
 import java.net.PasswordAuthentication;
 import java.net.URI;
@@ -368,25 +367,29 @@ class JsonApi {
      * @param id  the OMERO image ID
      * @return a CompletableFuture with the list of ROIs. If an error occurs, the list is empty
      */
-    public CompletableFuture<List<PathObject>> getROIs(long id) {
+    public CompletableFuture<List<Shape>> getROIs(long id) {
         var uri = WebUtilities.createURI(String.format(ROIS_URL, host, id));
 
         if (uri.isPresent()) {
             var gson = new GsonBuilder().registerTypeAdapter(Shape.class, new Shape.GsonShapeDeserializer()).setLenient().create();
 
             return RequestSender.getPaginated(uri.get()).thenApply(jsonElements -> jsonElements.stream()
-                    .map(datum -> datum.getAsJsonObject().getAsJsonArray("shapes").asList().stream()
-                            .map(jsonElement -> {
-                                try {
-                                    return gson.fromJson(jsonElement, Shape.class);
-                                } catch (JsonSyntaxException e) {
-                                    logger.error("Error parsing shape", e);
-                                    return null;
-                                }
-                            })
-                            .filter(Objects::nonNull)
-                            .map(Shape::createAnnotation)
-                            .toList())
+                    .map(datum -> {
+                        int roiID = datum.getAsJsonObject().get("@id").getAsInt();
+
+                        return datum.getAsJsonObject().getAsJsonArray("shapes").asList().stream()
+                                .map(jsonElement -> {
+                                    try {
+                                        return gson.fromJson(jsonElement, Shape.class);
+                                    } catch (JsonSyntaxException e) {
+                                        logger.error("Error parsing shape", e);
+                                        return null;
+                                    }
+                                })
+                                .filter(Objects::nonNull)
+                                .peek(shape -> shape.setOldId(roiID))
+                                .toList();
+                    })
                     .flatMap(List::stream)
                     .toList());
         } else {

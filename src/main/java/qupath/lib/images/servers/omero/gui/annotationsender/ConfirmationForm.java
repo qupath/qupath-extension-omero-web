@@ -10,8 +10,8 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 /**
- * Form that can be used in a dialog to show the number of annotations
- * to be sent and the image URI to the user.
+ * Form that can be used in a dialog to ask the
+ * user for confirmation.
  */
 class ConfirmationForm extends VBox {
 
@@ -19,15 +19,18 @@ class ConfirmationForm extends VBox {
     private Label information;
     @FXML
     private Label uri;
+    @FXML
+    private Label existingAnnotationsDeleted;
 
     /**
      * Creates the confirmation form.
      *
      * @param numberOfAnnotations  the number of annotations about to be sent
      * @param imageURI  the URI of the image
+     * @param existingDeleted  whether existing annotations should be deleted
      * @throws IOException if an error occurs while creating the form
      */
-    public ConfirmationForm(int numberOfAnnotations, String imageURI) throws IOException {
+    public ConfirmationForm(int numberOfAnnotations, String imageURI, boolean existingDeleted) throws IOException {
         UiUtilities.loadFXML(this, ConfirmationForm.class.getResource("confirmation_form.fxml"));
         ResourceBundle resources = UiUtilities.getResources();
 
@@ -38,5 +41,9 @@ class ConfirmationForm extends VBox {
         }
 
         uri.setText(imageURI);
+
+        if (existingDeleted) {
+            existingAnnotationsDeleted.setText(resources.getString("AnnotationsSender.ConfirmationForm.existingAnnotationsDeleted"));
+        }
     }
 }

@@ -3,6 +3,7 @@ package qupath.lib.images.servers.omero.web.entities.shapes;
 import com.google.gson.annotations.SerializedName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qupath.lib.objects.PathObject;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
 
@@ -13,8 +14,13 @@ import qupath.lib.roi.interfaces.ROI;
 class Label extends Shape {
 
     private static final Logger logger = LoggerFactory.getLogger(Shape.class);
+    public static final String TYPE = TYPE_URL + "Label";
     @SerializedName(value = "X", alternate = "x") private double x;
     @SerializedName(value = "Y", alternate = "y") private double y;
+
+    public Label(PathObject pathObject) {
+        super(pathObject);
+    }
 
     @Override
     public ROI createROI() {
