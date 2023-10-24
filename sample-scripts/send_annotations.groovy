@@ -1,4 +1,4 @@
-import qupath.lib.images.servers.omero.imagesserver.*
+import qupath.ext.omero.imagesserver.*
 
 /*
  * This script creates an annotation on the current image and send it to the OMERO server.
@@ -23,7 +23,7 @@ addObject(annotation)
 def annotations = [annotation]    // other annotations could be added to this list
 
 // Send annotation to OMERO
-def status = omeroServer.sendAnnotations(annotations).get()
+def status = omeroServer.getClient().getApisHandler().writeROIs(omeroServer.getId(), annotations, true).get()
 if (status) {
     println "Annotation sent"
 } else {
