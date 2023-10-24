@@ -3,7 +3,7 @@ package qupath.lib.images.servers.omero.gui.connectionsmanager.connection;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
-import qupath.lib.images.servers.omero.web.WebClient;
+import qupath.lib.images.servers.omero.core.WebClient;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 
 import java.net.URI;

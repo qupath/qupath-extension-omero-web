@@ -12,7 +12,7 @@
  *         {@link qupath.lib.images.servers.ImageServer ImageServer} used when opening images coming from OMERO servers.
  *     </li>
  *     <li>
- *         The {@link qupath.lib.images.servers.omero.web WEB} package contains web requests to communicate with an OMERO server.
+ *         The {@link qupath.lib.images.servers.omero.core WEB} package contains web requests to communicate with an OMERO server.
  *     </li>
  * </ul>
  */

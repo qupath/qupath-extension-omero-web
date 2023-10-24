@@ -6,10 +6,10 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.entities.search.SearchResult;
-import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.Dataset;
-import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.Project;
+import qupath.lib.images.servers.omero.core.WebClient;
+import qupath.lib.images.servers.omero.core.entities.search.SearchResult;
+import qupath.lib.images.servers.omero.core.entities.repositoryentities.serverentities.Dataset;
+import qupath.lib.images.servers.omero.core.entities.repositoryentities.serverentities.Project;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 
 import java.awt.image.BufferedImage;

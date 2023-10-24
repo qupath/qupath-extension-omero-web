@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.ImageServerBuilder;
-import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.WebClients;
-import qupath.lib.images.servers.omero.web.RequestSender;
-import qupath.lib.images.servers.omero.web.WebUtilities;
+import qupath.lib.images.servers.omero.core.WebClient;
+import qupath.lib.images.servers.omero.core.WebClients;
+import qupath.lib.images.servers.omero.core.RequestSender;
+import qupath.lib.images.servers.omero.core.WebUtilities;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;

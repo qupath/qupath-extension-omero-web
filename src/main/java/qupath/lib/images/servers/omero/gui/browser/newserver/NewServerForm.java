@@ -3,7 +3,7 @@ package qupath.lib.images.servers.omero.gui.browser.newserver;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
-import qupath.lib.images.servers.omero.web.ClientsPreferencesManager;
+import qupath.lib.images.servers.omero.core.ClientsPreferencesManager;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 
 import java.io.IOException;

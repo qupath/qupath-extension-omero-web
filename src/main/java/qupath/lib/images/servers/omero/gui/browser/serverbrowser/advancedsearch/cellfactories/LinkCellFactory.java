@@ -3,7 +3,7 @@ package qupath.lib.images.servers.omero.gui.browser.serverbrowser.advancedsearch
 import javafx.scene.control.Button;
 import javafx.scene.control.TableCell;
 import qupath.lib.gui.QuPathGUI;
-import qupath.lib.images.servers.omero.web.entities.search.SearchResult;
+import qupath.lib.images.servers.omero.core.entities.search.SearchResult;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 
 import java.util.ResourceBundle;

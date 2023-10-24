@@ -7,7 +7,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qupath.lib.images.servers.omero.web.WebClient;
+import qupath.lib.images.servers.omero.core.WebClient;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 import qupath.lib.images.servers.omero.gui.connectionsmanager.connection.Connection;
 

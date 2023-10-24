@@ -6,10 +6,10 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
-import qupath.lib.images.servers.omero.web.RequestSender;
+import qupath.lib.images.servers.omero.core.RequestSender;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
-import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.WebUtilities;
+import qupath.lib.images.servers.omero.core.WebClient;
+import qupath.lib.images.servers.omero.core.WebUtilities;
 
 import java.io.IOException;
 import java.net.URI;

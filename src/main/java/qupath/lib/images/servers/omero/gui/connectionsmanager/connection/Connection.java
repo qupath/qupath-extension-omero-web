@@ -13,11 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.fx.dialogs.Dialogs;
 import qupath.lib.images.servers.omero.OmeroExtension;
-import qupath.lib.images.servers.omero.web.ClientsPreferencesManager;
-import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.WebClients;
+import qupath.lib.images.servers.omero.core.ClientsPreferencesManager;
+import qupath.lib.images.servers.omero.core.WebClient;
+import qupath.lib.images.servers.omero.core.WebClients;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
-import qupath.lib.images.servers.omero.web.entities.login.LoginResponse;
+import qupath.lib.images.servers.omero.core.entities.login.LoginResponse;
 
 import java.io.IOException;
 import java.net.URI;

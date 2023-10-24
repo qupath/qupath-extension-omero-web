@@ -2,7 +2,7 @@ package qupath.lib.images.servers.omero.gui.browser.serverbrowser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qupath.lib.images.servers.omero.web.WebClient;
+import qupath.lib.images.servers.omero.core.WebClient;
 
 import java.io.IOException;
 

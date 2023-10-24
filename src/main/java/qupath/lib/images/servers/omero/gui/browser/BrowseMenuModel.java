@@ -2,8 +2,8 @@ package qupath.lib.images.servers.omero.gui.browser;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.WebClients;
+import qupath.lib.images.servers.omero.core.WebClient;
+import qupath.lib.images.servers.omero.core.WebClients;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 
 /**

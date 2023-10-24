@@ -8,9 +8,9 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.TreeItem;
-import qupath.lib.images.servers.omero.web.entities.permissions.Group;
-import qupath.lib.images.servers.omero.web.entities.permissions.Owner;
-import qupath.lib.images.servers.omero.web.entities.repositoryentities.RepositoryEntity;
+import qupath.lib.images.servers.omero.core.entities.permissions.Group;
+import qupath.lib.images.servers.omero.core.entities.permissions.Owner;
+import qupath.lib.images.servers.omero.core.entities.repositoryentities.RepositoryEntity;
 
 import java.util.function.Predicate;
 

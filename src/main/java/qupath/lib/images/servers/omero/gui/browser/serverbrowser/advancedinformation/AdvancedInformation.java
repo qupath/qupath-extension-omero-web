@@ -12,9 +12,9 @@ import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.tools.GuiTools;
-import qupath.lib.images.servers.omero.web.entities.annotations.*;
-import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.ServerEntity;
-import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.image.Image;
+import qupath.lib.images.servers.omero.core.entities.annotations.*;
+import qupath.lib.images.servers.omero.core.entities.repositoryentities.serverentities.ServerEntity;
+import qupath.lib.images.servers.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 
 import java.io.IOException;

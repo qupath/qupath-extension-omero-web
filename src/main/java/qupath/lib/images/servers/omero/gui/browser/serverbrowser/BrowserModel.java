@@ -2,11 +2,11 @@ package qupath.lib.images.servers.omero.gui.browser.serverbrowser;
 
 import javafx.beans.property.*;
 import javafx.collections.*;
-import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.apis.ApisHandler;
+import qupath.lib.images.servers.omero.core.WebClient;
+import qupath.lib.images.servers.omero.core.apis.ApisHandler;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
-import qupath.lib.images.servers.omero.web.entities.permissions.Group;
-import qupath.lib.images.servers.omero.web.entities.permissions.Owner;
+import qupath.lib.images.servers.omero.core.entities.permissions.Group;
+import qupath.lib.images.servers.omero.core.entities.permissions.Owner;
 
 import java.net.URI;
 

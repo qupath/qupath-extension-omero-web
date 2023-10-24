@@ -3,11 +3,11 @@ package qupath.lib.images.servers.omero.imagesserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.lib.images.servers.*;
-import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.WebUtilities;
-import qupath.lib.images.servers.omero.web.entities.shapes.Shape;
-import qupath.lib.images.servers.omero.web.pixelapis.PixelAPI;
-import qupath.lib.images.servers.omero.web.pixelapis.PixelAPIReader;
+import qupath.lib.images.servers.omero.core.WebClient;
+import qupath.lib.images.servers.omero.core.WebUtilities;
+import qupath.lib.images.servers.omero.core.entities.shapes.Shape;
+import qupath.lib.images.servers.omero.core.pixelapis.PixelAPI;
+import qupath.lib.images.servers.omero.core.pixelapis.PixelAPIReader;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.PathObjectReader;
 
@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * <p>{@link qupath.lib.images.servers.ImageServer Image server} of the extension.</p>
- * <p>Pixels are read using the {@link qupath.lib.images.servers.omero.web.pixelapis PixelAPIs} package.</p>
+ * <p>Pixels are read using the {@link qupath.lib.images.servers.omero.core.pixelapis PixelAPIs} package.</p>
  */
 public class OmeroImageServer extends AbstractTileableImageServer implements PathObjectReader  {
 

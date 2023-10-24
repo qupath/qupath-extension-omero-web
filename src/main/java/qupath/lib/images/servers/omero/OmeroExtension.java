@@ -40,11 +40,12 @@ import java.util.ResourceBundle;
 
 /**
  * <p>Install the OMERO extension.</p>
- * It adds 3 menus to the Extensions menu:
+ * It adds menus and actions to the Extensions menu:
  * <ul>
  *     <li>A browse menu, described in {@link qupath.lib.images.servers.omero.gui.browser browser}.</li>
  *     <li>A connection manager action, described in {@link qupath.lib.images.servers.omero.gui.connectionsmanager connection manager}.</li>
  *     <li>An annotation sender action, described in {@link qupath.lib.images.servers.omero.gui.annotationsender annotation sender}.</li>
+ *     <li>An annotation importer action, described in {@link qupath.lib.images.servers.omero.gui.annotationimporter annotation importer}.</li>
  * </ul>
  */
 public class OmeroExtension implements QuPathExtension, GitHubProject {

@@ -6,6 +6,10 @@
  *         can send annotations of the current image to the corresponding OMERO server.
  *     </li>
  *     <li>
+ *         The {@link qupath.lib.images.servers.omero.gui.annotationimporter AnnotationImporter} package
+ *         can import annotations to the current image from the corresponding OMERO server.
+ *     </li>
+ *     <li>
  *         The {@link qupath.lib.images.servers.omero.gui.browser Browser} package contains windows
  *         to browse an OMERO server.
  *     </li>

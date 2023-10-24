@@ -6,8 +6,8 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import qupath.lib.images.servers.omero.web.WebClient;
-import qupath.lib.images.servers.omero.web.entities.repositoryentities.serverentities.image.Image;
+import qupath.lib.images.servers.omero.core.WebClient;
+import qupath.lib.images.servers.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.lib.images.servers.omero.gui.UiUtilities;
 
 import java.io.IOException;

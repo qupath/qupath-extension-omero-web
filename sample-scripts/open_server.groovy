@@ -1,4 +1,4 @@
-import qupath.lib.images.servers.omero.web.*
+import qupath.lib.images.servers.omero.core.*
 import qupath.lib.images.servers.*
 
 /*
