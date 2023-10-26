@@ -57,11 +57,7 @@ public abstract class Annotation {
      */
     public String getAdderFullName() {
         Optional<Owner> owner = link == null ? Optional.empty() : link.getOwner();
-        if (owner.isPresent()) {
-            return owner.get().getFullName();
-        } else {
-            return "";
-        }
+        return owner.map(Owner::getFullName).orElse("");
     }
 
     /**

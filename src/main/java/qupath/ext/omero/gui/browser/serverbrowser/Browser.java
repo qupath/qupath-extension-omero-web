@@ -209,7 +209,7 @@ public class Browser extends Stage {
     @FXML
     private void onAdvancedClicked(ActionEvent ignoredEvent) {
         try {
-            new AdvancedSearch(this, client, browserModel);
+            new AdvancedSearch(this, client);
         } catch (IOException e) {
             logger.error("Error while creating the advanced search window", e);
         }

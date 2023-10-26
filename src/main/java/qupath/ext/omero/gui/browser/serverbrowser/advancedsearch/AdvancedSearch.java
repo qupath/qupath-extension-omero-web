@@ -20,7 +20,6 @@ import qupath.ext.omero.core.entities.permissions.Owner;
 import qupath.ext.omero.core.entities.search.SearchQuery;
 import qupath.ext.omero.core.entities.search.SearchResult;
 import qupath.ext.omero.gui.UiUtilities;
-import qupath.ext.omero.gui.browser.serverbrowser.BrowserModel;
 import qupath.ext.omero.gui.browser.serverbrowser.advancedsearch.cellfactories.LinkCellFactory;
 import qupath.ext.omero.gui.browser.serverbrowser.advancedsearch.cellfactories.TypeCellFactory;
 
@@ -43,7 +42,6 @@ public class AdvancedSearch extends Stage {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     private static final ResourceBundle resources = UiUtilities.getResources();
     private final WebClient client;
-    private final BrowserModel browserModel;
     @FXML
     private TextField query;
     @FXML
@@ -92,12 +90,10 @@ public class AdvancedSearch extends Stage {
      *
      * @param ownerWindow  the stage who should own this window
      * @param client  the client on which the search will be performed
-     * @param browserModel  the browser model of the browser
      * @throws IOException if an error occurs while creating the window
      */
-    public AdvancedSearch(Stage ownerWindow, WebClient client, BrowserModel browserModel) throws IOException {
+    public AdvancedSearch(Stage ownerWindow, WebClient client) throws IOException {
         this.client = client;
-        this.browserModel = browserModel;
 
         initUI(ownerWindow);
         setUpListeners();
