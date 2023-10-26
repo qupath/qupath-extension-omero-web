@@ -479,8 +479,8 @@ class JsonApi {
                         OmeroServerList.class
                 ).thenApply(serverList -> {
                     if (serverList.isPresent() && serverList.get().getServerId().isPresent() && serverList.get().getServerPort().isPresent()) {
-                        serverID = serverList.get().getServerId().get();
-                        port = serverList.get().getServerPort().get();
+                        serverID = serverList.get().getServerId().getAsInt();
+                        port = serverList.get().getServerPort().getAsInt();
                         return true;
                     } else {
                         logger.error("Couldn't get id. The server response doesn't contain the required information.");

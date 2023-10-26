@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * Response of the <a href="https://docs.openmicroscopy.org/omero/5.6.0/developers/json-api.html#list-available-omero-servers">server list API request</a>
@@ -21,11 +22,11 @@ public class OmeroServerList {
      * @return the ID of the first server we can connect to,
      * or an empty Optional if it was not found
      */
-    public Optional<Integer> getServerId() {
+    public OptionalInt getServerId() {
         if (serverInfos == null || serverInfos.isEmpty()) {
-            return Optional.empty();
+            return OptionalInt.empty();
         } else {
-            return Optional.of(serverInfos.get(0).getId());
+            return OptionalInt.of(serverInfos.get(0).getId());
         }
     }
 
@@ -33,11 +34,11 @@ public class OmeroServerList {
      * @return the port of the first server we can connect to,
      * or an empty Optional if it was not found
      */
-    public Optional<Integer> getServerPort() {
+    public OptionalInt getServerPort() {
         if (serverInfos == null || serverInfos.isEmpty()) {
-            return Optional.empty();
+            return OptionalInt.empty();
         } else {
-            return Optional.of(serverInfos.get(0).getPort());
+            return OptionalInt.of(serverInfos.get(0).getPort());
         }
     }
 }

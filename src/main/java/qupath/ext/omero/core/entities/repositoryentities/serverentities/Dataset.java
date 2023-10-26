@@ -67,7 +67,7 @@ public class Dataset extends ServerEntity {
             case 0 -> name == null || name.isEmpty() ? "-" : name;
             case 1 -> String.valueOf(getId());
             case 2 -> description == null || description.isEmpty() ? "-" : description;
-            case 3 -> getOwner().getName();
+            case 3 -> getOwner().getFullName();
             case 4 -> getGroup().getName();
             case 5 -> String.valueOf(getNumberOfChildren());
             default -> "";

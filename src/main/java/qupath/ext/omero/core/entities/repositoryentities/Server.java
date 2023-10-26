@@ -27,13 +27,13 @@ public class Server extends RepositoryEntity {
     private final StringConverter<Owner> ownerStringConverter = new StringConverter<>() {
         @Override
         public String toString(Owner owner) {
-            return owner == null ? null : owner.getName();
+            return owner == null ? null : owner.getFullName();
         }
 
         @Override
         public Owner fromString(String string) {
             return owners.stream()
-                    .filter(owner -> owner.getName().equals(string))
+                    .filter(owner -> owner.getFullName().equals(string))
                     .findAny()
                     .orElse(null);
         }
@@ -125,7 +125,7 @@ public class Server extends RepositoryEntity {
             Owner defaultOwner = null;
             if (defaultUserId > -1) {
                 defaultOwner = server.owners.stream()
-                        .filter(owner -> owner.getId() == defaultUserId)
+                        .filter(owner -> owner.id() == defaultUserId)
                         .findAny()
                         .orElse(null);
 

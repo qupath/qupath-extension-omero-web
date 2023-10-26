@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.entities.annotations.annotationsentities.Experimenter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +18,6 @@ public class AnnotationGroup {
 
     private static final Logger logger = LoggerFactory.getLogger(AnnotationGroup.class);
     private final Map<Class<? extends Annotation>, List<Annotation>> annotations;
-    private final List<Experimenter> experimenters;
 
     /**
      * Creates an annotation group from a JSON object.
@@ -25,13 +25,12 @@ public class AnnotationGroup {
      * @param json the JSON supposed to contain the annotation group.
      */
     public AnnotationGroup(JsonObject json) {
-        this.annotations = createAnnotations(json);
-        this.experimenters = createExperimenters(json);
+        this.annotations = createAnnotations(json, createExperimenters(json));
     }
 
     @Override
     public String toString() {
-        return String.format("Annotation group containing %s and owned by %s", annotations, experimenters);
+        return String.format("Annotation group containing %s", annotations);
     }
 
     /**
@@ -45,23 +44,10 @@ public class AnnotationGroup {
         return annotations;
     }
 
-    /**
-     * @return all experimenters of this annotation group
-     */
-    public List<Experimenter> getExperimenters() {
-        return experimenters;
-    }
-
-    private static Map<Class<? extends Annotation>, List<Annotation>> createAnnotations(JsonObject json) {
+    private static Map<Class<? extends Annotation>, List<Annotation>> createAnnotations(JsonObject json, List<Experimenter> experimenters) {
         Gson gson = new GsonBuilder().registerTypeAdapter(Annotation.class, new Annotation.GsonOmeroAnnotationDeserializer()).setLenient().create();
 
-        Map<Class<? extends Annotation>, List<Annotation>> annotations = Map.of(
-                CommentAnnotation.class, new ArrayList<>(),
-                FileAnnotation.class, new ArrayList<>(),
-                RatingAnnotation.class, new ArrayList<>(),
-                MapAnnotation.class, new ArrayList<>(),
-                TagAnnotation.class, new ArrayList<>()
-        );
+        Map<Class<? extends Annotation>, List<Annotation>> annotations = new HashMap<>();
 
         JsonElement annotationsJSON = json.get("annotations");
         if (annotationsJSON != null) {
@@ -72,7 +58,15 @@ public class AnnotationGroup {
                     try {
                         Annotation annotation = gson.fromJson(jsonAnn, Annotation.class);
                         if (annotation != null) {
-                            annotations.get(annotation.getClass()).add(annotation);
+                            annotation.updateAdderAndOwner(experimenters);
+
+                            if (annotations.containsKey(annotation.getClass())) {
+                                annotations.get(annotation.getClass()).add(annotation);
+                            } else {
+                                List<Annotation> annotationsForClass = new ArrayList<>();
+                                annotationsForClass.add(annotation);
+                                annotations.put(annotation.getClass(), annotationsForClass);
+                            }
                         }
                     } catch (JsonSyntaxException e) {
                         logger.error("Error when reading " + jsonAnn, e);

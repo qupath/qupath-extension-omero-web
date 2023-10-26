@@ -176,7 +176,7 @@ public class AdvancedSearch extends Stage {
         nameColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getName()));
         acquiredColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(DATE_FORMAT.format(n.getValue().getDateAcquired())));
         importedColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(DATE_FORMAT.format(n.getValue().getDateImported())));
-        groupColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getGroup()));
+        groupColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getGroupName()));
         linkColumn.setCellValueFactory(n -> new ReadOnlyObjectWrapper<>(n.getValue()));
 
         typeColumn.setCellFactory(n -> new TypeCellFactory(client));

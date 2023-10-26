@@ -44,9 +44,10 @@ public class RatingAnnotation extends Annotation {
     }
 
     /**
-     * @return the rating of the annotation (from 1 to {@link #getMaxValue()})
+     * @return the rating of the annotation (from 0 to {@link #getMaxValue()}),
+     * or 0 if the value is missing from the annotation
      */
     public short getValue() {
-        return value;
+        return value > MAX_VALUE ? MAX_VALUE : value;
     }
 }

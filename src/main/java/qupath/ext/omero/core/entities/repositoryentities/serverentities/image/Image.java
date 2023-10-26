@@ -81,7 +81,7 @@ public class Image extends ServerEntity {
         return switch (informationIndex) {
             case 0 -> name == null || name.isEmpty() ? "-" : name;
             case 1 -> String.valueOf(getId());
-            case 2 -> getOwner().getName();
+            case 2 -> getOwner().getFullName();
             case 3 -> getGroup().getName();
             case 4 -> acquisitionDate == 0 ? "-" : new Date(acquisitionDate * 1000).toString();
             case 5 -> getImageDimensions().map(d -> d[0] + " px").orElse("-");

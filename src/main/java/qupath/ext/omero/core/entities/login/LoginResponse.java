@@ -1,11 +1,11 @@
 package qupath.ext.omero.core.entities.login;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.entities.permissions.Group;
-import qupath.lib.io.GsonTools;
 
 /**
  * <p>Reads the response from a login request.</p>
@@ -71,12 +71,12 @@ public class LoginResponse {
      */
     public static LoginResponse createSuccessLoginResponse(String serverResponse, char[] password) {
         try {
-            JsonElement element = JsonParser.parseString(serverResponse);
+            JsonElement element = JsonParser.parseString(serverResponse).getAsJsonObject().get("eventContext");
 
             return new LoginResponse(
-                    GsonTools.getInstance().fromJson(element.getAsJsonObject().get("eventContext"), Group.class),
-                    element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userId").getAsInt(),
-                    element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userName").getAsString(),
+                    new Gson().fromJson(element, Group.class),
+                    element.getAsJsonObject().get("userId").getAsInt(),
+                    element.getAsJsonObject().get("userName").getAsString(),
                     password
             );
         } catch (Exception e) {

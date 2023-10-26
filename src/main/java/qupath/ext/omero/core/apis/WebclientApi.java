@@ -204,7 +204,7 @@ class WebclientApi implements AutoCloseable {
                 fields,
                 dataTypes,
                 searchQuery.group().getId(),
-                searchQuery.owner().getId(),
+                searchQuery.owner().id(),
                 System.currentTimeMillis()
         ));
         if (uri.isPresent()) {

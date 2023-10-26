@@ -268,7 +268,7 @@ public class Browser extends Stage {
                         menu.getItems().addAll(
                                 owners.stream()
                                         .map(owner -> {
-                                            MenuItem ownerItem = new MenuItem(owner.getName());
+                                            MenuItem ownerItem = new MenuItem(owner.getFullName());
                                             ownerItem.setOnAction(ignoredEvent -> {
                                                 browserModel.getSelectedGroup().set(group);
                                                 browserModel.getSelectedOwner().set(owner);
@@ -365,7 +365,7 @@ public class Browser extends Stage {
         loadingThumbnail.visibleProperty().bind(Bindings.notEqual(browserModel.getNumberOfThumbnailsLoading(), 0));
 
         groupOwner.textProperty().bind(Bindings.createStringBinding(
-                () -> String.format("%s     %s", browserModel.getSelectedGroup().get().getName(), browserModel.getSelectedOwner().get().getName()),
+                () -> String.format("%s     %s", browserModel.getSelectedGroup().get().getName(), browserModel.getSelectedOwner().get().getFullName()),
                 browserModel.getSelectedGroup(), browserModel.getSelectedOwner()
         ));
 

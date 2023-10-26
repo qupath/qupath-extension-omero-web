@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.apis.ApisHandler;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -55,7 +56,7 @@ public class WebUtilities {
     public static Optional<URI> createURI(String url) {
         try {
             return Optional.of(new URI(url));
-        } catch (Exception e) {
+        } catch (URISyntaxException e) {
             logger.error("Couldn't create URI " + url, e);
             return Optional.empty();
         }

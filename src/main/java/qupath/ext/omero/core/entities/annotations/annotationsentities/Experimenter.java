@@ -26,12 +26,26 @@ public class Experimenter {
     }
 
     /**
-     * @return the full name (first name + last name) of this experimenter,
+     * @return the first name of this experimenter, or an empty String if not found
+     */
+    public String getFirstName() {
+        return Objects.toString(firstName, "");
+    }
+
+    /**
+     * @return the last name of this experimenter, or an empty String if not found
+     */
+    public String getLastName() {
+        return Objects.toString(lastName, "");
+    }
+
+    /**
+     * @return the full name (first name last name) of this experimenter,
      * or an empty String if not found
      */
     public String getFullName() {
-        String firstName = Objects.toString(this.firstName, "");
-        String lastName = Objects.toString(this.lastName, "");
+        String firstName = getFirstName();
+        String lastName = getLastName();
 
         if (!firstName.isEmpty() && !lastName.isEmpty()) {
             return firstName + " " + lastName;

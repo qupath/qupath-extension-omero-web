@@ -15,7 +15,10 @@ import java.util.regex.Pattern;
 
 /**
  * <p>The result of a search query.</p>
- * <p>This class can create usable results from an HTML search query response.</p>
+ * <p>
+ *     This class can create usable results from an HTML search query response
+ *     (usually from {@code https://omero-server/webclient/load_searching/form}).
+ * </p>
  */
 public class SearchResult {
 
@@ -125,9 +128,9 @@ public class SearchResult {
     }
 
     /**
-     * @return the group of the result
+     * @return the group name of the result
      */
-    public String getGroup() {
+    public String getGroupName() {
         return group;
     }
 

@@ -27,17 +27,29 @@ public abstract class Shape {
 
     private static final Logger logger = LoggerFactory.getLogger(Shape.class);
     protected static String TYPE_URL = "http://www.openmicroscopy.org/Schemas/OME/2016-06#";
+    @SerializedName(value = "@type") protected String type;
     @SerializedName(value = "@id") private int id;
     @SerializedName(value = "TheC") private Integer c;
     @SerializedName(value = "TheZ") private int z;
     @SerializedName(value = "TheT") private int t;
-    @SerializedName(value = "@type") protected String type;
-    @SerializedName(value = "Text", alternate = "text") protected String text;
+    @SerializedName(value = "Text", alternate = "text") private String text;
     @SerializedName(value = "Locked", alternate = "locked") private Boolean locked;
     @SerializedName(value = "FillColor", alternate = "fillColor") private int fillColor;
     @SerializedName(value = "StrokeColor", alternate = "strokeColor") private Integer strokeColor;
     @SerializedName(value = "oldId") private String oldId = "-1:-1";
 
+    /**
+     * <p>
+     *     Create a new shape.
+     * </p>
+     * <p>
+     *     Its text will be formatted as {@code Type:Class1&Class2:ObjectID:ParentID},
+     *     for example {@code Annotation:NoClass:aba712b2-bbc2-4c05-bbba-d9fbab4d454f:NoParent}
+     *     or {@code Detection:Stroma:aba712b2-bbc2-4c05-bbba-d9fbab4d454f:205037ff-7dd7-4549-89d8-a4e3cbf61294}
+     * </p>
+     *
+     * @param pathObject  the path object corresponding to this shape
+     */
     public Shape(PathObject pathObject) {
         this.text = String.format(
                 "%s:%s:%s:%s",
@@ -104,7 +116,7 @@ public abstract class Shape {
      * @param roiID the ROI ID (as explained above)
      */
     public void setOldId(int roiID) {
-        oldId = String.format("\"%d:%d\"", roiID, id);
+        oldId = String.format("%d:%d", roiID, id);
     }
 
     /**
@@ -257,11 +269,13 @@ public abstract class Shape {
                 "",
                 "NoParent"
         };
-        String[] tokens = text.split(":");
+        if (text != null) {
+            String[] tokens = text.split(":");
 
-        for (int i=0; i<4; ++i) {
-            if (tokens.length > i && !tokens[i].isEmpty()) {
-                parsedComment[i] = tokens[i];
+            for (int i=0; i<4; ++i) {
+                if (tokens.length > i && !tokens[i].isEmpty()) {
+                    parsedComment[i] = tokens[i];
+                }
             }
         }
 

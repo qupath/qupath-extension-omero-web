@@ -11,31 +11,20 @@ import java.util.stream.Stream;
 /**
  * An OMERO owner represents a person that own OMERO entities.
  */
-public class Owner implements Comparable<Owner> {
+public record Owner(@SerializedName(value = "@id", alternate = "id") int id,
+                    @SerializedName(value = "FirstName") String firstName,
+                    @SerializedName(value = "MiddleName") String middleName,
+                    @SerializedName(value = "LastName") String lastName,
+                    @SerializedName(value = "Email") String emailAddress,
+                    @SerializedName(value = "Institution") String institution,
+                    @SerializedName(value = "UserName") String username) implements Comparable<Owner> {
 
     private static final ResourceBundle resources = UiUtilities.getResources();
     private static final Owner ALL_MEMBERS = new Owner(-1, resources.getString("Web.Entities.Permissions.Owner.allMembers"), "", "", "", "", "");
-    @SerializedName(value = "@id", alternate = "id") private final int id;
-    @SerializedName(value = "FirstName") private final String firstName;
-    @SerializedName(value = "MiddleName") private final String middleName;
-    @SerializedName(value = "LastName") private final String lastName;
-    @SerializedName(value = "Email") private final String emailAddress;
-    @SerializedName(value = "Institution") private final String institution;
-    @SerializedName(value = "UserName") private final String username;
-
-    private Owner(int id, String firstName, String middleName, String lastName, String emailAddress, String institution, String username) {
-        this.id = id;
-        this.firstName = firstName;
-        this.middleName = middleName;
-        this.lastName = lastName;
-        this.emailAddress = emailAddress;
-        this.institution = institution;
-        this.username = username;
-    }
 
     @Override
     public String toString() {
-        return Stream.of("Owner: " + getName(), emailAddress, institution, username)
+        return Stream.of("Owner: " + getFullName(), emailAddress, institution, username)
                 .filter(Objects::nonNull)
                 .filter(str -> !str.isEmpty())
                 .collect(Collectors.joining(", "));
@@ -52,17 +41,73 @@ public class Owner implements Comparable<Owner> {
             return true;
         if (!(obj instanceof Owner))
             return false;
-        return ((Owner)obj).id == this.id;
+        return ((Owner) obj).id == this.id;
     }
 
     @Override
     public int compareTo(Owner other) {
-        int lastNameComparison = getLastName().compareToIgnoreCase(other.getLastName());
+        int lastNameComparison = lastName().compareToIgnoreCase(other.lastName());
         if (lastNameComparison == 0) {
-            return getFirstName().compareToIgnoreCase(other.getFirstName());
+            return firstName().compareToIgnoreCase(other.firstName());
         } else {
             return lastNameComparison;
         }
+    }
+
+    /**
+     * @return the ID of the owner, or 0 if not found
+     */
+    @Override
+    public int id() {
+        return id;
+    }
+
+    /**
+     * @return the first name of the owner, or an empty String if not found
+     */
+    @Override
+    public String firstName() {
+        return Objects.toString(firstName, "");
+    }
+
+    /**
+     * @return the middle name of the owner, or an empty String if not found
+     */
+    @Override
+    public String middleName() {
+        return Objects.toString(middleName, "");
+    }
+
+    /**
+     * @return the last name of the owner, or an empty String if not found
+     */
+    @Override
+    public String lastName() {
+        return Objects.toString(lastName, "");
+    }
+
+    /**
+     * @return the email address of the owner, or an empty String if not found
+     */
+    @Override
+    public String emailAddress() {
+        return Objects.toString(emailAddress, "");
+    }
+
+    /**
+     * @return the institution of the owner, or an empty String if not found
+     */
+    @Override
+    public String institution() {
+        return Objects.toString(institution, "");
+    }
+
+    /**
+     * @return the username of the owner, or an empty String if not found
+     */
+    @Override
+    public String username() {
+        return Objects.toString(username, "");
     }
 
     /**
@@ -75,26 +120,9 @@ public class Owner implements Comparable<Owner> {
     /**
      * @return the full name (first, middle and last name) of the group, or an empty String if not found
      */
-    public String getName() {
-        return getFirstName() + " " + (getMiddleName().isEmpty() ? "" : getMiddleName() + " ") + getLastName();
-    }
-
-    /**
-     * @return the ID of the owner, or 0 if not found
-     */
-    public int getId() {
-        return id;
-    }
-
-    private String getFirstName() {
-        return firstName == null ? "" : firstName;
-    }
-
-    private String getMiddleName() {
-        return middleName == null ? "" : middleName;
-    }
-
-    private String getLastName() {
-        return lastName == null ? "" : lastName;
+    public String getFullName() {
+        return (firstName().isEmpty() ? "" : firstName() + " ") +
+                (middleName().isEmpty() ? "" : middleName() + " ") +
+                lastName();
     }
 }

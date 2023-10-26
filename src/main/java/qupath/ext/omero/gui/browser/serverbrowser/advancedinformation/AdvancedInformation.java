@@ -72,7 +72,7 @@ public class AdvancedInformation extends Stage {
         FormPane formPane = new FormPane(resources.getString("Browser.Browser.AdvancedInformation.details"));
         
         formPane.addRow(resources.getString("Browser.Browser.AdvancedInformation.id"), String.valueOf(serverEntity.getId()));
-        formPane.addRow(resources.getString("Browser.Browser.AdvancedInformation.owner"), serverEntity.getOwner().getName());
+        formPane.addRow(resources.getString("Browser.Browser.AdvancedInformation.owner"), serverEntity.getOwner().getFullName());
         formPane.addRow(resources.getString("Browser.Browser.AdvancedInformation.group"), serverEntity.getGroup().getName());
 
         if (serverEntity instanceof Image image) {
@@ -92,13 +92,13 @@ public class AdvancedInformation extends Stage {
             TitledPane pane = null;
 
             if (omeroAnnotationType.equals(TagAnnotation.class)) {
-                pane = createTagPane(annotationGroup, annotationList);
+                pane = createTagPane(annotationList);
             } else if (omeroAnnotationType.equals(MapAnnotation.class)) {
-                pane = createMapPane(annotationGroup, annotationList);
+                pane = createMapPane(annotationList);
             } else if (omeroAnnotationType.equals(FileAnnotation.class)) {
-                pane = createFilePane(annotationGroup, annotationList);
+                pane = createFilePane(annotationList);
             } else if (omeroAnnotationType.equals(CommentAnnotation.class)) {
-                pane = createCommentPane(annotationGroup, annotationList);
+                pane = createCommentPane(annotationList);
             } else if (omeroAnnotationType.equals(RatingAnnotation.class)) {
                 pane = createRatingPane(annotationList);
             }
@@ -110,22 +110,22 @@ public class AdvancedInformation extends Stage {
         }
     }
 
-    private TitledPane createTagPane(AnnotationGroup annotationGroup, List<Annotation> annotationList) throws IOException {
+    private TitledPane createTagPane(List<Annotation> annotationList) throws IOException {
         InformationPane tagPane = new InformationPane(TagAnnotation.getTitle() + " (" + annotationList.size() + ")");
 
         for (Annotation annotation : annotationList) {
             TagAnnotation tagAnnotation = (TagAnnotation) annotation;
 
             tagPane.addRow(tagAnnotation.getValue().orElse(""), MessageFormat.format(
-                    resources.getString("Browser.Browser.AdvancedInformation.addedCreated"),
-                    tagAnnotation.getAdder(annotationGroup),
-                    tagAnnotation.getCreator(annotationGroup)
+                    resources.getString("Browser.Browser.AdvancedInformation.addedOwned"),
+                    tagAnnotation.getAdderFullName(),
+                    tagAnnotation.getOwnerFullName()
             ));
         }
         return tagPane;
     }
 
-    private TitledPane createMapPane(AnnotationGroup annotationGroup, List<Annotation> annotationList) throws IOException {
+    private TitledPane createMapPane(List<Annotation> annotationList) throws IOException {
         FormPane mapPane = new FormPane();
         int numberOfValues = 0;
 
@@ -136,9 +136,9 @@ public class AdvancedInformation extends Stage {
                         value.getKey(),
                         value.getValue().isEmpty() ? "-" : value.getValue(),
                         MessageFormat.format(
-                                resources.getString("Browser.Browser.AdvancedInformation.addedCreated"),
-                                mapAnnotation.getAdder(annotationGroup),
-                                mapAnnotation.getCreator(annotationGroup)
+                                resources.getString("Browser.Browser.AdvancedInformation.addedOwned"),
+                                mapAnnotation.getAdderFullName(),
+                                mapAnnotation.getOwnerFullName()
                         )
                 );
             }
@@ -149,7 +149,7 @@ public class AdvancedInformation extends Stage {
         return mapPane;
     }
 
-    private TitledPane createFilePane(AnnotationGroup annotationGroup, List<Annotation> annotationList) throws IOException {
+    private TitledPane createFilePane(List<Annotation> annotationList) throws IOException {
         InformationPane attachmentPane = new InformationPane(FileAnnotation.getTitle() + " (" + annotationList.size() + ")");
 
         for (Annotation annotation : annotationList) {
@@ -158,9 +158,9 @@ public class AdvancedInformation extends Stage {
                     fileAnnotation.getFilename().orElse("") +
                             " (" + fileAnnotation.getFileSize().orElse(0L) + " " + resources.getString("Browser.Browser.AdvancedInformation.bytes") + ")",
                     MessageFormat.format(
-                            resources.getString("Browser.Browser.AdvancedInformation.addedCreatedType"),
-                            fileAnnotation.getAdder(annotationGroup),
-                            fileAnnotation.getCreator(annotationGroup),
+                            resources.getString("Browser.Browser.AdvancedInformation.addedOwnedType"),
+                            fileAnnotation.getAdderFullName(),
+                            fileAnnotation.getOwnerFullName(),
                             fileAnnotation.getMimeType().orElse("")
                     )
             );
@@ -168,7 +168,7 @@ public class AdvancedInformation extends Stage {
         return attachmentPane;
     }
 
-    private TitledPane createCommentPane(AnnotationGroup annotationGroup, List<Annotation> annotationList) throws IOException {
+    private TitledPane createCommentPane(List<Annotation> annotationList) throws IOException {
         InformationPane commentPane = new InformationPane(CommentAnnotation.getTitle() + " (" + annotationList.size() + ")");
 
         for (Annotation annotation : annotationList) {
@@ -176,7 +176,7 @@ public class AdvancedInformation extends Stage {
             commentPane.addRow(commentAnnotation.getValue().orElse(""),
                     MessageFormat.format(
                             resources.getString("Browser.Browser.AdvancedInformation.added"),
-                            commentAnnotation.getAdder(annotationGroup)
+                            commentAnnotation.getAdderFullName()
                     )
             );
         }
@@ -193,7 +193,6 @@ public class AdvancedInformation extends Stage {
         }
         if (annotationList.size() != 0) {
             averageRating /= annotationList.size();
-
         }
 
         Glyph fullStarGlyph = new Glyph("FontAwesome", FontAwesome.Glyph.STAR).size(QuPathGUI.TOOLBAR_ICON_SIZE);

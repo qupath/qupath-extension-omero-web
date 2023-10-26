@@ -12,6 +12,10 @@ public class Link {
 
     @SerializedName(value = "owner") private Owner owner;
 
+    public Link(Owner owner) {
+        this.owner = owner;
+    }
+
     @Override
     public String toString() {
         return String.format("Link of owner %s", owner);
