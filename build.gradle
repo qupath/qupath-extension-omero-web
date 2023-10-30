@@ -2,14 +2,16 @@ plugins {
   id 'java-library'
   // To create a shadow/fat jar, including dependencies
   id 'com.github.johnrengelman.shadow' version '7.0.0'
-  // Reduce JavaCPP dependencies
-  id 'org.bytedeco.gradle-javacpp-platform' version '1.5.7'
+    // Add JavaFX dependencies
+    alias(libs.plugins.javafx)
 }
 
 ext.moduleName = 'qupath.extension.omero'
 archivesBaseName = 'qupath-extension-omero'
 description = "QuPath extension to support image reading using OMERO's web API."
 version = "0.3.1-SNAPSHOT"
+ext.qupathVersion = gradle.ext.qupathVersion
+ext.qupathJavaVersion = 17
 
 repositories {
 //  mavenLocal()
@@ -26,36 +28,59 @@ repositories {
 }
 
 dependencies {
-  implementation "org.apache.commons:commons-text:1.9"
-  
-  shadow "io.github.qupath:qupath-gui-fx:0.3.0"    
-  shadow "org.slf4j:slf4j-api:1.7.30"
+    implementation "org.apache.commons:commons-text:1.9"
+    shadow "io.github.qupath:qupath-gui-fx:${qupathVersion}"
+    shadow libs.qupath.fxtras
+
+    shadow libs.slf4j
+}
+
+jar {
+    manifest {
+        attributes("Implementation-Title": project.name,
+                "Implementation-Version": archiveVersion,
+                "Automatic-Module-Name": moduleName)
+    }
 }
 
 processResources {
-  from ("${projectDir}/LICENSE.txt") {
-    into 'licenses/'
-  }
+    from ("${projectDir}/LICENSE") {
+        into 'licenses/'
+    }
 }
 
 tasks.register("copyDependencies", Copy) {
-  description "Copy dependencies into the output libs directory"
-  group "QuPath"
-  
-  from configurations.default
-  into 'build/libs'
+    description "Copy dependencies into the build directory for use elsewhere"
+    group "QuPath"
+
+    from configurations.default
+    into 'build/libs'
 }
 
 java {
-    def version = project.findProperty('toolchain')
-    if (!version)
-        version = 11
-    else if (version.strip() == 'skip')
-        version = null
-    if (version != null) {
-        logger.quiet("Setting toolchain to {}", version)
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(version)
-        }
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(qupathJavaVersion)
     }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+    def strictJavadoc = findProperty('strictJavadoc')
+    if (!strictJavadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+tasks.named('compileJava') {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(org.gradle.jvm.tasks.Jar) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }

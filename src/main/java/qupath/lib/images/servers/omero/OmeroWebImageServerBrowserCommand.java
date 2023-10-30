@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.controlsfx.glyphfont.GlyphFontRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -348,8 +349,13 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 	        if (e.getClickCount() == 2) {
 	        	var selectedItem = tree.getSelectionModel().getSelectedItem();
 	        	if (selectedItem != null && selectedItem.getValue().getType() == OmeroObjectType.IMAGE && isSupported(selectedItem.getValue())) {
-	        		if (qupath.getProject() == null)
-	        			qupath.openImage(createObjectURI(selectedItem.getValue()), true, true);
+	        		if (qupath.getProject() == null) {
+						try {
+							qupath.openImage(qupath.getViewer(), createObjectURI(selectedItem.getValue()), true, true);
+						} catch (IOException ex) {
+							throw new RuntimeException(ex);
+						}
+					}
 	        		else
 	        			promptToImportOmeroImages(createObjectURI(selectedItem.getValue()));
 	        	}
@@ -376,7 +382,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 					Dialogs.showPlainMessage("Requesting orphaned folder", "Link to orphaned folder does not exist!");
 					return;
 				}
-				QuPathGUI.launchBrowserWindow(createObjectURI(selected.get(0).getValue()));
+				QuPathGUI.openInBrowser(createObjectURI(selected.get(0).getValue()));
 			}
 	    });
 	    openBrowserItem.disableProperty().bind(tree.getSelectionModel().selectedItemProperty().isNull()
@@ -611,8 +617,13 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 				return;
 			}
 			if (qupath.getProject() == null) {
-				if (validUris.length == 1)
-					qupath.openImage(validUris[0], true, true);
+				if (validUris.length == 1) {
+					try {
+						qupath.openImage(qupath.getViewer(), validUris[0], true, true);
+					} catch (IOException ex) {
+						throw new RuntimeException(ex);
+					}
+				}
 				else
 					Dialogs.showErrorMessage("Open OMERO images", "If you want to handle multiple images, you need to create a project first."); // Same as D&D for images
 				return;
@@ -1412,7 +1423,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 				}
 				
 				for (int i = 0; i < Math.round(rating/anns.size()); i++)
-					gp.add(IconFactory.createNode(QuPathGUI.TOOLBAR_ICON_SIZE, QuPathGUI.TOOLBAR_ICON_SIZE, IconFactory.PathIcons.STAR), i, 0);
+					gp.add(GlyphFontRegistry.font("icomoon").create("\u2605").size(QuPathGUI.TOOLBAR_ICON_SIZE).color(javafx.scene.paint.Color.GRAY), i, 0);
 				gp.setHgap(10.0);
 				break;
 			default:
@@ -1722,7 +1733,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		                return;
 		            }
 
-		            button.setOnAction(e -> QuPathGUI.launchBrowserWindow(item.link.toString()));
+		            button.setOnAction(e -> QuPathGUI.openInBrowser(item.link.toString()));
 		            setGraphic(button);
 		        }
 		    });
