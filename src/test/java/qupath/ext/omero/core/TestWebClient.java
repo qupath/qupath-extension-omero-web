@@ -1,11 +1,8 @@
 package qupath.ext.omero.core;
 
 import org.junit.jupiter.api.*;
-import qupath.ext.omero.TestUtilities;
-import qupath.ext.omero.core.pixelapis.PixelAPI;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
