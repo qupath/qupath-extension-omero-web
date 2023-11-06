@@ -3,7 +3,7 @@ package qupath.ext.omero.core.apis;
 import javafx.collections.ObservableList;
 import org.junit.jupiter.api.*;
 import qupath.ext.omero.TestUtilities;
-import qupath.ext.omero.core.OmeroServer;
+import qupath.ext.omero.OmeroServer;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.WebClients;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;

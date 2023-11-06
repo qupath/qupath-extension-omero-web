@@ -2,6 +2,7 @@ package qupath.ext.omero.core;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import qupath.ext.omero.OmeroServer;
 import qupath.ext.omero.TestUtilities;
 
 import java.util.List;

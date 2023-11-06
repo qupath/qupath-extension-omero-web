@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.annotations.SerializedName;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import qupath.ext.omero.OmeroServer;
 import qupath.ext.omero.TestUtilities;
 
 import java.awt.image.BufferedImage;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-public class TestRequestSender {
+public class TestRequestSender extends OmeroServer {
 
     @Test
     void Check_Link_Reachable() throws ExecutionException, InterruptedException {

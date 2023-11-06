@@ -1,6 +1,7 @@
 package qupath.ext.omero.core;
 
 import org.junit.jupiter.api.*;
+import qupath.ext.omero.OmeroServer;
 
 import java.net.URI;
 import java.util.Set;

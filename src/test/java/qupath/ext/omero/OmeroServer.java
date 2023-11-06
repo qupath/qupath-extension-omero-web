@@ -1,4 +1,4 @@
-package qupath.ext.omero.core;
+package qupath.ext.omero;
 
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assumptions;
@@ -7,7 +7,10 @@ import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
 import org.testcontainers.utility.DockerImageName;
+import qupath.ext.omero.core.WebClient;
+import qupath.ext.omero.core.WebClients;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
@@ -70,6 +73,12 @@ public abstract class OmeroServer {
                     .withEnv("POSTGRES_PASSWORD", "postgres");
             postgres.start();
 
+            omeroWeb = new GenericContainer<>(DockerImageName.parse("openmicroscopy/omero-web-standalone"))
+                    .withNetwork(Network.SHARED)
+                    .withEnv("OMEROHOST", "omero-server")
+                    .withExposedPorts(4080);
+            omeroWeb.start();
+
             omeroServer = new GenericContainer<>(DockerImageName.parse("openmicroscopy/omero-server"))
                     .withNetwork(Network.SHARED)
                     .withNetworkAliases("omero-server")
@@ -79,6 +88,25 @@ public abstract class OmeroServer {
                     .withEnv("CONFIG_omero_db_name", "postgres")
                     .withEnv("ROOTPASS", OMERO_PASSWORD)
                     .withExposedPorts(OMERO_SERVER_PORT)
+                    .waitingFor(new AbstractWaitStrategy() {
+                        @Override
+                        protected void waitUntilReady() {
+                            // Wait for the server to accept connections
+                            while (true) {
+                                try {
+                                    WebClient client = createValidClient();
+                                    WebClients.removeClient(client);
+                                    return;
+                                } catch (IllegalStateException | ExecutionException | InterruptedException ignored) {}
+
+                                try {
+                                    TimeUnit.SECONDS.sleep(1);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+                    })
                     .withFileSystemBind(
                             Objects.requireNonNull(OmeroServer.class.getResource("analysis.csv")).getPath(),
                             "/analysis.csv"
@@ -98,16 +126,7 @@ public abstract class OmeroServer {
                     .dependsOn(postgres);
             omeroServer.start();
 
-            omeroWeb = new GenericContainer<>(DockerImageName.parse("openmicroscopy/omero-web-standalone"))
-                    .withNetwork(Network.SHARED)
-                    .withEnv("OMEROHOST", "omero-server")
-                    .withExposedPorts(4080)
-                    .dependsOn(omeroServer);
-            omeroWeb.start();
-
             try {
-                TimeUnit.SECONDS.sleep(10);     // Give time for the server to start
-
                 omeroServer.execInContainer("chmod", "+x", "/setupOmeroServer.sh");
 
                 Container.ExecResult result = omeroServer.execInContainer("/setupOmeroServer.sh");
