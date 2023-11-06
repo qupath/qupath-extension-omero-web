@@ -1,6 +1,7 @@
 package qupath.ext.omero.core.entities.repositoryentities.serverentities;
 
 import com.google.gson.annotations.SerializedName;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.ext.omero.core.apis.ApisHandler;
 import qupath.ext.omero.gui.UiUtilities;
@@ -23,10 +24,28 @@ public class Project extends ServerEntity {
             resources.getString("Web.Entities.Project.group"),
             resources.getString("Web.Entities.Project.nbDatasets")
     };
+    private final transient ObservableList<Dataset> children = FXCollections.observableArrayList();
+    private final transient ObservableList<Dataset> childrenImmutable = FXCollections.unmodifiableObservableList(children);
     private transient boolean childrenPopulated = false;
     private transient ApisHandler apisHandler;
+    private transient boolean isPopulating = false;
     @SerializedName(value = "Description") private String description;
     @SerializedName(value = "omero:childCount") private int childCount;
+
+    /**
+     * Creates an empty project.
+     */
+    public Project() {
+        // This constructor is declared because otherwise transient fields
+        // of this class are not declared when it is created through JSON
+    }
+
+    /**
+     * Creates an empty project only defined by its ID.
+     */
+    public Project(long id) {
+        this.id = id;
+    }
 
     @Override
     public int getNumberOfChildren() {
@@ -37,7 +56,7 @@ public class Project extends ServerEntity {
      * @throws IllegalStateException when the APIs handler has not been set (see {@link #setApisHandler(ApisHandler)})
      */
     @Override
-    public ObservableList<RepositoryEntity> getChildren() {
+    public ObservableList<? extends RepositoryEntity> getChildren() {
         if (!childrenPopulated) {
             populateChildren();
             childrenPopulated = true;
@@ -46,12 +65,12 @@ public class Project extends ServerEntity {
     }
 
     @Override
-    public String getType() {
-        return "project";
+    public boolean isPopulatingChildren() {
+        return isPopulating;
     }
 
     @Override
-    public String getAttributeInformation(int informationIndex) {
+    public String getAttributeName(int informationIndex) {
         if (informationIndex < ATTRIBUTES.length) {
             return ATTRIBUTES[informationIndex];
         } else {
@@ -60,7 +79,7 @@ public class Project extends ServerEntity {
     }
 
     @Override
-    public String getValueInformation(int informationIndex) {
+    public String getAttributeValue(int informationIndex) {
         return switch (informationIndex) {
             case 0 -> name == null || name.isEmpty() ? "-" : name;
             case 1 -> String.valueOf(getId());
@@ -107,7 +126,11 @@ public class Project extends ServerEntity {
                     "The APIs handler has not been set on this project. See the setApisHandler(ApisHandler) function."
             );
         } else {
-            apisHandler.getDatasets(getId()).thenAccept(this.children::addAll);
+            isPopulating = true;
+            apisHandler.getDatasets(getId()).thenAccept(datasets -> {
+                children.addAll(datasets);
+                isPopulating = false;
+            });
         }
     }
 }

@@ -2,11 +2,8 @@ package qupath.ext.omero.core.entities.permissions;
 
 import com.google.gson.Gson;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 
-@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class TestOwner {
 
     @Test

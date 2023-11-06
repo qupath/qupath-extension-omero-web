@@ -33,6 +33,20 @@ public class AnnotationGroup {
         return String.format("Annotation group containing %s", annotations);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof AnnotationGroup annotationGroup))
+            return false;
+        return annotationGroup.annotations.equals(annotations);
+    }
+
+    @Override
+    public int hashCode() {
+        return annotations.hashCode();
+    }
+
     /**
      * Returns all annotations contained in this annotation group.
      * They are organized by type of annotation (e.g. all comment annotations form one group,

@@ -18,6 +18,16 @@ public class Group {
     @SerializedName(value = "url:experimenters") private final String experimentersLink;
     private List<Owner> owners;
 
+    /**
+     * Creates an empty group only defined by its name and ID.
+     *
+     * @param id  the ID of the group
+     * @param name  the name of the group
+     */
+    public Group(int id, String name) {
+        this(id, name, "");
+    }
+
     private Group(int id, String name, String experimentersLink) {
         this.id = id;
         this.name = name;
@@ -30,17 +40,17 @@ public class Group {
     }
 
     @Override
-    public int hashCode() {
-        return Integer.hashCode(id);
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (!(obj instanceof Group))
+        if (!(obj instanceof Group group))
             return false;
-        return ((Group)obj).id == this.id;
+        return group.id == this.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
     }
 
     /**

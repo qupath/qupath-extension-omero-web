@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.apis.authenticators.Authenticator;
 import qupath.ext.omero.core.entities.login.LoginResponse;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
 import qupath.ext.omero.core.entities.shapes.Shape;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
@@ -16,7 +18,6 @@ import qupath.ext.omero.core.entities.serverinformation.OmeroAPI;
 import qupath.ext.omero.core.entities.serverinformation.OmeroServerList;
 import qupath.ext.omero.core.WebUtilities;
 import qupath.ext.omero.core.RequestSender;
-import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
 
 import java.net.PasswordAuthentication;
@@ -51,7 +52,6 @@ class JsonApi {
     private static final String ROIS_URL = "%s/api/v0/m/rois/?image=%s";
     private final IntegerProperty numberOfEntitiesLoading = new SimpleIntegerProperty(0);
     private final BooleanProperty areOrphanedImagesLoading = new SimpleBooleanProperty(false);
-    private final IntegerProperty numberOfOrphanedImages = new SimpleIntegerProperty(0);
     private final IntegerProperty numberOfOrphanedImagesLoaded = new SimpleIntegerProperty(0);
     private final URI host;
     private final ApisHandler apisHandler;
@@ -113,30 +113,6 @@ class JsonApi {
     }
 
     /**
-     * @return the number of orphaned images currently being loaded by the API
-     * This property may be updated from any thread
-     */
-    public ReadOnlyBooleanProperty getOrphanedImagesLoading() {
-        return areOrphanedImagesLoading;
-    }
-
-    /**
-     * @return the total number of orphaned images
-     * This property may be updated from any thread
-     */
-    public ReadOnlyIntegerProperty getNumberOfOrphanedImages() {
-        return numberOfOrphanedImages;
-    }
-
-    /**
-     * @return the number of orphaned images which have been loaded
-     * This property may be updated from any thread
-     */
-    public ReadOnlyIntegerProperty getNumberOfOrphanedImagesLoaded() {
-        return numberOfOrphanedImagesLoaded;
-    }
-
-    /**
      * <p>Attempt to authenticate to the current server.</p>
      * <p>This function is asynchronous.</p>
      *
@@ -155,9 +131,7 @@ class JsonApi {
     public CompletableFuture<LoginResponse> login(String... args) {
         var uri = WebUtilities.createURI(urls.get(LOGIN_URL_KEY));
 
-        PasswordAuthentication authentication = getPasswordAuthenticationFromArgs(args).orElse(
-                Authenticator.getPasswordAuthentication(host.toString())
-        );
+        PasswordAuthentication authentication = getPasswordAuthenticationFromArgs(args).orElseGet(() -> Authenticator.getPasswordAuthentication(host.toString()));
 
         if (uri.isEmpty() || authentication == null) {
             return CompletableFuture.completedFuture(LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.CANCELED));
@@ -189,7 +163,10 @@ class JsonApi {
     }
 
     /**
-     * <p>Attempt to retrieve all groups of the server.</p>
+     * <p>
+     *     Attempt to retrieve all groups of the server.
+     *     This doesn't include the default group.
+     * </p>
      * <p>This function is asynchronous.</p>
      *
      * @return a CompletableFuture with the list containing all groups of this server,
@@ -225,7 +202,10 @@ class JsonApi {
     }
 
     /**
-     * <p>Attempt to retrieve all owners of the server.</p>
+     * <p>
+     *     Attempt to retrieve all owners of the server.
+     *     This doesn't include the default owner.
+     * </p>
      * <p>This function is asynchronous.</p>
      *
      * @return a CompletableFuture with the list containing all owners of this server,
@@ -249,8 +229,10 @@ class JsonApi {
      *
      * @return a CompletableFuture with the list containing all projects of this server
      */
-    public CompletableFuture<List<ServerEntity>> getProjects() {
-        return getChildren(String.format(PROJECTS_URL, urls.get(PROJECTS_URL_KEY)));
+    public CompletableFuture<List<Project>> getProjects() {
+        return getChildren(String.format(PROJECTS_URL, urls.get(PROJECTS_URL_KEY))).thenApply(
+                children -> children.stream().map(child -> (Project) child).toList()
+        );
     }
 
     /**
@@ -259,8 +241,10 @@ class JsonApi {
      *
      * @return a CompletableFuture with the list containing all orphaned datasets of this server
      */
-    public CompletableFuture<List<ServerEntity>> getOrphanedDatasets() {
-        return getChildren(String.format(ORPHANED_DATASETS_URL, urls.get(DATASETS_URL_KEY)));
+    public CompletableFuture<List<Dataset>> getOrphanedDatasets() {
+        return getChildren(String.format(ORPHANED_DATASETS_URL, urls.get(DATASETS_URL_KEY))).thenApply(
+                children -> children.stream().map(child -> (Dataset) child).toList()
+        );
     }
 
     /**
@@ -270,8 +254,10 @@ class JsonApi {
      * @param projectID  the project ID whose datasets should be retrieved
      * @return a CompletableFuture with the list containing all datasets of the project
      */
-    public CompletableFuture<List<ServerEntity>> getDatasets(long projectID) {
-        return getChildren(String.format(DATASETS_URL, urls.get(PROJECTS_URL_KEY), projectID));
+    public CompletableFuture<List<Dataset>> getDatasets(long projectID) {
+        return getChildren(String.format(DATASETS_URL, urls.get(PROJECTS_URL_KEY), projectID)).thenApply(
+                children -> children.stream().map(child -> (Dataset) child).toList()
+        );
     }
 
     /**
@@ -281,8 +267,10 @@ class JsonApi {
      * @param datasetID  the dataset ID whose images should be retrieved
      * @return a CompletableFuture with the list containing all images of the dataset
      */
-    public CompletableFuture<List<ServerEntity>> getImages(long datasetID) {
-        return getChildren(String.format(IMAGES_URL, urls.get(DATASETS_URL_KEY), datasetID));
+    public CompletableFuture<List<Image>> getImages(long datasetID) {
+        return getChildren(String.format(IMAGES_URL, urls.get(DATASETS_URL_KEY), datasetID)).thenApply(
+                children -> children.stream().map(child -> (Image) child).toList()
+        );
     }
 
     /**
@@ -310,29 +298,45 @@ class JsonApi {
     }
 
     /**
+     * <p>Attempt to get the number of orphaned images of this server.</p>
+     *
+     * @return a CompletableFuture with the number of orphaned images, or 0 if it couldn't be retrieved
+     */
+    public CompletableFuture<Integer> getNumberOfOrphanedImages() {
+        return apisHandler.getOrphanedImagesIds().thenApply(ids -> ids.stream()
+                .map(id -> WebUtilities.createURI(urls.get(IMAGES_URL_KEY) + id))
+                .flatMap(Optional::stream)
+                .toList()
+        ).thenApply(List::size);
+    }
+
+    /**
      * <p>
      *     Populate all orphaned images of this server to the list specified in parameter.
      *     This function populates and doesn't return a list because the number of images can
      *     be large, so this operation can take tens of seconds.
      * </p>
-     * <p>This function is asynchronous but the list update is done in the UI thread.</p>
+     * <p>The list can be updated from any thread.</p>
      *
-     * @param children  the list which should be populated by the orphaned images.
+     * @param children  the list which should be populated by the orphaned images. It should
+     *                  be possible to add elements to this list
      */
-    public void populateOrphanedImagesIntoList(List<RepositoryEntity> children) {
+    public void populateOrphanedImagesIntoList(List<Image> children) {
         setOrphanedImagesLoading(true);
+        resetNumberOfOrphanedImagesLoaded();
 
         getOrphanedImagesURIs().thenAcceptAsync(uris -> {
             // The number of parallel requests is limited to 16
             // to avoid too many concurrent streams
             List<List<URI>> batches = Lists.partition(uris, 16);
             for (List<URI> batch: batches) {
-                List<ServerEntity> serverEntities = batch.stream()
+                List<Image> serverEntities = batch.stream()
                         .map(this::requestImageInfo)
                         .map(CompletableFuture::join)
                         .flatMap(Optional::stream)
                         .map(jsonObject -> ServerEntity.createFromJsonElement(jsonObject, apisHandler))
                         .flatMap(Optional::stream)
+                        .map(serverEntity -> (Image) serverEntity)
                         .toList();
 
                 children.addAll(serverEntities);
@@ -345,7 +349,24 @@ class JsonApi {
     }
 
     /**
+     * @return whether orphaned images are currently being loaded.
+     * This property may be updated from any thread
+     */
+    public ReadOnlyBooleanProperty areOrphanedImagesLoading() {
+        return areOrphanedImagesLoading;
+    }
+
+    /**
+     * @return the number of orphaned images which have been loaded
+     * This property may be updated from any thread
+     */
+    public ReadOnlyIntegerProperty getNumberOfOrphanedImagesLoaded() {
+        return numberOfOrphanedImagesLoaded;
+    }
+
+    /**
      * <p>Indicates if the server can be browsed without being authenticated.</p>
+     * <p>This works only if the client isn't already authenticated to the server.</p>
      * <p>This function is asynchronous.</p>
      *
      * @return a CompletableFuture indicating if authentication can be skipped
@@ -397,23 +418,6 @@ class JsonApi {
         }
     }
 
-    /**
-     * <p>Attempt to retrieve the URIs of all orphaned images of the server.</p>
-     * <p>This function is asynchronous.</p>
-     *
-     * @return a CompletableFuture with the list of URIs of all orphaned images. If an error occurs, the list is empty
-     */
-    public CompletableFuture<List<URI>> getOrphanedImagesURIs() {
-        return apisHandler.getOrphanedImagesIds().thenApply(ids -> ids.stream()
-                .map(id -> WebUtilities.createURI(urls.get(IMAGES_URL_KEY) + id))
-                .flatMap(Optional::stream)
-                .toList()
-        ).thenApply(uris -> {
-            setNumberOfOrphanedImages(uris.size());
-            return uris;
-        });
-    }
-
     private CompletableFuture<Map<String, String>> getURLs(String url) {
         var uri = WebUtilities.createURI(url);
 
@@ -459,12 +463,20 @@ class JsonApi {
         areOrphanedImagesLoading.set(orphanedImagesLoading);
     }
 
-    private synchronized void addToNumberOfOrphanedImagesLoaded(int addition) {
-        numberOfOrphanedImagesLoaded.set(numberOfOrphanedImagesLoaded.get() + addition);
+    private CompletableFuture<List<URI>> getOrphanedImagesURIs() {
+        return apisHandler.getOrphanedImagesIds().thenApply(ids -> ids.stream()
+                .map(id -> WebUtilities.createURI(urls.get(IMAGES_URL_KEY) + id))
+                .flatMap(Optional::stream)
+                .toList()
+        );
     }
 
-    private synchronized void setNumberOfOrphanedImages(int numberOfOrphanedImages) {
-        this.numberOfOrphanedImages.set(numberOfOrphanedImages);
+    private synchronized void resetNumberOfOrphanedImagesLoaded() {
+        numberOfOrphanedImagesLoaded.set(0);
+    }
+
+    private synchronized void addToNumberOfOrphanedImagesLoaded(int addition) {
+        numberOfOrphanedImagesLoaded.set(numberOfOrphanedImagesLoaded.get() + addition);
     }
 
     private CompletableFuture<Boolean> setServerIDAndPort(Map<String, String> urls) {
@@ -539,6 +551,7 @@ class JsonApi {
                 password = args[i++].toCharArray();
             }
         }
+
         if (username != null && password != null) {
             return Optional.of(new PasswordAuthentication(username, password));
         } else {

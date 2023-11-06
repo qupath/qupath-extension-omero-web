@@ -13,6 +13,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.WebUtilities;
 import qupath.ext.omero.core.entities.permissions.Group;
@@ -152,7 +153,16 @@ public class AdvancedSearch extends Stage {
         UiUtilities.loadFXML(this, AdvancedSearch.class.getResource("advanced_search.fxml"));
 
         owner.setItems(FXCollections.observableList(client.getServer().getOwners()));
-        owner.setConverter(client.getServer().getOwnerStringConverter());
+        owner.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Owner owner) {
+                return owner.getFullName();
+            }
+            @Override
+            public Owner fromString(String string) {
+                return null;
+            }
+        });
         if (client.getServer().getDefaultOwner().isPresent()) {
             owner.getSelectionModel().select(client.getServer().getDefaultOwner().get());
         } else {
@@ -168,10 +178,16 @@ public class AdvancedSearch extends Stage {
 
         results.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
+
+
         typeColumn.setCellValueFactory(n -> new ReadOnlyObjectWrapper<>(n.getValue()));
         nameColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getName()));
-        acquiredColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(DATE_FORMAT.format(n.getValue().getDateAcquired())));
-        importedColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(DATE_FORMAT.format(n.getValue().getDateImported())));
+        acquiredColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getDateAcquired().isPresent() ?
+                DATE_FORMAT.format(n.getValue().getDateAcquired().get()) : ""
+        ));
+        importedColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getDateImported().isPresent() ?
+                DATE_FORMAT.format(n.getValue().getDateImported().get()) : ""
+        ));
         groupColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getGroupName()));
         linkColumn.setCellValueFactory(n -> new ReadOnlyObjectWrapper<>(n.getValue()));
 

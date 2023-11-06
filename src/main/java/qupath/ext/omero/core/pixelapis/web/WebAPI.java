@@ -27,6 +27,20 @@ public class WebAPI implements PixelAPI {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof WebAPI webAPI))
+            return false;
+        return webAPI.client.equals(client);
+    }
+
+    @Override
+    public int hashCode() {
+        return client.hashCode();
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

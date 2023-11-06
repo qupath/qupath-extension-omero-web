@@ -13,7 +13,6 @@ import qupath.ext.omero.core.entities.search.SearchResult;
 import qupath.ext.omero.gui.UiUtilities;
 
 import java.awt.image.BufferedImage;
-import java.util.Optional;
 
 /**
  * Cell factory that displays an image representing the search result in the cell and in a tooltip.
@@ -34,21 +33,23 @@ public class TypeCellFactory extends TableCell<SearchResult, SearchResult> {
             hide();
         } else {
             if (item.getType().equalsIgnoreCase("project")) {
-                Optional<BufferedImage> icon = client.getOmeroIcon(Project.class);
-                if (icon.isPresent()) {
-                    show(item, icon.get());
-                } else {
-                    hide();
-                }
+                client.getApisHandler().getOmeroIcon(Project.class).thenAccept(icon -> Platform.runLater(() -> {
+                    if (icon.isPresent()) {
+                        show(item, icon.get());
+                    } else {
+                        hide();
+                    }
+                }));
             } else if (item.getType().equalsIgnoreCase("dataset")) {
-                Optional<BufferedImage> icon = client.getOmeroIcon(Dataset.class);
-                if (icon.isPresent()) {
-                    show(item, icon.get());
-                } else {
-                    hide();
-                }
+                client.getApisHandler().getOmeroIcon(Dataset.class).thenAccept(icon -> Platform.runLater(() -> {
+                    if (icon.isPresent()) {
+                        show(item, icon.get());
+                    } else {
+                        hide();
+                    }
+                }));
             } else {
-                client.getThumbnail(item.getId()).thenAccept(thumbnail -> Platform.runLater(() -> {
+                client.getApisHandler().getThumbnail(item.getId()).thenAccept(thumbnail -> Platform.runLater(() -> {
                     if (thumbnail.isPresent()) {
                         show(item, thumbnail.get());
                     } else {

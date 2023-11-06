@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  * A server entity represents an OMERO entity belonging to the project/dataset/image
  * hierarchy.
  */
-public abstract class ServerEntity extends RepositoryEntity {
+public abstract class ServerEntity implements RepositoryEntity {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerEntity.class);
     @SerializedName(value = "@id") protected long id;
@@ -27,7 +27,19 @@ public abstract class ServerEntity extends RepositoryEntity {
     private Owner owner = Owner.getAllMembersOwner();
     private Group group = Group.getAllGroupsGroup();
 
-    protected ServerEntity() {}
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof ServerEntity serverEntity))
+            return false;
+        return serverEntity.id == this.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(id);
+    }
 
     @Override
     public String getName() {
@@ -42,17 +54,12 @@ public abstract class ServerEntity extends RepositoryEntity {
     }
 
     /**
-     * @return a textual description of the entity. This is needed in API requests for example
-     */
-    abstract public String getType();
-
-    /**
      * Returns the <b>name</b> of an attribute associated with this entity.
      *
      * @param informationIndex the index of the attribute
      * @return the attribute name corresponding to the index, or an empty String if the index is out of bound
      */
-    abstract public String getAttributeInformation(int informationIndex);
+    abstract public String getAttributeName(int informationIndex);
 
     /**
      * Returns the <b>value</b> of an attribute associated with this entity.
@@ -60,7 +67,7 @@ public abstract class ServerEntity extends RepositoryEntity {
      * @param informationIndex the index of the attribute
      * @return the attribute value corresponding to the index, or an empty String if the index is out of bound
      */
-    abstract public String getValueInformation(int informationIndex);
+    abstract public String getAttributeValue(int informationIndex);
 
     /**
      * @return the total number of attributes this entity has

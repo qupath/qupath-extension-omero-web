@@ -79,7 +79,7 @@ public class AdvancedInformation extends Stage {
             int startingIndex = 4;  // The first image attributes are already used before
 
             for (int i=startingIndex; i<image.getNumberOfAttributes(); ++i) {
-                formPane.addRow(image.getAttributeInformation(i), image.getValueInformation(i));
+                formPane.addRow(image.getAttributeName(i), image.getAttributeValue(i));
             }
         }
 

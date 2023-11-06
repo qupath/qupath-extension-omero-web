@@ -42,7 +42,7 @@ class PixelInfo {
      * of the image. If a dimension was not found, 0 is returned
      */
     public int[] getImageDimensions() {
-        return new int[] { width, height, c, z, t };
+        return new int[] { width, height, z, c, t };
     }
 
     /**

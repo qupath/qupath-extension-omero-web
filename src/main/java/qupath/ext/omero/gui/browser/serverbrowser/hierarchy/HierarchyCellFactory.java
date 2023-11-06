@@ -1,5 +1,6 @@
 package qupath.ext.omero.gui.browser.serverbrowser.hierarchy;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Tooltip;
@@ -67,7 +68,7 @@ public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {
 
             if (repositoryEntity instanceof OrphanedFolder orphanedFolder) {
                 textProperty().bind(
-                        Bindings.when(browserModel.getOrphanedImagesLoading())
+                        Bindings.when(browserModel.areOrphanedImagesLoading())
                                 .then(Bindings.concat(
                                         orphanedFolder.getName(),
                                         " (",
@@ -102,11 +103,12 @@ public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {
     }
 
     private void setIcon(Class<? extends RepositoryEntity> type) {
-        var optionalIcon = client.getOmeroIcon(type);
-        if (optionalIcon.isPresent()) {
-            Canvas iconCanvas = new Canvas(15, 15);
-            UiUtilities.paintBufferedImageOnCanvas(optionalIcon.get(), iconCanvas);
-            setGraphic(iconCanvas);
-        }
+        client.getApisHandler().getOmeroIcon(type).thenAccept(icon -> Platform.runLater(() -> {
+            if (icon.isPresent()) {
+                Canvas iconCanvas = new Canvas(15, 15);
+                UiUtilities.paintBufferedImageOnCanvas(icon.get(), iconCanvas);
+                setGraphic(iconCanvas);
+            }
+        }));
     }
 }

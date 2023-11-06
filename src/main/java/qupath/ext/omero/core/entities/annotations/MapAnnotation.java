@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import qupath.ext.omero.gui.UiUtilities;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 /**
@@ -17,6 +18,20 @@ public class MapAnnotation extends Annotation {
     @Override
     public String toString() {
         return String.format("%s. Values: %s", super.toString(), values);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof MapAnnotation mapAnnotation))
+            return false;
+        return Objects.equals(mapAnnotation.values, values);
+    }
+
+    @Override
+    public int hashCode() {
+        return (values == null ? "" : values).hashCode();
     }
 
     /**

@@ -5,8 +5,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import qupath.lib.common.ColorTools;
 import qupath.lib.objects.PathAnnotationObject;
@@ -19,7 +17,6 @@ import qupath.lib.roi.interfaces.ROI;
 import java.util.Set;
 import java.util.UUID;
 
-@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class TestShape {
 
     public static Shape createShapeFromJSON(String json) {

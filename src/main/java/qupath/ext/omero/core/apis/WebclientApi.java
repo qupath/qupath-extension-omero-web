@@ -4,6 +4,9 @@ import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.search.SearchQuery;
 import qupath.ext.omero.core.entities.search.SearchResult;
 import qupath.ext.omero.core.WebUtilities;
@@ -38,6 +41,11 @@ class WebclientApi implements AutoCloseable {
             "?query=%s&%s&%s&searchGroup=%s&ownedBy=%s" +
             "&useAcquisitionDate=false&startdateinput=&enddateinput=&_=%d";
     private static final String IMAGE_ICON_URL = "%s/static/webclient/image/image16.png";
+    Map<Class<? extends ServerEntity>, String> TYPE_TO_URI_LABEL = Map.of(
+            Image.class, "image",
+            Dataset.class, "dataset",
+            Project.class, "project"
+    );
     private final URI host;
     private final URI pingUri;
     private String token;
@@ -81,16 +89,25 @@ class WebclientApi implements AutoCloseable {
     }
 
     /**
-     * Returns a link of the OMERO.web client pointing to a server entity (e.g. an image, a dataset).
+     * Returns a link of the OMERO.web client pointing to a server entity.
      *
-     * @param serverEntity  the entity to have a link to
+     * @param entity  the entity to have a link to.
+     *                Must be an {@link Image}, a {@link Dataset}, or a {@link Project}
      * @return a URL pointing to the server entity
+     * @throws IllegalArgumentException when the provided entity is not an image, dataset or project
      */
-    public String getItemURI(ServerEntity serverEntity) {
+    public String getEntityURI(ServerEntity entity) {
+        if (!TYPE_TO_URI_LABEL.containsKey(entity.getClass())) {
+            throw new IllegalArgumentException(String.format(
+                    "The provided item (%s) is not an image, dataset or project.",
+                    entity
+            ));
+        }
+
         return String.format(ITEM_URL,
                 host,
-                serverEntity.getType(),
-                serverEntity.getId()
+                TYPE_TO_URI_LABEL.get(entity.getClass()),
+                entity.getId()
         );
     }
 
@@ -118,15 +135,15 @@ class WebclientApi implements AutoCloseable {
      * @return a CompletableFuture with a list containing the ID of all orphaned images,
      * or an empty list if an error occurred
      */
-    public CompletableFuture<List<Integer>> getOrphanedImagesIds() {
+    public CompletableFuture<List<Long>> getOrphanedImagesIds() {
         var uri = WebUtilities.createURI(String.format(ORPHANED_IMAGES_URL, host));
 
         if (uri.isPresent()) {
-            return RequestSender.requestAndConvertToJsonList(uri.get(), "images").thenApply(elements ->
+            return RequestSender.getAndConvertToJsonList(uri.get(), "images").thenApply(elements ->
                     elements.stream()
                             .map(jsonElement -> {
                                 try {
-                                    return Integer.parseInt(jsonElement.getAsJsonObject().get("id").toString());
+                                    return Long.parseLong(jsonElement.getAsJsonObject().get("id").toString());
                                 } catch (Exception e) {
                                     logger.error("Could not parse " + jsonElement, e);
                                     return null;
@@ -142,17 +159,31 @@ class WebclientApi implements AutoCloseable {
 
     /**
      * <p>
-     *     Attempt to retrieve OMERO annotations of an OMERO entity (e.g. an image, dataset).
+     *     Attempt to retrieve OMERO annotations of an OMERO entity .
      *     An OMERO annotation is <b>not</b> similar to a QuPath annotation, it refers to some metadata
      *     attached to an entity.
      * </p>
      * <p>This function is asynchronous.</p>
      *
-     * @param serverEntity  the entity whose annotation should be retrieved
+     * @param entity  the type of the entity whose annotation should be retrieved.
+     *                Must be an {@link Image}, a {@link Dataset}, or a {@link Project}
      * @return a CompletableFuture with the annotation, or an empty Optional if an error occurred
+     * @throws IllegalArgumentException when the provided entity is not an image, dataset or project
      */
-    public CompletableFuture<Optional<AnnotationGroup>> getAnnotations(ServerEntity serverEntity) {
-        var uri = WebUtilities.createURI(String.format(READ_ANNOTATION_URL, host, serverEntity.getType(), serverEntity.getId()));
+    public CompletableFuture<Optional<AnnotationGroup>> getAnnotations(ServerEntity entity) {
+        if (!TYPE_TO_URI_LABEL.containsKey(entity.getClass())) {
+            throw new IllegalArgumentException(String.format(
+                    "The provided item (%s) is not an image, dataset or project.",
+                    entity
+            ));
+        }
+
+        var uri = WebUtilities.createURI(String.format(
+                READ_ANNOTATION_URL,
+                host,
+                TYPE_TO_URI_LABEL.get(entity.getClass()),
+                entity.getId()
+        ));
 
         if (uri.isPresent()) {
             return RequestSender.getAndConvert(uri.get(), JsonObject.class)

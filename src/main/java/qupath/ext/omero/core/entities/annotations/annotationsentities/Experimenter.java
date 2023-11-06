@@ -18,6 +18,20 @@ public class Experimenter {
         return String.format("Experimenter %s with ID %d", getFullName(), id);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof Experimenter experimenter))
+            return false;
+        return experimenter.id == id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
+
     /**
      * @return the unique ID of this experimenter, or 0 if not found
      */

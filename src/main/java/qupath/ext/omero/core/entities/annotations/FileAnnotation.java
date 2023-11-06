@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import qupath.ext.omero.gui.UiUtilities;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -21,6 +22,20 @@ public class FileAnnotation extends Annotation {
     @Override
     public String toString() {
         return String.format("%s. Map: %s", super.toString(), map);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof FileAnnotation fileAnnotation))
+            return false;
+        return Objects.equals(fileAnnotation.map, map);
+    }
+
+    @Override
+    public int hashCode() {
+        return (map == null ? "" : map).hashCode();
     }
 
     /**

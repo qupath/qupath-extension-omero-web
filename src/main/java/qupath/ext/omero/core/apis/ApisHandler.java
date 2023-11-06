@@ -3,6 +3,10 @@ package qupath.ext.omero.core.apis;
 import javafx.beans.property.*;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
 import qupath.ext.omero.core.entities.login.LoginResponse;
+import qupath.ext.omero.core.entities.repositoryentities.OrphanedFolder;
+import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
 import qupath.ext.omero.core.entities.search.SearchQuery;
 import qupath.ext.omero.core.entities.search.SearchResult;
 import qupath.ext.omero.core.entities.shapes.Shape;
@@ -13,7 +17,6 @@ import qupath.ext.omero.core.entities.imagemetadata.ImageMetadataResponse;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
-import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
 import qupath.lib.objects.PathObject;
 
@@ -21,6 +24,7 @@ import java.awt.image.BufferedImage;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>This class provides functions to perform operations with an OMERO server.</p>
@@ -32,11 +36,14 @@ import java.util.concurrent.CompletableFuture;
  */
 public class ApisHandler implements AutoCloseable {
 
+    private static final int THUMBNAIL_SIZE = 256;
     private final WebClient client;
     private final URI host;
     private final WebclientApi webclientApi;
     private final WebGatewayApi webGatewayApi;
     private final IViewerApi iViewerApi;
+    private final Map<Long, BufferedImage> thumbnails = new ConcurrentHashMap<>();
+    private final Map<Class<? extends RepositoryEntity>, BufferedImage> omeroIcons = new ConcurrentHashMap<>();
     private JsonApi jsonApi;
 
     private ApisHandler(WebClient client, URI host) {
@@ -78,6 +85,20 @@ public class ApisHandler implements AutoCloseable {
     @Override
     public String toString() {
         return String.format("APIs handler of %s", host);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof ApisHandler apisHandler))
+            return false;
+        return Objects.equals(apisHandler.host, host);
+    }
+
+    @Override
+    public int hashCode() {
+        return host.hashCode();
     }
 
     /**
@@ -133,10 +154,10 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
-     * See {@link WebclientApi#getItemURI(ServerEntity)}.
+     * See {@link WebclientApi#getEntityURI(ServerEntity)}.
      */
-    public String getItemURI(ServerEntity serverEntity) {
-        return webclientApi.getItemURI(serverEntity);
+    public String getItemURI(ServerEntity entity) {
+        return webclientApi.getEntityURI(entity);
     }
 
     /**
@@ -144,27 +165,6 @@ public class ApisHandler implements AutoCloseable {
      */
     public ReadOnlyIntegerProperty getNumberOfEntitiesLoading() {
         return jsonApi.getNumberOfEntitiesLoading();
-    }
-
-    /**
-     * See {@link JsonApi#getOrphanedImagesLoading()}.
-     */
-    public ReadOnlyBooleanProperty getOrphanedImagesLoading() {
-        return jsonApi.getOrphanedImagesLoading();
-    }
-
-    /**
-     * See {@link JsonApi#getNumberOfOrphanedImagesLoaded()}.
-     */
-    public ReadOnlyIntegerProperty getNumberOfOrphanedImagesLoaded() {
-        return jsonApi.getNumberOfOrphanedImagesLoaded();
-    }
-
-    /**
-     * See {@link JsonApi#getNumberOfOrphanedImages()}.
-     */
-    public ReadOnlyIntegerProperty getNumberOfOrphanedImages() {
-        return jsonApi.getNumberOfOrphanedImages();
     }
 
     /**
@@ -191,15 +191,8 @@ public class ApisHandler implements AutoCloseable {
     /**
      * See {@link WebclientApi#getOrphanedImagesIds()}.
      */
-    public CompletableFuture<List<Integer>> getOrphanedImagesIds() {
+    public CompletableFuture<List<Long>> getOrphanedImagesIds() {
         return webclientApi.getOrphanedImagesIds();
-    }
-
-    /**
-     * See {@link JsonApi#getOrphanedImagesURIs()}.
-     */
-    public CompletableFuture<List<URI>> getOrphanedImagesURIs() {
-        return jsonApi.getOrphanedImagesURIs();
     }
 
     /**
@@ -219,28 +212,28 @@ public class ApisHandler implements AutoCloseable {
     /**
      * See {@link JsonApi#getProjects()}.
      */
-    public CompletableFuture<List<ServerEntity>> getProjects() {
+    public CompletableFuture<List<Project>> getProjects() {
         return jsonApi.getProjects();
     }
 
     /**
      * See {@link JsonApi#getOrphanedDatasets()}.
      */
-    public CompletableFuture<List<ServerEntity>> getOrphanedDatasets() {
+    public CompletableFuture<List<Dataset>> getOrphanedDatasets() {
         return jsonApi.getOrphanedDatasets();
     }
 
     /**
      * See {@link JsonApi#getDatasets(long)}.
      */
-    public CompletableFuture<List<ServerEntity>> getDatasets(long projectID) {
+    public CompletableFuture<List<Dataset>> getDatasets(long projectID) {
         return jsonApi.getDatasets(projectID);
     }
 
     /**
      * See {@link JsonApi#getImages(long)}.
      */
-    public CompletableFuture<List<ServerEntity>> getImages(long datasetID) {
+    public CompletableFuture<List<Image>> getImages(long datasetID) {
         return jsonApi.getImages(datasetID);
     }
 
@@ -252,17 +245,38 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
+     * See {@link JsonApi#getNumberOfOrphanedImages()}.
+     */
+    public CompletableFuture<Integer> getNumberOfOrphanedImages() {
+        return jsonApi.getNumberOfOrphanedImages();
+    }
+
+    /**
      * See {@link JsonApi#populateOrphanedImagesIntoList(List)}.
      */
-    public void populateOrphanedImagesIntoList(List<RepositoryEntity> children) {
+    public void populateOrphanedImagesIntoList(List<Image> children) {
         jsonApi.populateOrphanedImagesIntoList(children);
+    }
+
+    /**
+     * See {@link JsonApi#areOrphanedImagesLoading()}.
+     */
+    public ReadOnlyBooleanProperty areOrphanedImagesLoading() {
+        return jsonApi.areOrphanedImagesLoading();
+    }
+
+    /**
+     * See {@link JsonApi#getNumberOfOrphanedImagesLoaded()}.
+     */
+    public ReadOnlyIntegerProperty getNumberOfOrphanedImagesLoaded() {
+        return jsonApi.getNumberOfOrphanedImagesLoaded();
     }
 
     /**
      * See {@link WebclientApi#getAnnotations(ServerEntity)}.
      */
-    public CompletableFuture<Optional<AnnotationGroup>> getAnnotations(ServerEntity serverEntity) {
-        return webclientApi.getAnnotations(serverEntity);
+    public CompletableFuture<Optional<AnnotationGroup>> getAnnotations(ServerEntity entity) {
+        return webclientApi.getAnnotations(entity);
     }
 
     /**
@@ -273,38 +287,63 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
-     * See {@link WebGatewayApi#getProjectIcon()}.
+     * <p>Attempt to retrieve the icon of an OMERO entity.</p>
+     * <p>Icons for orphaned folders, projects, datasets, and images can be retrieved.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @param type  the class of the entity whose icon is to be retrieved
+     * @return a CompletableFuture with the icon if the operation succeeded, or an empty Optional otherwise
      */
-    public CompletableFuture<Optional<BufferedImage>> getProjectIcon() {
-        return webGatewayApi.getProjectIcon();
+    public CompletableFuture<Optional<BufferedImage>> getOmeroIcon(Class<? extends RepositoryEntity> type) {
+        if (omeroIcons.containsKey(type)) {
+            return CompletableFuture.completedFuture(Optional.of(omeroIcons.get(type)));
+        } else {
+            if (type.equals(Project.class)) {
+                return webGatewayApi.getProjectIcon().thenApply(icon -> {
+                    icon.ifPresent(bufferedImage -> omeroIcons.put(type, bufferedImage));
+                    return icon;
+                });
+            } else if (type.equals(Dataset.class)) {
+                return webGatewayApi.getDatasetIcon().thenApply(icon -> {
+                    icon.ifPresent(bufferedImage -> omeroIcons.put(type, bufferedImage));
+                    return icon;
+                });
+            } else if (type.equals(OrphanedFolder.class)) {
+                return webGatewayApi.getOrphanedFolderIcon().thenApply(icon -> {
+                    icon.ifPresent(bufferedImage -> omeroIcons.put(type, bufferedImage));
+                    return icon;
+                });
+            } else if (type.equals(Image.class)) {
+                return webclientApi.getImageIcon().thenApply(icon -> {
+                    icon.ifPresent(bufferedImage -> omeroIcons.put(type, bufferedImage));
+                    return icon;
+                });
+            } else {
+                return CompletableFuture.completedFuture(Optional.empty());
+            }
+        }
     }
 
     /**
-     * See {@link WebGatewayApi#getDatasetIcon()}.
+     * {@link #getThumbnail(long, int)} with a size of
+     * {@link #THUMBNAIL_SIZE}.
      */
-    public CompletableFuture<Optional<BufferedImage>> getDatasetIcon() {
-        return webGatewayApi.getDatasetIcon();
-    }
-
-    /**
-     * See {@link WebGatewayApi#getOrphanedFolderIcon()}.
-     */
-    public CompletableFuture<Optional<BufferedImage>> getOrphanedFolderIcon() {
-        return webGatewayApi.getOrphanedFolderIcon();
-    }
-
-    /**
-     * See {@link WebclientApi#getImageIcon()}.
-     */
-    public CompletableFuture<Optional<BufferedImage>> getImageIcon() {
-        return webclientApi.getImageIcon();
+    public CompletableFuture<Optional<BufferedImage>> getThumbnail(long id) {
+        return getThumbnail(id, THUMBNAIL_SIZE);
     }
 
     /**
      * See {@link WebGatewayApi#getThumbnail(long, int)}.
      */
     public CompletableFuture<Optional<BufferedImage>> getThumbnail(long id, int size) {
-        return webGatewayApi.getThumbnail(id, size);
+        if (thumbnails.containsKey(id)) {
+            return CompletableFuture.completedFuture(Optional.of(thumbnails.get(id)));
+        } else {
+            return webGatewayApi.getThumbnail(id, size).thenApply(thumbnail -> {
+                thumbnail.ifPresent(bufferedImage -> thumbnails.put(id, bufferedImage));
+                return thumbnail;
+            });
+        }
     }
 
     /**

@@ -19,6 +19,20 @@ public class RatingAnnotation extends Annotation {
         return String.format("%s. Value: %d", super.toString(), value);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof RatingAnnotation ratingAnnotation))
+            return false;
+        return ratingAnnotation.value == value;
+    }
+
+    @Override
+    public int hashCode() {
+        return Short.hashCode(value);
+    }
+
     /**
      * @return a localized title for a map annotation
      */

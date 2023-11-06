@@ -31,17 +31,17 @@ public record Owner(@SerializedName(value = "@id", alternate = "id") int id,
     }
 
     @Override
-    public int hashCode() {
-        return Integer.hashCode(id);
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (!(obj instanceof Owner))
+        if (!(obj instanceof Owner owner))
             return false;
-        return ((Owner) obj).id == this.id;
+        return owner.id == this.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
     }
 
     @Override

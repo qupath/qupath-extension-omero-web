@@ -1,10 +1,12 @@
 package qupath.ext.omero.core.entities.search;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -37,14 +39,27 @@ public class SearchResult {
     private final String group;
     private final String link;
 
-    private SearchResult(
+    /**
+     * Creates a new search result corresponding to an OMERO object.
+     * You should rather use {@link #createFromHTMLResponse(String, URI)}
+     * to create search results.
+     *
+     * @param type  the type of the object (e.g. dataset, image)
+     * @param id  the id of the object
+     * @param name  the name of the object
+     * @param group  the group name whose object belongs to
+     * @param link  a URL linking to the object
+     * @param dateAcquired  the date this object was acquired
+     * @param dateImported  the date this object was imported
+     */
+    public SearchResult(
             String type,
             int id,
             String name,
-            Date dateAcquired,
-            Date dateImported,
             String group,
-            String link
+            String link,
+            @Nullable Date dateAcquired,
+            @Nullable Date dateImported
     ) {
         this.type = type;
         this.id = id;
@@ -53,6 +68,20 @@ public class SearchResult {
         this.dateImported = dateImported;
         this.group = group;
         this.link = link;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof SearchResult searchResult))
+            return false;
+        return searchResult.id == id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
     }
 
     /**
@@ -70,14 +99,28 @@ public class SearchResult {
             try {
                 String row = rowMatcher.group(0);
 
+                Date acquiredDate = null;
+                try {
+                    acquiredDate = OMERO_DATE_FORMAT.parse(findPatternInText(DATE_PATTERN, row).orElse(""));
+                } catch (ParseException e) {
+                    logger.info("Could not parse acquired date.", e);
+                }
+
+                Date importedDate = null;
+                try {
+                    importedDate = OMERO_DATE_FORMAT.parse(findPatternInText(DATE_PATTERN, row, 1).orElse(""));
+                } catch (ParseException e) {
+                    logger.info("Could not parse imported date.", e);
+                }
+
                 searchResults.add(new SearchResult(
                         rowMatcher.group(1),
                         Integer.parseInt(rowMatcher.group(2)),
                         findPatternInText(DESCRIPTION_PATTERN, row).orElse("-"),
-                        OMERO_DATE_FORMAT.parse(findPatternInText(DATE_PATTERN, row).orElse("")),
-                        OMERO_DATE_FORMAT.parse(findPatternInText(DATE_PATTERN, row, 1).orElse("")),
                         findPatternInText(GROUP_PATTERN, row).orElse("-"),
-                        serverURI + findPatternInText(LINK_PATTERN, row).orElse("")
+                        serverURI + findPatternInText(LINK_PATTERN, row).orElse(""),
+                        acquiredDate,
+                        importedDate
                 ));
             } catch (Exception e) {
                 logger.warn("Could not parse search result.", e);
@@ -114,17 +157,19 @@ public class SearchResult {
     }
 
     /**
-     * @return the date the result was acquired
+     * @return the date the result was acquired, or an empty Optional
+     * if the date couldn't be retrieved
      */
-    public Date getDateAcquired() {
-        return dateAcquired;
+    public Optional<Date> getDateAcquired() {
+        return Optional.ofNullable(dateAcquired);
     }
 
     /**
-     * @return the date the result was imported
+     * @return the date the result was imported, or an empty Optional
+     * if the date couldn't be retrieved
      */
-    public Date getDateImported() {
-        return dateImported;
+    public Optional<Date> getDateImported() {
+        return Optional.ofNullable(dateImported);
     }
 
     /**

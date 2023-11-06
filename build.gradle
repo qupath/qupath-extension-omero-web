@@ -21,10 +21,12 @@ dependencies {
     shadow libs.slf4j
 
     // Auto-discover if OMERO-Gateway is available
-    shadow "org.openmicroscopy:omero-gateway:5.8.0"
+    shadow "org.openmicroscopy:omero-gateway:5.8.2"
 
     testImplementation "io.github.qupath:qupath-gui-fx:${qupathVersion}"
     testImplementation libs.junit
+    testImplementation "org.testcontainers:testcontainers:1.19.1"
+    testImplementation "org.testcontainers:junit-jupiter:1.19.1"
 }
 
 jar {

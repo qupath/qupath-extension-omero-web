@@ -228,7 +228,9 @@ public class Browser extends Stage {
                             }
                         })
                         .filter(Objects::nonNull)
-                        .map(repositoryEntity -> client.getApisHandler().getItemURI(repositoryEntity))
+                        .map(serverEntity ->
+                                client.getApisHandler().getItemURI(serverEntity)
+                        )
                         .toArray(String[]::new)
         );
     }
@@ -298,7 +300,7 @@ public class Browser extends Stage {
         attributeColumn.setCellValueFactory(cellData -> {
             var selectedItems = hierarchy.getSelectionModel().getSelectedItems();
             if (cellData != null && selectedItems.size() == 1 && selectedItems.get(0).getValue() instanceof ServerEntity serverEntity) {
-                return new ReadOnlyObjectWrapper<>(serverEntity.getAttributeInformation(cellData.getValue()));
+                return new ReadOnlyObjectWrapper<>(serverEntity.getAttributeName(cellData.getValue()));
             } else {
                 return new ReadOnlyObjectWrapper<>("");
             }
@@ -307,7 +309,7 @@ public class Browser extends Stage {
         valueColumn.setCellValueFactory(cellData -> {
             var selectedItems = hierarchy.getSelectionModel().getSelectedItems();
             if (cellData != null && selectedItems.size() == 1 && selectedItems.get(0).getValue() instanceof ServerEntity serverEntity) {
-                return new ReadOnlyObjectWrapper<>(serverEntity.getValueInformation(cellData.getValue()));
+                return new ReadOnlyObjectWrapper<>(serverEntity.getAttributeValue(cellData.getValue()));
             } else {
                 return new ReadOnlyObjectWrapper<>("");
             }
@@ -360,7 +362,7 @@ public class Browser extends Stage {
                 browserModel.getNumberOfOrphanedImages(),
                 ")"
         ));
-        loadingOrphaned.visibleProperty().bind(browserModel.getOrphanedImagesLoading());
+        loadingOrphaned.visibleProperty().bind(browserModel.areOrphanedImagesLoading());
 
         loadingThumbnail.visibleProperty().bind(Bindings.notEqual(browserModel.getNumberOfThumbnailsLoading(), 0));
 
@@ -412,7 +414,7 @@ public class Browser extends Stage {
 
         var selectedItems = hierarchy.getSelectionModel().getSelectedItems();
         if (selectedItems.size() == 1 && selectedItems.get(0) != null && selectedItems.get(0).getValue() instanceof Image image) {
-            client.getThumbnail(image.getId()).thenAccept(thumbnail -> Platform.runLater(() ->
+            client.getApisHandler().getThumbnail(image.getId()).thenAccept(thumbnail -> Platform.runLater(() ->
                     thumbnail.ifPresent(bufferedImage -> UiUtilities.paintBufferedImageOnCanvas(bufferedImage, canvas))
             ));
         }

@@ -64,6 +64,21 @@ public class RequestSender {
     }
 
     /**
+     * Performs a GET request to the specified URI to determine if it is reachable.
+     *
+     * @param uri  the link of the request
+     * @return whether the provided link is reachable
+     */
+    public static CompletableFuture<Boolean> isLinkReachable(URI uri) {
+        return getGETRequest(uri, false)
+                .map(getRequest ->
+                        httpClient.sendAsync(getRequest, HttpResponse.BodyHandlers.ofString())
+                                .handle((response, error) -> !hasRequestFailed(response, error))
+                )
+                .orElse(CompletableFuture.completedFuture(false));
+    }
+
+    /**
      * Performs a GET request to the specified URI.
      *
      * @param uri  the link of the request
@@ -169,7 +184,7 @@ public class RequestSender {
      * @param memberName  the member of the response that should contain the list to convert
      * @return a list of JSON elements, or an empty list if the request or the conversion failed
      */
-    public static CompletableFuture<List<JsonElement>> requestAndConvertToJsonList(URI uri, String memberName) {
+    public static CompletableFuture<List<JsonElement>> getAndConvertToJsonList(URI uri, String memberName) {
         return getAndConvert(uri, JsonObject.class).thenApply(response -> {
             if (response.isPresent()) {
                 try {
@@ -182,21 +197,6 @@ public class RequestSender {
                 return List.of();
             }
         });
-    }
-
-    /**
-     * Performs a GET request to the specified URI to determine if it is reachable.
-     *
-     * @param uri  the link of the request
-     * @return whether the provided link is reachable
-     */
-    public static CompletableFuture<Boolean> isLinkReachable(URI uri) {
-        return getGETRequest(uri, false)
-                .map(getRequest ->
-                        httpClient.sendAsync(getRequest, HttpResponse.BodyHandlers.ofString())
-                                .handle((response, error) -> !hasRequestFailed(response, error))
-                )
-                .orElse(CompletableFuture.completedFuture(false));
     }
 
     /**
@@ -300,7 +300,7 @@ public class RequestSender {
                 .limit(max(0, (totalCount - limit) / limit))
                 .mapToObj(offset -> WebUtilities.createURI(uri + "offset=" + offset).orElse(null))
                 .filter(Objects::nonNull)
-                .map(currentURI -> requestAndConvertToJsonList(currentURI, "data"))
+                .map(currentURI -> getAndConvertToJsonList(currentURI, "data"))
                 .map(CompletableFuture::join)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)

@@ -1,0 +1,21 @@
+#!/bin/sh
+
+/opt/omero/server/venv3/bin/omero login root@localhost:4064 -w password
+
+project=$(/opt/omero/server/venv3/bin/omero obj new Project name=project)
+dataset=$(/opt/omero/server/venv3/bin/omero obj new Dataset name=dataset)
+/opt/omero/server/venv3/bin/omero obj new ProjectDatasetLink parent=$project child=$dataset
+
+comment=$(/opt/omero/server/venv3/bin/omero obj new CommentAnnotation textValue=comment)
+/opt/omero/server/venv3/bin/omero obj new DatasetAnnotationLink parent=$dataset child=$comment
+
+analysis=$(/opt/omero/server/venv3/bin/omero upload /analysis.csv)
+file=$(/opt/omero/server/venv3/bin/omero obj new FileAnnotation file=$analysis)
+/opt/omero/server/venv3/bin/omero obj new DatasetAnnotationLink parent=$dataset child=$file
+
+/opt/omero/server/venv3/bin/omero obj new Dataset name=orphaned_dataset
+
+/opt/omero/server/venv3/bin/omero import -d $dataset --transfer=ln_s /mitosis.tif
+/opt/omero/server/venv3/bin/omero import --transfer=ln_s /Dot_Blot.tif
+
+echo $analysis

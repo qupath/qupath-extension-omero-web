@@ -1,11 +1,10 @@
 package qupath.ext.omero.core.entities.repositoryentities;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.apis.ApisHandler;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
 import qupath.ext.omero.gui.UiUtilities;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
@@ -18,49 +17,35 @@ import java.util.concurrent.CompletableFuture;
  * It contains one {@link OrphanedFolder}, and zero or more projects and orphaned datasets (described in
  * {@link qupath.ext.omero.core.entities.repositoryentities.serverentities server entities}).
  */
-public class Server extends RepositoryEntity {
+public class Server implements RepositoryEntity {
 
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
     private static final ResourceBundle resources = UiUtilities.getResources();
+    private final ObservableList<RepositoryEntity> children = FXCollections.observableArrayList();
+    private final ObservableList<RepositoryEntity> childrenImmutable = FXCollections.unmodifiableObservableList(children);
     private final List<Owner> owners = new ArrayList<>();
     private final List<Group> groups = new ArrayList<>();
-    private final StringConverter<Owner> ownerStringConverter = new StringConverter<>() {
-        @Override
-        public String toString(Owner owner) {
-            return owner == null ? null : owner.getFullName();
-        }
-
-        @Override
-        public Owner fromString(String string) {
-            return owners.stream()
-                    .filter(owner -> owner.getFullName().equals(string))
-                    .findAny()
-                    .orElse(null);
-        }
-    };
     private Owner defaultOwner = null;
     private Group defaultGroup = null;
-    private int numberOfChildren = 1;       // the server has at least an orphaned folder as a child
+    private boolean isPopulating = false;
 
-    private Server(ApisHandler apisHandler) {
+    private Server() {
         owners.add(Owner.getAllMembersOwner());
         groups.add(Group.getAllGroupsGroup());
-
-        children.add(new OrphanedFolder(apisHandler));
     }
 
     @Override
     public String toString() {
-        return String.format("Server containing %d children", numberOfChildren);
+        return String.format("Server containing the following children: %s", children);
     }
 
     @Override
     public int getNumberOfChildren() {
-        return numberOfChildren;
+        return children.size();
     }
 
     @Override
-    public ObservableList<RepositoryEntity> getChildren() {
+    public ObservableList<? extends RepositoryEntity> getChildren() {
         return childrenImmutable;
     }
 
@@ -72,6 +57,11 @@ public class Server extends RepositoryEntity {
     @Override
     public boolean isFilteredByGroupOwnerName(Group groupFilter, Owner ownerFilter, String nameFilter) {
         return true;
+    }
+
+    @Override
+    public boolean isPopulatingChildren() {
+        return isPopulating;
     }
 
     /**
@@ -102,9 +92,12 @@ public class Server extends RepositoryEntity {
      * @return the new server, or an empty Optional if the creation failed
      */
     public static CompletableFuture<Optional<Server>> create(ApisHandler apisHandler, Group defaultGroup, int defaultUserId) {
-        Server server = new Server(apisHandler);
+        Server server = new Server();
 
-        return apisHandler.getGroups().thenCompose(groups -> {
+        return OrphanedFolder.create(apisHandler).thenCompose(orphanedFolder -> {
+            server.children.add(orphanedFolder);
+            return apisHandler.getGroups();
+        }).thenCompose(groups -> {
             server.groups.addAll(groups);
 
             if (groups.isEmpty() || (defaultGroup != null && !groups.contains(defaultGroup))) {
@@ -166,37 +159,31 @@ public class Server extends RepositoryEntity {
     }
 
     /**
-     * @return a converter to switch from/to owner to/from string
-     */
-    public StringConverter<Owner> getOwnerStringConverter() {
-        return ownerStringConverter;
-    }
-
-    /**
-     * @return an unmodifiable list of owners of this server
-     */
-    public List<Owner> getOwners() {
-        return Collections.unmodifiableList(owners);
-    }
-
-    /**
-     * @return an unmodifiable list of groups of this server
+     * @return an unmodifiable list of groups of this server. This includes
+     * the default group
      */
     public List<Group> getGroups() {
         return Collections.unmodifiableList(groups);
     }
 
-    private void populate(ApisHandler apisHandler) {
-        apisHandler.getProjects().thenCompose(projects -> {
-            addChildren(projects);
-
-            return apisHandler.getOrphanedDatasets();
-        }).thenAccept(this::addChildren);
+    /**
+     * @return an unmodifiable list of owners of this server. This includes
+     * the default owner
+     */
+    public List<Owner> getOwners() {
+        return Collections.unmodifiableList(owners);
     }
 
-    private void addChildren(List<ServerEntity> serverEntities) {
-        children.addAll(serverEntities);
+    private void populate(ApisHandler apisHandler) {
+        isPopulating = true;
 
-        numberOfChildren += serverEntities.size();
+        apisHandler.getProjects().thenCompose(projects -> {
+            children.addAll(projects);
+
+            return apisHandler.getOrphanedDatasets();
+        }).thenAccept(orphanedDatasets -> {
+            children.addAll(orphanedDatasets);
+            isPopulating = false;
+        });
     }
 }

@@ -5,6 +5,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.gui.UiUtilities;
@@ -40,8 +41,8 @@ public class Image extends ServerEntity {
             resources.getString("Web.Entities.Image.imageWidth"),
             resources.getString("Web.Entities.Image.imageHeight"),
             resources.getString("Web.Entities.Image.uncompressedSize"),
-            resources.getString("Web.Entities.Image.nbChannels"),
             resources.getString("Web.Entities.Image.nbZSlices"),
+            resources.getString("Web.Entities.Image.nbChannels"),
             resources.getString("Web.Entities.Image.nbTimePoints"),
             resources.getString("Web.Entities.Image.pixelSizeX"),
             resources.getString("Web.Entities.Image.pixelSizeY"),
@@ -52,9 +53,11 @@ public class Image extends ServerEntity {
     @SerializedName(value = "AcquisitionDate") private long acquisitionDate;
     @SerializedName(value = "Pixels") private PixelInfo pixels;
 
-    @Override
-    public ObservableList<RepositoryEntity> getChildren() {
-        return childrenImmutable;
+    /**
+     * Creates an empty image only defined by its ID.
+     */
+    public Image(long id) {
+        this.id = id;
     }
 
     @Override
@@ -63,12 +66,17 @@ public class Image extends ServerEntity {
     }
 
     @Override
-    public String getType() {
-        return "image";
+    public ObservableList<? extends RepositoryEntity> getChildren() {
+        return FXCollections.emptyObservableList();
     }
 
     @Override
-    public String getAttributeInformation(int informationIndex) {
+    public boolean isPopulatingChildren() {
+        return false;
+    }
+
+    @Override
+    public String getAttributeName(int informationIndex) {
         if (informationIndex < ATTRIBUTES.length) {
             return ATTRIBUTES[informationIndex];
         } else {
@@ -77,13 +85,13 @@ public class Image extends ServerEntity {
     }
 
     @Override
-    public String getValueInformation(int informationIndex) {
+    public String getAttributeValue(int informationIndex) {
         return switch (informationIndex) {
             case 0 -> name == null || name.isEmpty() ? "-" : name;
             case 1 -> String.valueOf(getId());
             case 2 -> getOwner().getFullName();
             case 3 -> getGroup().getName();
-            case 4 -> acquisitionDate == 0 ? "-" : new Date(acquisitionDate * 1000).toString();
+            case 4 -> acquisitionDate == 0 ? "-" : new Date(acquisitionDate).toString();
             case 5 -> getImageDimensions().map(d -> d[0] + " px").orElse("-");
             case 6 -> getImageDimensions().map(d -> d[1] + " px").orElse("-");
             case 7 -> {
@@ -183,7 +191,7 @@ public class Image extends ServerEntity {
      * @return whether this image has 3 channels (RGB)
      */
     public boolean has3Channels() {
-        return getImageDimensions().filter(ints -> ints[2] == 3).isPresent();
+        return getImageDimensions().filter(ints -> ints[3] == 3).isPresent();
     }
 
     private Optional<int[]> getImageDimensions() {

@@ -3,6 +3,7 @@ package qupath.ext.omero.core.entities.annotations;
 import com.google.gson.annotations.SerializedName;
 import qupath.ext.omero.gui.UiUtilities;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -17,6 +18,20 @@ public class CommentAnnotation extends Annotation {
     @Override
     public String toString() {
         return String.format("%s. Value: %s", super.toString(), value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof CommentAnnotation commentAnnotation))
+            return false;
+        return Objects.equals(commentAnnotation.value, value);
+    }
+
+    @Override
+    public int hashCode() {
+        return (value == null ? "" : value).hashCode();
     }
 
     /**

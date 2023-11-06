@@ -3,8 +3,6 @@ package qupath.ext.omero.core.entities.imagemetadata;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import qupath.lib.common.ColorTools;
 import qupath.lib.images.servers.ImageChannel;
@@ -14,7 +12,6 @@ import qupath.lib.images.servers.PixelType;
 import java.util.List;
 import java.util.Optional;
 
-@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class TestImageMetadataResponse {
 
     @Test

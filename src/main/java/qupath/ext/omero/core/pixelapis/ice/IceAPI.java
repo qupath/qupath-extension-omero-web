@@ -45,6 +45,20 @@ public class IceAPI implements PixelAPI {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof IceAPI iceAPI))
+            return false;
+        return iceAPI.client.equals(client);
+    }
+
+    @Override
+    public int hashCode() {
+        return client.hashCode();
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

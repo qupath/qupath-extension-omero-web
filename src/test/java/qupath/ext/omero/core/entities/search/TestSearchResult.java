@@ -1,8 +1,6 @@
 package qupath.ext.omero.core.entities.search;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -11,8 +9,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
-@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class TestSearchResult {
 
     private static final DateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss Z");
@@ -72,7 +70,11 @@ public class TestSearchResult {
     void Check_Results_Acquired_Dates() throws ParseException {
         List<SearchResult> searchResults = createSearchResults();
 
-        List<Date> resultsAcquiredDates = searchResults.stream().map(SearchResult::getDateAcquired).toList();
+        List<Date> resultsAcquiredDates = searchResults.stream()
+                .map(SearchResult::getDateAcquired)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
 
         Assertions.assertArrayEquals(new Date[] {
                 dateFormat.parse("Tue, 29 Dec 2009 09:59:15 +0000"),
@@ -85,7 +87,11 @@ public class TestSearchResult {
     void Check_Results_Imported_Dates() throws ParseException {
         List<SearchResult> searchResults = createSearchResults();
 
-        List<Date> resultsImportedDates = searchResults.stream().map(SearchResult::getDateImported).toList();
+        List<Date> resultsImportedDates = searchResults.stream()
+                .map(SearchResult::getDateImported)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
 
         Assertions.assertArrayEquals(new Date[]{
                 dateFormat.parse("Mon, 09 Oct 2023 15:36:27 +0100"),

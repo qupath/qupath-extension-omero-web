@@ -9,21 +9,15 @@ import qupath.ext.omero.core.apis.ApisHandler;
 import qupath.ext.omero.core.entities.login.LoginResponse;
 import qupath.ext.omero.imagesserver.OmeroImageServer;
 import qupath.lib.gui.QuPathGUI;
-import qupath.ext.omero.core.entities.repositoryentities.OrphanedFolder;
-import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
 import qupath.ext.omero.core.entities.repositoryentities.Server;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.pixelapis.ice.IceAPI;
 import qupath.ext.omero.core.pixelapis.PixelAPI;
 import qupath.ext.omero.core.pixelapis.web.WebAPI;
+import qupath.lib.gui.viewer.QuPathViewer;
 
-import java.awt.image.BufferedImage;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -31,7 +25,7 @@ import java.util.stream.Stream;
  * <p>Class representing an OMERO Web Client.</p>
  * <p>
  *     It handles creating a connection with an OMERO server, logging in, keeping the connection alive,
- *     logging out, and retrieving images (icons, thumbnails) from the server.
+ *     and logging out.
  * </p>
  * <p>
  *     A client can be connected to a server without being authenticated if the server allows it.
@@ -42,20 +36,20 @@ import java.util.stream.Stream;
  *     and a reference to a {@link Server Server}
  *     which is the ancestor of all OMERO entities.
  * </p>
- * <p>A client must be {@link #close() closed} once no longer used.</p>
+ * <p>
+ *     A client must be {@link #close() closed} once no longer used.
+ *     This is handled by {@link WebClients#removeClient(WebClient)}.
+ * </p>
  */
 public class WebClient implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(WebClient.class);
-    private static final int THUMBNAIL_SIZE = 256;
     private static final long PING_DELAY_MILLISECONDS = 60000L;
     private final StringProperty username = new SimpleStringProperty("");
     private final BooleanProperty authenticated = new SimpleBooleanProperty(false);
     private final ObjectProperty<PixelAPI> selectedPixelAPI = new SimpleObjectProperty<>();
     private final ObservableSet<URI> openedImagesURIs = FXCollections.observableSet();
     private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
-    private final Map<Long, BufferedImage> thumbnails = new ConcurrentHashMap<>();
-    private final Map<Class<? extends RepositoryEntity>, BufferedImage> omeroIcons = new ConcurrentHashMap<>();
     private Server server;
     private List<PixelAPI> availablePixelAPIs;
     private ApisHandler apisHandler;
@@ -233,6 +227,18 @@ public class WebClient implements AutoCloseable {
     }
 
     /**
+     * Indicates if this client can be closed, by checking if there is any
+     * opened image in the QuPath viewer that belongs to this client.
+     *
+     * @return whether this client can be closed
+     */
+    public boolean canBeClosed() {
+        return !(QuPathGUI.getInstance() != null && QuPathGUI.getInstance().getAllViewers().stream()
+                .map(QuPathViewer::getServer)
+                .anyMatch(server -> server instanceof OmeroImageServer omeroImageServer && omeroImageServer.getClient().equals(this)));
+    }
+
+    /**
      * <p>Attempt to authenticate to the server using the optional arguments.</p>
      * <p>
      *     Take a look at the {@link ApisHandler#login(String...) JsonApi.login()}
@@ -256,50 +262,6 @@ public class WebClient implements AutoCloseable {
 
             return loginResponse;
         });
-    }
-
-    /**
-     * <p>Attempt to retrieve the thumbnail of an image from its id.</p>
-     * <p>This function is asynchronous.</p>
-     *
-     * @param id  the id of the image whose thumbnail is to be retrieved
-     * @return a CompletableFuture with the thumbnail if the operation succeeded, or an empty Optional otherwise
-     */
-    public CompletableFuture<Optional<BufferedImage>> getThumbnail(long id) {
-        if (thumbnails.containsKey(id)) {
-            return CompletableFuture.completedFuture(Optional.of(thumbnails.get(id)));
-        } else {
-            return apisHandler.getThumbnail(id, THUMBNAIL_SIZE).thenApply(thumbnail -> {
-                thumbnail.ifPresent(bufferedImage -> thumbnails.put(id, bufferedImage));
-                return thumbnail;
-            });
-        }
-    }
-
-    /**
-     * <p>Attempt to retrieve the icon of an OMERO entity.</p>
-     * <p>This function is asynchronous.</p>
-     *
-     * @param type  the class of the entity whose icon is to be retrieved
-     * @return a CompletableFuture with the icon if the operation succeeded, or an empty Optional otherwise
-     */
-    public Optional<BufferedImage> getOmeroIcon(Class<? extends RepositoryEntity> type) {
-        if (omeroIcons.containsKey(type)) {
-            return Optional.of(omeroIcons.get(type));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * Indicates if this client can be closed, by checking if there is any
-     * opened image in the QuPath viewer that belongs to this client.
-     *
-     * @return whether this client can be closed
-     */
-    public boolean canBeClosed() {
-        return !(QuPathGUI.getInstance().getViewer().getServer() instanceof OmeroImageServer omeroImageServer &&
-                omeroImageServer.getClient().equals(this));
     }
 
     private CompletableFuture<WebClient> initialize(URI uri, String... args) {
@@ -338,7 +300,6 @@ public class WebClient implements AutoCloseable {
                 }
             }
             if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
-                populateIcons();
                 setUpPixelAPIs();
             }
             this.status = switch (status) {
@@ -380,7 +341,6 @@ public class WebClient implements AutoCloseable {
                     }
                 }
                 if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
-                    populateIcons();
                     setUpPixelAPIs();
                 }
                 this.status = switch (status) {
@@ -422,13 +382,6 @@ public class WebClient implements AutoCloseable {
                 }
             }, PING_DELAY_MILLISECONDS, PING_DELAY_MILLISECONDS);
         }
-    }
-
-    private void populateIcons() {
-        apisHandler.getProjectIcon().thenAccept(icon -> icon.ifPresent(bufferedImage -> omeroIcons.put(Project.class, bufferedImage)));
-        apisHandler.getDatasetIcon().thenAccept(icon -> icon.ifPresent(bufferedImage -> omeroIcons.put(Dataset.class, bufferedImage)));
-        apisHandler.getOrphanedFolderIcon().thenAccept(icon -> icon.ifPresent(bufferedImage -> omeroIcons.put(OrphanedFolder.class, bufferedImage)));
-        apisHandler.getImageIcon().thenAccept(icon -> icon.ifPresent(bufferedImage -> omeroIcons.put(Image.class, bufferedImage)));
     }
 
     private void setUpPixelAPIs() {

@@ -1,34 +1,46 @@
 package qupath.ext.omero.core.entities.repositoryentities;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.ext.omero.core.apis.ApisHandler;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.gui.UiUtilities;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
 
+import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An orphaned folder is a container for orphaned images (which are described in
  * {@link qupath.ext.omero.core.entities.repositoryentities.serverentities server entities}).
  */
-public class OrphanedFolder extends RepositoryEntity {
+public class OrphanedFolder implements RepositoryEntity {
 
     private static final ResourceBundle resources = UiUtilities.getResources();
+    private final ObservableList<Image> children = FXCollections.observableArrayList();
+    private final ObservableList<Image> childrenImmutable = FXCollections.unmodifiableObservableList(children);
     private final ApisHandler apisHandler;
+    private final int numberOfImages;
     private boolean childrenPopulated = false;
-    private int numberOfImages = 0;
+
+    private OrphanedFolder(ApisHandler apisHandler, int numberOfImages) {
+        this.apisHandler = apisHandler;
+        this.numberOfImages = numberOfImages;
+    }
 
     /**
-     * Creates a new orphaned folder.
-     * This will load the number of orphaned images in the background.
+     * <p>Creates a new orphaned folder and request its number of children.</p>
+     * <p>This function is asynchronous.</p>
      *
-     * @param apisHandler  the request handler of the browser
+     * @param apisHandler  the apis handler of the server
+     * @return the new orphaned folder
      */
-    public OrphanedFolder(ApisHandler apisHandler) {
-        this.apisHandler = apisHandler;
-
-        setNumberOfChildren();
+    public static CompletableFuture<OrphanedFolder> create(ApisHandler apisHandler) {
+        return apisHandler.getNumberOfOrphanedImages().thenApply(numberOfOrphanedImages ->
+                new OrphanedFolder(apisHandler, numberOfOrphanedImages)
+        );
     }
 
     @Override
@@ -37,12 +49,26 @@ public class OrphanedFolder extends RepositoryEntity {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof OrphanedFolder orphanedFolder))
+            return false;
+        return Objects.equals(orphanedFolder.apisHandler, apisHandler);
+    }
+
+    @Override
+    public int hashCode() {
+        return apisHandler.hashCode();
+    }
+
+    @Override
     public int getNumberOfChildren() {
         return numberOfImages;
     }
 
     @Override
-    public ObservableList<RepositoryEntity> getChildren() {
+    public ObservableList<? extends RepositoryEntity> getChildren() {
         if (!childrenPopulated) {
             childrenPopulated = true;
 
@@ -61,9 +87,8 @@ public class OrphanedFolder extends RepositoryEntity {
         return true;
     }
 
-    private void setNumberOfChildren() {
-        apisHandler.getOrphanedImagesURIs().thenAccept(orphanedImagesURIs ->
-                numberOfImages = orphanedImagesURIs.size()
-        );
+    @Override
+    public boolean isPopulatingChildren() {
+        return apisHandler.areOrphanedImagesLoading().get();
     }
 }

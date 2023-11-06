@@ -1,5 +1,6 @@
 package qupath.ext.omero.gui.browser.serverbrowser;
 
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.*;
 import qupath.ext.omero.core.WebClient;
@@ -46,8 +47,7 @@ public class BrowserModel {
         UiUtilities.bindPropertyInUIThread(authenticated, client.getAuthenticated());
         UiUtilities.bindPropertyInUIThread(username, client.getUsername());
         UiUtilities.bindPropertyInUIThread(numberOfEntitiesLoading, client.getApisHandler().getNumberOfEntitiesLoading());
-        UiUtilities.bindPropertyInUIThread(areOrphanedImagesLoading, client.getApisHandler().getOrphanedImagesLoading());
-        UiUtilities.bindPropertyInUIThread(numberOfOrphanedImages, client.getApisHandler().getNumberOfOrphanedImages());
+        UiUtilities.bindPropertyInUIThread(areOrphanedImagesLoading, client.getApisHandler().areOrphanedImagesLoading());
         UiUtilities.bindPropertyInUIThread(numberOfOrphanedImagesLoaded, client.getApisHandler().getNumberOfOrphanedImagesLoaded());
         UiUtilities.bindPropertyInUIThread(numberOfThumbnailsLoading, client.getApisHandler().getNumberOfThumbnailsLoading());
 
@@ -68,6 +68,10 @@ public class BrowserModel {
         } else {
             selectedGroup = new SimpleObjectProperty<>(null);
         }
+
+        client.getApisHandler().getNumberOfOrphanedImages().thenAccept(numberOfOrphanedImages -> Platform.runLater(() ->
+                this.numberOfOrphanedImages.set(numberOfOrphanedImages))
+        );
     }
 
     /**
@@ -85,35 +89,35 @@ public class BrowserModel {
     }
 
     /**
-     * See {@link ApisHandler#getNumberOfEntitiesLoading() RequestsHandler.getNumberOfEntitiesLoading()}.
+     * See {@link ApisHandler#getNumberOfEntitiesLoading()}.
      */
     public ReadOnlyIntegerProperty getNumberOfEntitiesLoading() {
         return numberOfEntitiesLoading;
     }
 
     /**
-     * See {@link ApisHandler#getOrphanedImagesLoading() RequestsHandler.getOrphanedImagesLoading()}.
+     * See {@link ApisHandler#areOrphanedImagesLoading()}.
      */
-    public ReadOnlyBooleanProperty getOrphanedImagesLoading() {
+    public ReadOnlyBooleanProperty areOrphanedImagesLoading() {
         return areOrphanedImagesLoading;
     }
 
     /**
-     * See {@link ApisHandler#getNumberOfOrphanedImages() RequestsHandler.getNumberOfOrphanedImages()}.
+     * See {@link ApisHandler#getNumberOfOrphanedImages()}.
      */
     public ReadOnlyIntegerProperty getNumberOfOrphanedImages() {
         return numberOfOrphanedImages;
     }
 
     /**
-     * See {@link ApisHandler#getNumberOfOrphanedImagesLoaded() RequestsHandler.getNumberOfOrphanedImagesLoaded()}.
+     * See {@link ApisHandler#getNumberOfOrphanedImagesLoaded()}.
      */
     public ReadOnlyIntegerProperty getNumberOfOrphanedImagesLoaded() {
         return numberOfOrphanedImagesLoaded;
     }
 
     /**
-     * See {@link ApisHandler#getNumberOfThumbnailsLoading() RequestsHandler.getNumberOfThumbnailsLoading()}.
+     * See {@link ApisHandler#getNumberOfThumbnailsLoading()}.
      */
     public ReadOnlyIntegerProperty getNumberOfThumbnailsLoading() {
         return numberOfThumbnailsLoading;
