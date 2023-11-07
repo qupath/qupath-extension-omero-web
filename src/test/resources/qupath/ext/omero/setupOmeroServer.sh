@@ -16,6 +16,6 @@ file=$(/opt/omero/server/venv3/bin/omero obj new FileAnnotation file=$analysis)
 /opt/omero/server/venv3/bin/omero obj new Dataset name=orphaned_dataset
 
 /opt/omero/server/venv3/bin/omero import -d $dataset --transfer=ln_s /mitosis.tif
-/opt/omero/server/venv3/bin/omero import --transfer=ln_s /Dot_Blot.tif
+/opt/omero/server/venv3/bin/omero import --transfer=ln_s /Cardio.tif
 
 echo $analysis

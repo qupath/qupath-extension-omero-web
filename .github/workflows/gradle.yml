@@ -17,5 +17,7 @@
          distribution: 'adopt-hotspot'
      - name: Grant execute permission for gradlew
        run: chmod +x gradlew
+     - name: Grant execute permission for OMERO server setup script
+       run: chmod +x src/test/resources/qupath/ext/omero/setupOmeroServer.sh
      - name: Build with Gradle
        run: ./gradlew build -P toolchain=11

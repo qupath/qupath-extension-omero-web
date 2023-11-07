@@ -112,8 +112,8 @@ public abstract class OmeroServer {
                             "/analysis.csv"
                     )
                     .withFileSystemBind(
-                            Objects.requireNonNull(OmeroServer.class.getResource("Dot_Blot.tif")).getPath(),
-                            "/Dot_Blot.tif"
+                            Objects.requireNonNull(OmeroServer.class.getResource("Cardio.tif")).getPath(),
+                            "/Cardio.tif"
                     )
                     .withFileSystemBind(
                             Objects.requireNonNull(OmeroServer.class.getResource("mitosis.tif")).getPath(),
@@ -309,31 +309,31 @@ public abstract class OmeroServer {
         return URI.create(getServerURL() + "/webclient/?show=image-" + getImage().getId());
     }
 
-    protected static String getImageAttributeValue(int informationIndex) {
+    protected static Image getOrphanedImage() {
+        return new Image(2);
+    }
+
+    protected static String getOrphanedImageAttributeValue(int informationIndex) {
         return switch (informationIndex) {
-            case 0 -> "mitosis.tif";
-            case 1 -> String.valueOf(getImage().getId());
+            case 0 -> "Cardio.tif";
+            case 1 -> String.valueOf(getOrphanedImage().getId());
             case 2 -> getCurrentOwner().getFullName();
             case 3 -> getCurrentGroup().getName();
             case 4, 13 -> "-";
-            case 5 -> "171 px";
-            case 6 -> "196 px";
-            case 7 -> "32.6 MB";
-            case 8 -> "5";
-            case 9 -> "2";
-            case 10 -> "51";
-            case 11, 12 -> "0.08850000022125 µm";
-            case 14 -> "uint16";
+            case 5 -> "1000 px";
+            case 6 -> "1000 px";
+            case 7 -> "2.9 MB";
+            case 8 -> "1";
+            case 9 -> "3";
+            case 10 -> "1";
+            case 11, 12 -> "-";
+            case 14 -> "uint8";
             default -> "";
         };
     }
 
-    protected static int getImageNumberOfAttributes() {
+    protected static int getOrphanedImageNumberOfAttributes() {
         return 15;
-    }
-
-    protected static Image getOrphanedImage() {
-        return new Image(2);
     }
 
     protected static List<Group> getGroups() {
