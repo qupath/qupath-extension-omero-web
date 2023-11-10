@@ -115,7 +115,14 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
-     * @return the server port of this session
+     * See {@link JsonApi#getHost()}.
+     */
+    public String getServerHost() {
+        return jsonApi.getHost();
+    }
+
+    /**
+     * See {@link JsonApi#getPort()}.
      */
     public int getPort() {
         return jsonApi.getPort();

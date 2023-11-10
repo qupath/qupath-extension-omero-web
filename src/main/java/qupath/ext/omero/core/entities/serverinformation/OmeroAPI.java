@@ -28,19 +28,18 @@ public class OmeroAPI {
             return versions.get(versions.size() - 1).getVersionURL();
         }
     }
-}
 
-class OmeroAPIVersion {
+    private static class OmeroAPIVersion {
 
-    @SerializedName("url:base") private String versionURL;
+        @SerializedName("url:base") private String versionURL;
 
-    @Override
-    public String toString() {
-        return String.format("Version URL: %s", versionURL);
+        @Override
+        public String toString() {
+            return String.format("Version URL: %s", versionURL);
+        }
+
+        public Optional<String> getVersionURL() {
+            return Optional.ofNullable(versionURL);
+        }
     }
-
-    public Optional<String> getVersionURL() {
-        return Optional.ofNullable(versionURL);
-    }
 }
-

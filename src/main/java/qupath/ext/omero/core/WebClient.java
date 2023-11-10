@@ -220,13 +220,6 @@ public class WebClient implements AutoCloseable {
     }
 
     /**
-     * @return the server port of this session
-     */
-    public int getPort() {
-        return apisHandler.getPort();
-    }
-
-    /**
      * Indicates if this client can be closed, by checking if there is any
      * opened image in the QuPath viewer that belongs to this client.
      *

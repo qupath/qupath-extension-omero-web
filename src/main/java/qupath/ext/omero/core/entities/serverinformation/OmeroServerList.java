@@ -3,6 +3,7 @@ package qupath.ext.omero.core.entities.serverinformation;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
@@ -30,6 +31,18 @@ public class OmeroServerList {
     }
 
     /**
+     * @return the URL of the first server we can connect to,
+     * or an empty Optional if it was not found
+     */
+    public Optional<String> getServerHost() {
+        if (serverInfos == null || serverInfos.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(serverInfos.get(0).getHost());
+        }
+    }
+
+    /**
      * @return the port of the first server we can connect to,
      * or an empty Optional if it was not found
      */
@@ -40,23 +53,28 @@ public class OmeroServerList {
             return OptionalInt.of(serverInfos.get(0).getPort());
         }
     }
-}
 
-class OmeroServerInfo {
+    private static class OmeroServerInfo {
 
-    @SerializedName("id") private int id;
-    @SerializedName("port") private int port;
+        @SerializedName("id") private int id;
+        @SerializedName("host") private String host;
+        @SerializedName("port") private int port;
 
-    @Override
-    public String toString() {
-        return String.format("ID: %d, port: %d", id, port);
-    }
+        @Override
+        public String toString() {
+            return String.format("ID: %d, host: %s, port: %d", id, host, port);
+        }
 
-    public int getId() {
-        return id;
-    }
+        public int getId() {
+            return id;
+        }
 
-    public int getPort() {
-        return port;
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
     }
 }

@@ -66,15 +66,6 @@ public class TestWebClient extends OmeroServer {
     }
 
     @Test
-    void Check_Client_Port() {
-        int expectedPort = OmeroServer.getPort();
-
-        int port = client.getPort();
-
-        Assertions.assertEquals(expectedPort, port);
-    }
-
-    @Test
     void Check_Client_Can_Be_Closed() {
         boolean canBeClosed = client.canBeClosed();
 

@@ -58,6 +58,15 @@ public class TestApisHandler extends OmeroServer {
     }
 
     @Test
+    void Check_Server_Host() {
+        String expectedServerHost = OmeroServer.getServerHost();
+
+        String serverHost = apisHandler.getServerHost();
+
+        Assertions.assertEquals(expectedServerHost, serverHost);
+    }
+
+    @Test
     void Check_Port() {
         int expectedPort = OmeroServer.getPort();
 

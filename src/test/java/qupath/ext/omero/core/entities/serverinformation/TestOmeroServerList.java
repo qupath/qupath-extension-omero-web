@@ -27,6 +27,15 @@ public class TestOmeroServerList {
     }
 
     @Test
+    void Check_Server_Host() {
+        OmeroServerList omeroServerList = createOmeroServerList();
+
+        String serverHost = omeroServerList.getServerHost().orElse("");
+
+        Assertions.assertEquals("53.128.89.34", serverHost);
+    }
+
+    @Test
     void Check_Server_Port() {
         OmeroServerList omeroServerList = createOmeroServerList();
 
@@ -41,6 +50,7 @@ public class TestOmeroServerList {
                     "data": [
                         {
                             "id": 4,
+                            "host": 53.128.89.34,
                             "port": 50000
                         }
                     ]

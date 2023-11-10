@@ -56,8 +56,8 @@ class IceReader implements PixelAPIReader {
             ExperimenterData user = gateway.connect(new LoginCredentials(
                     client.getUsername().get(),
                     client.getPassword().map(String::valueOf).orElse(null),
-                    client.getServerURI().getHost(),
-                    client.getPort()
+                    client.getApisHandler().getServerHost(),
+                    client.getApisHandler().getPort()
             ));
 
             context = new SecurityContext(user.getGroupId());

@@ -66,7 +66,7 @@ public abstract class OmeroServer {
             postgres = null;
             omeroServer = null;
             omeroWeb = null;
-            analysisFileId = "82";
+            analysisFileId = "85";
         } else {
             postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
                     .withNetwork(Network.SHARED)
@@ -167,6 +167,10 @@ public abstract class OmeroServer {
         } else {
             throw new IllegalStateException("Client creation failed");
         }
+    }
+
+    protected static String getServerHost() {
+        return "omero-server";
     }
 
     protected static int getPort() {

@@ -53,21 +53,22 @@ class JsonApi {
     private final IntegerProperty numberOfEntitiesLoading = new SimpleIntegerProperty(0);
     private final BooleanProperty areOrphanedImagesLoading = new SimpleBooleanProperty(false);
     private final IntegerProperty numberOfOrphanedImagesLoaded = new SimpleIntegerProperty(0);
-    private final URI host;
+    private final URI webHost;
     private final ApisHandler apisHandler;
     private Map<String, String> urls;
     private int serverID;
+    private String serverHost;
     private int port;
     private String token;
 
     private JsonApi(ApisHandler apisHandler, URI host) {
         this.apisHandler = apisHandler;
-        this.host = host;
+        this.webHost = host;
     }
 
     @Override
     public String toString() {
-        return String.format("JSON API of %s", host);
+        return String.format("JSON API of %s", webHost);
     }
 
     /**
@@ -98,7 +99,16 @@ class JsonApi {
     }
 
     /**
-     * @return the server port of this session
+     * @return the server host of this server. This is the OMERO server
+     * host and may be different from the OMERO web host
+     */
+    public String getHost() {
+        return serverHost;
+    }
+
+    /**
+     * @return the server port of this server. This is the OMERO server
+     * port and may be different from the OMERO web port
      */
     public int getPort() {
         return port;
@@ -131,7 +141,7 @@ class JsonApi {
     public CompletableFuture<LoginResponse> login(String... args) {
         var uri = WebUtilities.createURI(urls.get(LOGIN_URL_KEY));
 
-        PasswordAuthentication authentication = getPasswordAuthenticationFromArgs(args).orElseGet(() -> Authenticator.getPasswordAuthentication(host.toString()));
+        PasswordAuthentication authentication = getPasswordAuthenticationFromArgs(args).orElseGet(() -> Authenticator.getPasswordAuthentication(webHost.toString()));
 
         if (uri.isEmpty() || authentication == null) {
             return CompletableFuture.completedFuture(LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.CANCELED));
@@ -389,7 +399,7 @@ class JsonApi {
      * @return a CompletableFuture with the list of ROIs. If an error occurs, the list is empty
      */
     public CompletableFuture<List<Shape>> getROIs(long id) {
-        var uri = WebUtilities.createURI(String.format(ROIS_URL, host, id));
+        var uri = WebUtilities.createURI(String.format(ROIS_URL, webHost, id));
 
         if (uri.isPresent()) {
             var gson = new GsonBuilder().registerTypeAdapter(Shape.class, new Shape.GsonShapeDeserializer()).setLenient().create();
@@ -429,7 +439,7 @@ class JsonApi {
     }
 
     private CompletableFuture<Boolean> initialize() {
-        var uri = WebUtilities.createURI(String.format(API_URL, host));
+        var uri = WebUtilities.createURI(String.format(API_URL, webHost));
 
         if (uri.isPresent()) {
             return RequestSender.getAndConvert(uri.get(), OmeroAPI.class)
@@ -445,7 +455,7 @@ class JsonApi {
                             logger.error("Could not find API URL in " + uri.get());
                             return false;
                         } else {
-                            if (setServerIDAndPort(urls).join() && setToken(urls).join()) {
+                            if (setServerInformation(urls).join() && setToken(urls).join()) {
                                 this.urls = urls;
 
                                 return true;
@@ -479,7 +489,7 @@ class JsonApi {
         numberOfOrphanedImagesLoaded.set(numberOfOrphanedImagesLoaded.get() + addition);
     }
 
-    private CompletableFuture<Boolean> setServerIDAndPort(Map<String, String> urls) {
+    private CompletableFuture<Boolean> setServerInformation(Map<String, String> urls) {
         String url = SERVERS_URL_KEY;
 
         if (urls.containsKey(url)) {
@@ -490,8 +500,13 @@ class JsonApi {
                         uri.get(),
                         OmeroServerList.class
                 ).thenApply(serverList -> {
-                    if (serverList.isPresent() && serverList.get().getServerId().isPresent() && serverList.get().getServerPort().isPresent()) {
+                    if (serverList.isPresent() &&
+                            serverList.get().getServerId().isPresent() &&
+                            serverList.get().getServerHost().isPresent() &&
+                            serverList.get().getServerPort().isPresent()
+                    ) {
                         serverID = serverList.get().getServerId().getAsInt();
+                        serverHost = serverList.get().getServerHost().get();
                         port = serverList.get().getServerPort().getAsInt();
                         return true;
                     } else {
