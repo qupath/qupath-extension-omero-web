@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class OmeroServer {
 
-    private static final boolean IS_LOCAL_OMERO_SERVER_RUNNING = true;
+    private static final boolean IS_LOCAL_OMERO_SERVER_RUNNING = false;
     private static final int CLIENT_CREATION_ATTEMPTS = 3;
     private static final String OMERO_PASSWORD = "password";
     private static final int OMERO_SERVER_PORT = 4064;
