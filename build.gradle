@@ -24,6 +24,8 @@ dependencies {
     shadow "org.openmicroscopy:omero-gateway:5.8.2"
 
     testImplementation "io.github.qupath:qupath-gui-fx:${qupathVersion}"
+    testImplementation "io.github.qupath:qupath-extension-bioformats:${qupathVersion}"
+    testImplementation "org.openmicroscopy:omero-gateway:5.8.2"
     testImplementation libs.junit
     testImplementation "org.testcontainers:testcontainers:1.19.1"
     testImplementation "org.testcontainers:junit-jupiter:1.19.1"

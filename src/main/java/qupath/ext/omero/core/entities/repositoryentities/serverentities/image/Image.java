@@ -174,7 +174,7 @@ public class Image extends ServerEntity {
     public ReadOnlyBooleanProperty isSupported() {
         if (isSupported == null) {
             throw new IllegalStateException(
-                    "The web client has not been set on this dataset. See the setWebClient(WebClient) function."
+                    "The web client has not been set on this image. See the setWebClient(WebClient) function."
             );
         }
         return isSupported;

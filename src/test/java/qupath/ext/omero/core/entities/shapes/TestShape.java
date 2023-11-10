@@ -7,13 +7,11 @@ import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import qupath.lib.common.ColorTools;
-import qupath.lib.objects.PathAnnotationObject;
-import qupath.lib.objects.PathDetectionObject;
 import qupath.lib.objects.PathObject;
-import qupath.lib.objects.TMACoreObject;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,30 +29,19 @@ public class TestShape {
         throw new IllegalArgumentException("Invalid JSON: " + json);
     }
 
-    public static String createJSONFromPathObject(PathObject pathObject) {
-        Gson gson = new GsonBuilder()
-                .registerTypeAdapter(TMACoreObject.class, new Shape.GsonShapeSerializer())
-                .registerTypeAdapter(PathAnnotationObject.class, new Shape.GsonShapeSerializer())
-                .registerTypeAdapter(PathDetectionObject.class, new Shape.GsonShapeSerializer())
-                .serializeSpecialFloatingPointValues()
-                .setLenient()
-                .create();
-        return gson.toJson(pathObject);
-    }
-
     @Test
     void Check_Empty() {
         Shape shape = new Gson().fromJson("{}", ShapeImplementation.class);
 
-        String id = shape.getQuPathId();
+        Optional<UUID> id = shape.getQuPathParentId();
 
-        Assertions.assertEquals("", id);
+        Assertions.assertTrue(id.isEmpty());
     }
 
     @Test
-    void Check_Annotation_Type() {
+    void Check_Path_Object_Is_Annotation() {
         Shape shape = createShape();
-        PathObject pathObject = shape.createAnnotation();
+        PathObject pathObject = shape.createPathObject();
 
         boolean isAnnotation = pathObject.isAnnotation();
 
@@ -62,9 +49,9 @@ public class TestShape {
     }
 
     @Test
-    void Check_Annotation_ID() {
+    void Check_Path_Object_ID() {
         Shape shape = createShape();
-        PathObject pathObject = shape.createAnnotation();
+        PathObject pathObject = shape.createPathObject();
 
         UUID id = pathObject.getID();
 
@@ -72,9 +59,9 @@ public class TestShape {
     }
 
     @Test
-    void Check_Annotation_Class() {
+    void Check_Path_Object_Class() {
         Shape shape = createShape();
-        PathObject pathObject = shape.createAnnotation();
+        PathObject pathObject = shape.createPathObject();
 
         Set<String> classifications = pathObject.getClassifications();
 
@@ -85,9 +72,9 @@ public class TestShape {
     }
 
     @Test
-    void Check_Annotation_ROI() {
+    void Check_Path_Object_ROI() {
         Shape shape = createShape();
-        PathObject pathObject = shape.createAnnotation();
+        PathObject pathObject = shape.createPathObject();
 
         ROI roi = pathObject.getROI();
 
@@ -95,9 +82,9 @@ public class TestShape {
     }
 
     @Test
-    void Check_Annotation_Color() {
+    void Check_Path_Object_Color() {
         Shape shape = createShape();
-        PathObject pathObject = shape.createAnnotation();
+        PathObject pathObject = shape.createPathObject();
 
         Integer color = pathObject.getColor();
 
@@ -105,9 +92,9 @@ public class TestShape {
     }
 
     @Test
-    void Check_Annotation_Lock() {
+    void Check_Path_Object_Lock() {
         Shape shape = createShape();
-        PathObject pathObject = shape.createAnnotation();
+        PathObject pathObject = shape.createPathObject();
 
         boolean lock = pathObject.isLocked();
 
@@ -115,21 +102,21 @@ public class TestShape {
     }
 
     @Test
-    void Check_Shape_ID() {
+    void Check_ID() {
         Shape shape = createShape();
 
-        String id = shape.getQuPathId();
+        UUID id = shape.getQuPathId();
 
-        Assertions.assertEquals("aba712b2-bbc2-4c05-bbba-d9fbab4d454f", id);
+        Assertions.assertEquals(UUID.fromString("aba712b2-bbc2-4c05-bbba-d9fbab4d454f"), id);
     }
 
     @Test
-    void Check_Shape_Parent_ID() {
+    void Check_Parent_ID() {
         Shape shape = createShape();
 
-        String id = shape.getQuPathParentId();
+        UUID id = shape.getQuPathParentId().orElse(null);
 
-        Assertions.assertEquals("NoParent", id);
+        Assertions.assertEquals(UUID.fromString("dfa7dfb2-fd32-4c05-bbba-d9fbab4d454f"), id);
     }
 
     @Test
@@ -155,7 +142,7 @@ public class TestShape {
         String json = """
                 {
                     "@id": 713,
-                    "text": "Annotation:Stroma:aba712b2-bbc2-4c05-bbba-d9fbab4d454f:NoParent",
+                    "text": "Annotation:Stroma:aba712b2-bbc2-4c05-bbba-d9fbab4d454f:dfa7dfb2-fd32-4c05-bbba-d9fbab4d454f",
                     "StrokeColor": -16776961,
                     "Locked": false,
                     "oldId": "454:713"
@@ -163,16 +150,17 @@ public class TestShape {
                 """;    // -16776961 is the integer representation of the red color in the BGR format
         return new Gson().fromJson(json, ShapeImplementation.class);
     }
+
+    private static class ShapeImplementation extends Shape {
+
+        protected ShapeImplementation(String type) {
+            super(type);
+        }
+
+        @Override
+        protected ROI createROI() {
+            return ROIs.createEmptyROI();
+        }
+    }
 }
 
-class ShapeImplementation extends Shape {
-
-    public ShapeImplementation(PathObject pathObject) {
-        super(pathObject);
-    }
-
-    @Override
-    protected ROI createROI() {
-        return ROIs.createEmptyROI();
-    }
-}

@@ -18,6 +18,7 @@ import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.search.SearchResult;
+import qupath.lib.images.servers.PixelType;
 
 import java.io.IOException;
 import java.net.URI;
@@ -48,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class OmeroServer {
 
-    private static final boolean IS_LOCAL_OMERO_SERVER_RUNNING = false;
+    private static final boolean IS_LOCAL_OMERO_SERVER_RUNNING = true;
     private static final int CLIENT_CREATION_ATTEMPTS = 3;
     private static final String OMERO_PASSWORD = "password";
     private static final int OMERO_SERVER_PORT = 4064;
@@ -65,7 +66,7 @@ public abstract class OmeroServer {
             postgres = null;
             omeroServer = null;
             omeroWeb = null;
-            analysisFileId = "85";
+            analysisFileId = "82";
         } else {
             postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
                     .withNetwork(Network.SHARED)
@@ -184,8 +185,8 @@ public abstract class OmeroServer {
         return new Project(1);
     }
 
-    protected static String getProjectURI() {
-        return getServerURL() + "/webclient/?show=project-" + getProject().getId();
+    protected static URI getProjectURI() {
+        return URI.create(getServerURL() + "/webclient/?show=project-" + getProject().getId());
     }
 
     protected static String getProjectAttributeValue(int informationIndex) {
@@ -212,8 +213,8 @@ public abstract class OmeroServer {
         return new Dataset(1);
     }
 
-    protected static String getDatasetURI() {
-        return getServerURL() + "/webclient/?show=dataset-" + getDataset().getId();
+    protected static URI getDatasetURI() {
+        return URI.create(getServerURL() + "/webclient/?show=dataset-" + getDataset().getId());
     }
 
     protected static AnnotationGroup getDatasetAnnotationGroup() {
@@ -309,25 +310,96 @@ public abstract class OmeroServer {
         return URI.create(getServerURL() + "/webclient/?show=image-" + getImage().getId());
     }
 
+    protected static String getImageName() {
+        return "mitosis.tif";
+    }
+
+    protected static PixelType getImagePixelType() {
+        return PixelType.UINT16;
+    }
+
+    protected static int getImageWidth() {
+        return 171;
+    }
+
+    protected static int getImageHeight() {
+        return 196;
+    }
+
+    protected static int getImageNumberOfSlices() {
+        return 5;
+    }
+
+    protected static int getImageNumberOfChannels() {
+        return 2;
+    }
+
+    protected static int getImageNumberOfTimePoints() {
+        return 51;
+    }
+
+    protected static boolean isImageRGB() {
+        return false;
+    }
+
+    protected static double getImagePixelWidthMicrons() {
+        return 0.08850000022125;
+    }
+
+    protected static double getImagePixelHeightMicrons() {
+        return 0.08850000022125;
+    }
+
     protected static Image getOrphanedImage() {
         return new Image(2);
     }
 
+    protected static URI getOrphanedImageURI() {
+        return URI.create(getServerURL() + "/webclient/?show=image-" + getOrphanedImage().getId());
+    }
+
+    protected static String getOrphanedImageName() {
+        return "Cardio.tif";
+    }
+
+    protected static PixelType getOrphanedImagePixelType() {
+        return PixelType.UINT8;
+    }
+
+    protected static int getOrphanedImageWidth() {
+        return 1000;
+    }
+
+    protected static int getOrphanedImageHeight() {
+        return 1000;
+    }
+
+    protected static int getOrphanedImageNumberOfSlices() {
+        return 1;
+    }
+
+    protected static int getOrphanedImageNumberOfChannels() {
+        return 3;
+    }
+
+    protected static int getOrphanedImageNumberOfTimePoints() {
+        return 1;
+    }
+
     protected static String getOrphanedImageAttributeValue(int informationIndex) {
         return switch (informationIndex) {
-            case 0 -> "Cardio.tif";
+            case 0 -> getOrphanedImageName();
             case 1 -> String.valueOf(getOrphanedImage().getId());
             case 2 -> getCurrentOwner().getFullName();
             case 3 -> getCurrentGroup().getName();
-            case 4, 13 -> "-";
-            case 5 -> "1000 px";
-            case 6 -> "1000 px";
+            case 4, 11, 12, 13 -> "-";
+            case 5 -> getOrphanedImageWidth() + " px";
+            case 6 -> getOrphanedImageHeight() + " px";
             case 7 -> "2.9 MB";
-            case 8 -> "1";
-            case 9 -> "3";
-            case 10 -> "1";
-            case 11, 12 -> "-";
-            case 14 -> "uint8";
+            case 8 -> String.valueOf(getOrphanedImageNumberOfSlices());
+            case 9 -> String.valueOf(getOrphanedImageNumberOfChannels());
+            case 10 -> String.valueOf(getOrphanedImageNumberOfTimePoints());
+            case 14 -> getOrphanedImagePixelType().toString().toLowerCase();
             default -> "";
         };
     }

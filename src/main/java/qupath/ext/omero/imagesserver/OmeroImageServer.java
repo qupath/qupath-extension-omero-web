@@ -40,13 +40,14 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
 
     /**
      * Attempt to create an OmeroImageServer.
+     * This should only be used by an {@link OmeroImageServerBuilder}.
      *
      * @param uri  the image URI
      * @param client  the corresponding WebClient
      * @param args  optional arguments used to open the image
      * @return an OmeroImageServer, or an empty Optional if an error occurred
      */
-    public static Optional<OmeroImageServer> create(URI uri, WebClient client, String... args) {
+    static Optional<OmeroImageServer> create(URI uri, WebClient client, String... args) {
         OmeroImageServer omeroImageServer = new OmeroImageServer(uri, client, args);
         if (omeroImageServer.setId() && omeroImageServer.setOriginalMetadata()) {
             try {
@@ -137,16 +138,16 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
         try {
             List<Shape> shapes = client.getApisHandler().getROIs(id).get();
 
-            Map<String, String> childToParentId = new HashMap<>();
-            Map<String, PathObject> idToPathObject = new HashMap<>();
+            Map<UUID, UUID> idToParentId = new HashMap<>();
+            Map<UUID, PathObject> idToPathObject = new HashMap<>();
             for (Shape shape: shapes) {
-                String id = shape.getQuPathId();
-                idToPathObject.put(id, shape.createAnnotation());
-                childToParentId.put(id, shape.getQuPathParentId());
+                UUID id = shape.getQuPathId();
+                idToPathObject.put(id, shape.createPathObject());
+                idToParentId.put(id, shape.getQuPathParentId().orElse(null));
             }
 
             List<PathObject> pathObjects = new ArrayList<>();
-            for (Map.Entry<String, String> entry: childToParentId.entrySet()) {
+            for (Map.Entry<UUID, UUID> entry: idToParentId.entrySet()) {
                 if (idToPathObject.containsKey(entry.getValue())) {
                     idToPathObject.get(entry.getValue()).addChildObject(idToPathObject.get(entry.getKey()));
                 } else {

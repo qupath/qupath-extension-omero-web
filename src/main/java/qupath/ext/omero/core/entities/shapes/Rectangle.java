@@ -5,10 +5,12 @@ import qupath.lib.objects.PathObject;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
 
+import java.util.Objects;
+
 /**
  * A rectangle.
  */
-class Rectangle extends Shape {
+public class Rectangle extends Shape {
 
     public static final String TYPE = TYPE_URL + "Rectangle";
     @SerializedName(value = "X", alternate = "x") private final double x;
@@ -19,20 +21,39 @@ class Rectangle extends Shape {
     /**
      * Creates a rectangle.
      *
-     * @param pathObject  the path object corresponding to this shape
      * @param x  the x-coordinate of the top left point of the rectangle
      * @param y  the y-coordinate of the top left point of the rectangle
      * @param width  the width of the rectangle
      * @param height  the height of the rectangle
      */
-    public Rectangle(PathObject pathObject, double x, double y, double width, double height) {
-        super(pathObject);
+    public Rectangle(
+            double x,
+            double y,
+            double width,
+            double height
+    ) {
+        super(TYPE);
 
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        this.type = TYPE;
+    }
+
+    /**
+     * Creates a rectangle corresponding to a path object.
+     *
+     * @param pathObject  the path object corresponding to this shape
+     */
+    public Rectangle(PathObject pathObject) {
+        this(
+                pathObject.getROI().getBoundsX(),
+                pathObject.getROI().getBoundsY(),
+                pathObject.getROI().getBoundsWidth(),
+                pathObject.getROI().getBoundsHeight()
+        );
+
+        linkWithPathObject(pathObject);
     }
 
     @Override
@@ -43,5 +64,19 @@ class Rectangle extends Shape {
     @Override
     public String toString() {
         return String.format("Rectangle located (top left) at {x: %f, y: %f} of width %f and height %f", x, y, width, height);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof Rectangle rectangle))
+            return false;
+        return rectangle.x == this.x && rectangle.y == this.y && rectangle.width == this.width && rectangle.height == this.height;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y, width, height);
     }
 }

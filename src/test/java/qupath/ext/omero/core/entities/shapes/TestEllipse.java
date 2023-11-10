@@ -2,39 +2,46 @@ package qupath.ext.omero.core.entities.shapes;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import qupath.lib.objects.PathObjects;
 import qupath.lib.roi.EllipseROI;
+import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
 
 public class TestEllipse {
 
     @Test
-    void Check_Ellipse_Created() {
-        Shape ellipse = createEllipse();
+    void Check_Ellipse_Created_From_JSON() {
+        Shape ellipse = createEllipseFromJSON();
 
-        Class<? extends Shape> type = ellipse.getClass();
-
-        Assertions.assertEquals(Ellipse.class, type);
+        Assertions.assertEquals(Ellipse.class, ellipse.getClass());
     }
 
     @Test
-    void Check_Ellipse_ROI() {
-        Shape ellipse = createEllipse();
+    void Check_Ellipse_Created_From_Path_Object() {
+        Shape ellipse = createEllipseFromPathObject();
+
+        Assertions.assertEquals(Ellipse.class, ellipse.getClass());
+    }
+
+    @Test
+    void Check_Ellipse_Created_From_JSON_And_Path_Object_Are_Equal() {
+        Shape ellipseFromJSON = createEllipseFromJSON();
+
+        Shape ellipseFromPathObject = createEllipseFromPathObject();
+
+        Assertions.assertEquals(ellipseFromJSON, ellipseFromPathObject);
+    }
+
+    @Test
+    void Check_ROI() {
+        Shape ellipse = createEllipseFromJSON();
 
         Class<? extends ROI> roiClass = ellipse.createROI().getClass();
 
         Assertions.assertEquals(EllipseROI.class, roiClass);
     }
 
-    @Test
-    void Check_Serialization_And_Deserialization() {
-        Shape ellipse = TestShape.createShapeFromJSON(TestShape.createJSONFromPathObject(createEllipse().createAnnotation()));
-
-        Class<? extends Shape> type = ellipse.getClass();
-
-        Assertions.assertEquals(Ellipse.class, type);
-    }
-
-    private Shape createEllipse() {
+    private Shape createEllipseFromJSON() {
         return TestShape.createShapeFromJSON("""
                 {
                     "@id": 713,
@@ -42,8 +49,18 @@ public class TestEllipse {
                     "StrokeColor": -16776961,
                     "Locked": false,
                     "oldId": "454:713",
-                    "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Ellipse"
+                    "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Ellipse",
+                    "x": 50,
+                    "y": 100,
+                    "radiusX": 10,
+                    "radiusY": 20
                 }
                 """);    // -16776961 is the integer representation of the red color in the BGR format
+    }
+
+    private Shape createEllipseFromPathObject() {
+        return Shape.createFromPathObject(PathObjects.createAnnotationObject(
+                ROIs.createEllipseROI(40, 80, 20, 40, null)
+        )).get(0);
     }
 }

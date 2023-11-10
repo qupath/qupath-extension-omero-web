@@ -8,8 +8,8 @@ import qupath.lib.roi.interfaces.ROI;
 public class TestLabel {
 
     @Test
-    void Check_Label_Created() {
-        Shape label = createLabel();
+    void Check_Label_Created_From_JSON() {
+        Shape label = createLabelFromJSON();
 
         Class<? extends Shape> type = label.getClass();
 
@@ -17,24 +17,15 @@ public class TestLabel {
     }
 
     @Test
-    void Check_Label_ROI() {
-        Shape label = createLabel();
+    void Check_ROI() {
+        Shape label = createLabelFromJSON();
 
         Class<? extends ROI> roiClass = label.createROI().getClass();
 
         Assertions.assertEquals(PointsROI.class, roiClass); // Labels are unsupported and converted to points
     }
 
-    @Test
-    void Check_Serialization_And_Deserialization() {
-        Shape label = TestShape.createShapeFromJSON(TestShape.createJSONFromPathObject(createLabel().createAnnotation()));
-
-        Class<? extends Shape> type = label.getClass();
-
-        Assertions.assertEquals(Point.class, type); // Labels are unsupported and converted to points
-    }
-
-    private Shape createLabel() {
+    private Shape createLabelFromJSON() {
         return TestShape.createShapeFromJSON("""
                 {
                     "@id": 713,

@@ -11,7 +11,8 @@ public class TestApiUtilities {
     void Check_Char_Concat_And_Converted_To_Bytes() {
         char[] firstPart = "Lorem ipsum dolor sit amet, consectetur adipiscing elit,".toCharArray();
         char[] secondPart = " sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.".toCharArray();
-        byte[] expected = (String.valueOf(firstPart) + String.valueOf(secondPart)).getBytes(StandardCharsets.UTF_8);
+        byte[] expected = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                .getBytes(StandardCharsets.UTF_8);
 
         byte[] concatenation = ApiUtilities.concatAndConvertToBytes(firstPart, secondPart);
 

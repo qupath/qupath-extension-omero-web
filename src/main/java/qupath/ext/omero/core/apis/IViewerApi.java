@@ -1,24 +1,17 @@
 package qupath.ext.omero.core.apis;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.entities.shapes.Shape;
 import qupath.ext.omero.core.WebUtilities;
 import qupath.ext.omero.core.RequestSender;
-import qupath.lib.io.GsonTools;
-import qupath.lib.objects.*;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * <p>API to communicate with an <a href="https://www.openmicroscopy.org/omero/iviewer/">OMERO.iviewer</a>.</p>
@@ -63,23 +56,20 @@ class IViewerApi {
      * <p>This function is asynchronous.</p>
      *
      * @param id  the OMERO image id
-     * @param pathObjectsToAdd  the list of ROIs to add. Detections from this list will be skipped.
-     * @param shapesToRemove the list of ROIs to remove
+     * @param shapesToAdd  the list of shapes to add
+     * @param shapesToRemove the list of shapes to remove
      * @param token  the OMERO <a href="https://docs.openmicroscopy.org/omero/5.6.0/developers/json-api.html#get-csrf-token">CSRF token</a>
      * @return a CompletableFuture indicating the success of the operation
      */
-    public CompletableFuture<Boolean> writeROIs(long id, Collection<PathObject> pathObjectsToAdd, Collection<Shape> shapesToRemove, String token) {
+    public CompletableFuture<Boolean> writeROIs(long id, Collection<Shape> shapesToAdd, Collection<Shape> shapesToRemove, String token) {
         var uri = WebUtilities.createURI(String.format(ROIS_URL, host));
 
         if (uri.isPresent()) {
-            var detections = pathObjectsToAdd.stream().filter(PathObject::isDetection).toList();
-            if (!detections.isEmpty()) {
-                logger.warn(detections.size() + " detections have been detected and won't be sent.");
-            }
 
-            List<String> roisToAdd = pathObjectsToString(pathObjectsToAdd.stream().filter(e -> !e.isDetection()).toList());
+            Gson gson = new Gson();
+            List<String> roisToAdd = shapesToAdd.stream().map(gson::toJson).toList();
             String roisToRemove = shapesToRemove.stream()
-                    .map(shape ->String.format("%s\":[%s]", shape.getOldId().split(":")[0], shape.getOldId()))
+                    .map(shape -> String.format("\"%s\":[\"%s\"]", shape.getOldId().split(":")[0], shape.getOldId()))
                     .collect(Collectors.joining(","));
 
             return RequestSender.post(
@@ -108,36 +98,5 @@ class IViewerApi {
         } else {
             return CompletableFuture.completedFuture(false);
         }
-    }
-    private List<String> pathObjectsToString(Collection<PathObject> pathObjects) {
-        Gson gson = new GsonBuilder()
-                .registerTypeAdapter(TMACoreObject.class, new Shape.GsonShapeSerializer())
-                .registerTypeAdapter(PathAnnotationObject.class, new Shape.GsonShapeSerializer())
-                .registerTypeAdapter(PathDetectionObject.class, new Shape.GsonShapeSerializer())
-                .serializeSpecialFloatingPointValues()
-                .setLenient()
-                .create();
-
-        return pathObjects.stream()
-                .map(pathObject -> {
-                    if (pathObject instanceof PathCellObject) {
-                        var detectionObject = PathObjects.createDetectionObject(pathObject.getROI());
-                        detectionObject.setPathClass(pathObject.getPathClass());
-                        detectionObject.setColor(pathObject.getColor());
-                        detectionObject.setName(pathObject.getName());
-                        pathObject = detectionObject;
-                    }
-                    return gson.toJson(pathObject);
-                })
-                .filter(Objects::nonNull)
-                .flatMap(json -> {
-                    // See if resulting JSON is a list (e.g. Points/MultiPolygon)
-                    try {
-                        return Arrays.stream(GsonTools.getInstance().fromJson(json, JsonElement[].class)).map(JsonElement::toString);
-                    } catch (Exception ex) {
-                        return Stream.of(json);
-                    }
-                })
-                .toList();
     }
 }

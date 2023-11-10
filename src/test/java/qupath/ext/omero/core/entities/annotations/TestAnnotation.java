@@ -128,6 +128,7 @@ public class TestAnnotation {
         Gson gson = new GsonBuilder().registerTypeAdapter(Annotation.class, new Annotation.GsonOmeroAnnotationDeserializer()).setLenient().create();
         return gson.fromJson(json, AnnotationImplementation.class);
     }
+
+    private static class AnnotationImplementation extends Annotation {}
 }
 
-class AnnotationImplementation extends Annotation {}

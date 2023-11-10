@@ -2,39 +2,48 @@ package qupath.ext.omero.core.entities.shapes;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import qupath.lib.roi.PolylineROI;
-import qupath.lib.roi.interfaces.ROI;
+import qupath.lib.geom.Point2;
+import qupath.lib.objects.PathObject;
+import qupath.lib.objects.PathObjects;
+import qupath.lib.roi.ROIs;
+
+import java.util.List;
 
 public class TestPolyline {
 
     @Test
-    void Check_Polyline_Created() {
-        Shape polyline = createPolyline();
+    void Check_Polyline_Created_From_JSON() {
+        Shape polyline = createPolylineFromJSON();
 
-        Class<? extends Shape> type = polyline.getClass();
-
-        Assertions.assertEquals(Polyline.class, type);
+        Assertions.assertEquals(Polyline.class, polyline.getClass());
     }
 
     @Test
     void Check_Label_ROI() {
-        Shape polyline = createPolyline();
+        Shape polyline = createPolylineFromPathObject();
 
-        Class<? extends ROI> roiClass = polyline.createROI().getClass();
-
-        Assertions.assertEquals(PolylineROI.class, roiClass);
+        Assertions.assertEquals(Polyline.class, polyline.getClass());
     }
 
     @Test
-    void Check_Serialization_And_Deserialization() {
-        Shape polyline = TestShape.createShapeFromJSON(TestShape.createJSONFromPathObject(createPolyline().createAnnotation()));
+    void Check_Polyline_Created_From_JSON_And_Path_Object_Are_Equal() {
+        Shape polylineFromJSON = createPolylineFromJSON();
 
-        Class<? extends Shape> type = polyline.getClass();
+        Shape polylineFromPathObject = createPolylineFromPathObject();
 
-        Assertions.assertEquals(Polyline.class, type);
+        Assertions.assertEquals(polylineFromJSON, polylineFromPathObject);
     }
 
-    private Shape createPolyline() {
+    @Test
+    void Check_Polyline_Created_From_Path_Object() {
+        PathObject pathObject = PathObjects.createAnnotationObject(ROIs.createPolylineROI(10, 10, null));
+
+        List<Shape> shapes = Shape.createFromPathObject(pathObject);
+
+        Assertions.assertTrue(shapes.get(0) instanceof Polyline);
+    }
+
+    private Shape createPolylineFromJSON() {
         return TestShape.createShapeFromJSON("""
                 {
                     "@id": 713,
@@ -42,8 +51,17 @@ public class TestPolyline {
                     "StrokeColor": -16776961,
                     "Locked": false,
                     "oldId": "454:713",
-                    "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Polyline"
+                    "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Polyline",
+                    "points": "0,0 50,0 0,50"
                 }
                 """);    // -16776961 is the integer representation of the red color in the BGR format
+    }
+
+    private Shape createPolylineFromPathObject() {
+        return Shape.createFromPathObject(PathObjects.createAnnotationObject(ROIs.createPolylineROI(List.of(
+                new Point2(0, 0),
+                new Point2(50, 0),
+                new Point2(0, 50)
+        ), null))).get(0);
     }
 }

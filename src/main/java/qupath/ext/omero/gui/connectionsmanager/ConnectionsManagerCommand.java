@@ -38,6 +38,11 @@ public class ConnectionsManagerCommand implements Runnable {
 		} else {
 			connectionsManager.show();
 			connectionsManager.requestFocus();
+
+			// This is necessary to avoid a bug on Linux
+			// that reset the connections manager size
+			connectionsManager.setWidth(connectionsManager.getWidth() + 1);
+			connectionsManager.setHeight(connectionsManager.getHeight() + 1);
 		}
 	}
 

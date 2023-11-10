@@ -18,7 +18,6 @@ import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
-import qupath.lib.objects.PathObject;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;
@@ -397,9 +396,9 @@ public class ApisHandler implements AutoCloseable {
     /**
      * See {@link IViewerApi#writeROIs(long, Collection, Collection, String)}.
      */
-    public CompletableFuture<Boolean> writeROIs(long id, Collection<PathObject> rois, boolean removeExistingROIs) {
+    public CompletableFuture<Boolean> writeROIs(long id, Collection<Shape> shapes, boolean removeExistingROIs) {
         CompletableFuture<List<Shape>> roisToRemoveFuture = removeExistingROIs ? getROIs(id) : CompletableFuture.completedFuture(List.of());
 
-        return roisToRemoveFuture.thenCompose(roisToRemove -> iViewerApi.writeROIs(id, rois, roisToRemove, jsonApi.getToken()));
+        return roisToRemoveFuture.thenCompose(roisToRemove -> iViewerApi.writeROIs(id, shapes, roisToRemove, jsonApi.getToken()));
     }
 }

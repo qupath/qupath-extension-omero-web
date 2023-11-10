@@ -35,6 +35,11 @@ public class BrowserCommand implements Runnable {
         } else {
             browser.show();
             browser.requestFocus();
+
+            // This is necessary to avoid a bug on Linux
+            // that reset the browser size
+            browser.setWidth(browser.getWidth() + 1);
+            browser.setHeight(browser.getHeight() + 1);
         }
     }
 

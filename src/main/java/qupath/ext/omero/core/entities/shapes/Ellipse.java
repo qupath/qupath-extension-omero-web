@@ -5,10 +5,12 @@ import qupath.lib.objects.PathObject;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
 
+import java.util.Objects;
+
 /**
  * An ellipse.
  */
-class Ellipse extends Shape {
+public class Ellipse extends Shape {
 
     public static final String TYPE = TYPE_URL + "Ellipse";
     @SerializedName(value = "X", alternate = "x") private final double x;
@@ -19,20 +21,34 @@ class Ellipse extends Shape {
     /**
      * Creates an ellipse.
      *
-     * @param pathObject  the path object corresponding to this shape
      * @param x  x-coordinate of the center of the ellipse
      * @param y  y-coordinate of the center of the ellipse
      * @param radiusX  radius along the x-axis
      * @param radiusY  radius along the y-axis
      */
-    public Ellipse(PathObject pathObject, double x, double y, double radiusX, double radiusY) {
-        super(pathObject);
+    public Ellipse(double x, double y, double radiusX, double radiusY) {
+        super(TYPE);
 
         this.x = x;
         this.y = y;
         this.radiusX = radiusX;
         this.radiusY = radiusY;
-        this.type = TYPE;
+    }
+
+    /**
+     * Creates an ellipse corresponding to a path object.
+     *
+     * @param pathObject  the path object corresponding to this shape
+     */
+    public Ellipse(PathObject pathObject) {
+        this(
+                pathObject.getROI().getCentroidX(),
+                pathObject.getROI().getCentroidY(),
+                pathObject.getROI().getBoundsWidth()/2,
+                pathObject.getROI().getBoundsHeight()/2
+        );
+
+        linkWithPathObject(pathObject);
     }
 
     @Override
@@ -42,6 +58,20 @@ class Ellipse extends Shape {
 
     @Override
     public String toString() {
-        return String.format("Ellipse located at {x: %f, y: %f} of radius {x: %f, y: %f}", x, y, radiusX, radiusY);
+        return String.format("Ellipse located centered at {x: %f, y: %f} of radius {x: %f, y: %f}", x, y, radiusX, radiusY);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof Ellipse ellipse))
+            return false;
+        return ellipse.x == this.x && ellipse.y == this.y && ellipse.radiusX == this.radiusX && ellipse.radiusY == this.radiusY;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y, radiusX, radiusY);
     }
 }

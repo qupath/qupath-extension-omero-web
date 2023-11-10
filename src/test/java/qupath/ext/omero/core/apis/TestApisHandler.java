@@ -7,6 +7,7 @@ import qupath.ext.omero.OmeroServer;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.WebClients;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
+import qupath.ext.omero.core.entities.imagemetadata.ImageMetadataResponse;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
 import qupath.ext.omero.core.entities.repositoryentities.OrphanedFolder;
@@ -18,11 +19,16 @@ import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEn
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.search.SearchQuery;
 import qupath.ext.omero.core.entities.search.SearchResult;
+import qupath.ext.omero.core.entities.shapes.Line;
+import qupath.ext.omero.core.entities.shapes.Rectangle;
+import qupath.ext.omero.core.entities.shapes.Shape;
+import qupath.lib.images.servers.PixelType;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -113,7 +119,7 @@ public class TestApisHandler extends OmeroServer {
     @Test
     void Check_Dataset_URI() {
         Dataset dataset = OmeroServer.getDataset();
-        String expectedURI = OmeroServer.getDatasetURI();
+        String expectedURI = OmeroServer.getDatasetURI().toString();
 
         String uri = apisHandler.getItemURI(dataset);
 
@@ -123,7 +129,7 @@ public class TestApisHandler extends OmeroServer {
     @Test
     void Check_Project_URI() {
         Project project = OmeroServer.getProject();
-        String expectedURI = OmeroServer.getProjectURI();
+        String expectedURI = OmeroServer.getProjectURI().toString();
 
         String uri = apisHandler.getItemURI(project);
 
@@ -384,11 +390,161 @@ public class TestApisHandler extends OmeroServer {
 
     @Test
     void Check_Image_Thumbnail_With_Invalid_Image_ID() throws ExecutionException, InterruptedException {
-        long imageId = -1;
+        long invalidImageID = -1;
 
-        BufferedImage image = apisHandler.getThumbnail(imageId).get().orElse(null);
+        BufferedImage image = apisHandler.getThumbnail(invalidImageID).get().orElse(null);
 
         Assertions.assertNull(image);
+    }
+
+    @Test
+    void Check_Image_Metadata_Name() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        String expectedName = OmeroServer.getImageName();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedName, metadata.getImageName());
+    }
+
+    @Test
+    void Check_Image_Metadata_Pixel_Type() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        PixelType expectedPixelType = OmeroServer.getImagePixelType();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedPixelType, metadata.getPixelType());
+    }
+
+    @Test
+    void Check_Image_Metadata_Width() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        int expectedWidth = OmeroServer.getImageWidth();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedWidth, metadata.getSizeX());
+    }
+
+    @Test
+    void Check_Image_Metadata_Height() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        int expectedHeight = OmeroServer.getImageHeight();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedHeight, metadata.getSizeY());
+    }
+
+    @Test
+    void Check_Image_Metadata_Number_Of_Slices() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        int expectedNumberOfSlices = OmeroServer.getImageNumberOfSlices();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedNumberOfSlices, metadata.getSizeZ());
+    }
+
+    @Test
+    void Check_Image_Metadata_Number_Of_Channels() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        int expectedNumberOfChannels = OmeroServer.getImageNumberOfChannels();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedNumberOfChannels, metadata.getChannels().size());
+    }
+
+    @Test
+    void Check_Image_Metadata_Number_Of_Time_Points() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        int expectedNumberOfTimePoints = OmeroServer.getImageNumberOfTimePoints();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedNumberOfTimePoints, metadata.getSizeT());
+    }
+
+    @Test
+    void Check_Image_Metadata_Is_RGB() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        boolean expectedRGB = OmeroServer.isImageRGB();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedRGB, metadata.isRGB());
+    }
+
+    @Test
+    void Check_Image_Metadata_Pixel_Width() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        double expectedPixelWidth = OmeroServer.getImagePixelWidthMicrons();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedPixelWidth, metadata.getPixelWidthMicrons().orElse(-1.));
+    }
+
+    @Test
+    void Check_Image_Metadata_Pixel_Height() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        double expectedPixelHeight = OmeroServer.getImagePixelHeightMicrons();
+
+        ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+        Assertions.assertNotNull(metadata);
+        Assertions.assertEquals(expectedPixelHeight, metadata.getPixelHeightMicrons().orElse(-1.));
+    }
+
+    @Test
+    void Check_Image_Metadata_With_Invalid_Image_ID() throws ExecutionException, InterruptedException {
+        long invalidImageID = -1;
+
+        Optional<ImageMetadataResponse> metadata = apisHandler.getImageMetadata(invalidImageID).get();
+
+        Assertions.assertTrue(metadata.isEmpty());
+    }
+
+    @Test
+    void Check_Get_ROIs_With_Invalid_Image_ID() throws ExecutionException, InterruptedException {
+        long invalidImageID = -1;
+        List<Shape> expectedROIs = List.of();
+
+        List<Shape> rois = apisHandler.getROIs(invalidImageID).get();
+
+        TestUtilities.assertListEqualsWithoutOrder(expectedROIs, rois);
+    }
+
+    @Test
+    void Check_Write_ROIs() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        List<Shape> rois = List.of(new Rectangle(10, 10, 100, 100), new Line(20, 20, 50, 50));
+
+        boolean success = apisHandler.writeROIs(imageId, rois, true).get();
+
+        Assertions.assertTrue(success);
+    }
+
+    @Test
+    void Check_Get_ROIs_After_Sent() throws ExecutionException, InterruptedException {
+        long imageId = OmeroServer.getImage().getId();
+        List<Shape> expectedROIs = List.of(new Rectangle(10, 10, 100, 100), new Line(20, 20, 50, 50));
+        apisHandler.writeROIs(imageId, expectedROIs, true).get();
+
+        List<Shape> rois = apisHandler.getROIs(imageId).get();
+
+        TestUtilities.assertListEqualsWithoutOrder(expectedROIs, rois);
     }
 
     private static class ServerEntityImplementation extends ServerEntity {

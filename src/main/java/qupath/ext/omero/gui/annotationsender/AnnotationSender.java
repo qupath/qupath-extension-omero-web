@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.gui.UiUtilities;
 import qupath.ext.omero.imagesserver.OmeroImageServer;
+import qupath.ext.omero.core.entities.shapes.Shape;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
@@ -63,7 +64,12 @@ public class AnnotationSender {
                 );
 
                 if (!requestCanceled) {
-                    var annotations = getAnnotations(viewer, annotationForm.areOnlySelectedAnnotationsSelected());
+                    Collection<PathObject> annotations = getAnnotations(viewer, annotationForm.areOnlySelectedAnnotationsSelected());
+                    List<Shape> shapes = annotations.stream()
+                            .map(Shape::createFromPathObject)
+                            .flatMap(List::stream)
+                            .toList();
+
                     if (annotations.isEmpty()) {
                         Dialogs.showErrorMessage(
                                 resources.getString("AnnotationsSender.sendAnnotations"),
@@ -86,7 +92,7 @@ public class AnnotationSender {
                         if (dialogConfirmed) {
                             omeroImageServer.getClient().getApisHandler().writeROIs(
                                     omeroImageServer.getId(),
-                                    annotations,
+                                    shapes,
                                     annotationForm.deleteExistingDataSelected()
                             ).thenAccept(success -> Platform.runLater(() -> {
                                 if (success) {
@@ -138,7 +144,7 @@ public class AnnotationSender {
 
     private static Collection<PathObject> getAnnotations(QuPathViewer viewer, boolean onlySelected) {
         if (onlySelected) {
-            return viewer.getAllSelectedObjects();
+            return viewer.getAllSelectedObjects().stream().filter(e -> !e.isDetection()).toList();
         } else {
             return viewer.getHierarchy() == null ? List.of() : viewer.getHierarchy().getAnnotationObjects();
         }
