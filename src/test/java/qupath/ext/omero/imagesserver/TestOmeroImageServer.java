@@ -8,9 +8,6 @@ import qupath.ext.omero.OmeroServer;
 import qupath.ext.omero.TestUtilities;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.WebClients;
-import qupath.ext.omero.core.entities.shapes.Line;
-import qupath.ext.omero.core.entities.shapes.Rectangle;
-import qupath.ext.omero.core.entities.shapes.Shape;
 import qupath.ext.omero.core.pixelapis.web.WebAPI;
 import qupath.lib.analysis.stats.Histogram;
 import qupath.lib.common.ColorTools;
@@ -18,13 +15,14 @@ import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.PixelType;
 import qupath.lib.images.servers.TileRequest;
 import qupath.lib.objects.PathObject;
+import qupath.lib.objects.PathObjects;
+import qupath.lib.roi.ROIs;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class TestOmeroImageServer extends OmeroServer {
@@ -146,15 +144,29 @@ public class TestOmeroImageServer extends OmeroServer {
     }
 
     @Test
-    void Check_Path_Objects_Read() throws ExecutionException, InterruptedException {
-        List<Shape> shapes = List.of(new Rectangle(10, 10, 100, 100), new Line(20, 20, 50, 50));
-        List<UUID> expectedPathObjectIds = shapes.stream().map(Shape::createPathObject).map(PathObject::getID).toList();
-        imageServer.getClient().getApisHandler().writeROIs(imageServer.getId(), shapes, true).get();
+    void Check_Path_Objects_Written() {
+        List<PathObject> pathObject = List.of(
+                PathObjects.createAnnotationObject(ROIs.createRectangleROI(10, 10, 100, 100, null)),
+                PathObjects.createAnnotationObject(ROIs.createLineROI(20, 20, 50, 50, null))
+        );
+
+        boolean success = imageServer.sendPathObjects(pathObject, true);
+
+        Assertions.assertTrue(success);
+    }
+
+    @Test
+    void Check_Path_Objects_Read() {
+        List<PathObject> expectedPathObject = List.of(
+                PathObjects.createAnnotationObject(ROIs.createRectangleROI(10, 10, 100, 100, null)),
+                PathObjects.createAnnotationObject(ROIs.createLineROI(20, 20, 50, 50, null))
+        );
+        imageServer.sendPathObjects(expectedPathObject, true);
 
         Collection<PathObject> pathObjects = imageServer.readPathObjects();
 
         TestUtilities.assertListEqualsWithoutOrder(
-                expectedPathObjectIds,
+                expectedPathObject.stream().map(PathObject::getID).toList(),
                 pathObjects.stream().map(PathObject::getID).toList()
         );
     }

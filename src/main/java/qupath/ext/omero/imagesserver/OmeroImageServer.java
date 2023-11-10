@@ -175,6 +175,29 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
     }
 
     /**
+     * Attempt to send some path objects to the OMERO server.
+     *
+     * @param pathObjects  the path objects to send
+     * @param removeExistingAnnotations  whether to remove existing annotations of the image in the OMERO server
+     * @return whether the operation succeeded
+     */
+    public boolean sendPathObjects(Collection<PathObject> pathObjects, boolean removeExistingAnnotations) {
+        try {
+            return client.getApisHandler().writeROIs(
+                    id,
+                    pathObjects.stream()
+                            .map(Shape::createFromPathObject)
+                            .flatMap(List::stream)
+                            .toList(),
+                    removeExistingAnnotations
+            ).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Could not send path objects");
+            return false;
+        }
+    }
+
+    /**
      * @return the client owning this image server
      */
     public WebClient getClient() {

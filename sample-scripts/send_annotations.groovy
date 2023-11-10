@@ -1,7 +1,11 @@
 import qupath.ext.omero.imagesserver.*
 
 /*
- * This script creates an annotation on the current image and send it to the OMERO server.
+ * This script send all annotations of the current image to the OMERO server.
+ *
+ * An OMERO image must be currently opened in QuPath through the QuPath GUI or through the command line, for example with:
+ * path/to/QuPath/bin/QuPath script --image=the_web_link_of_your_image --server "[--username,your_username,--password,your_password]" path/to/this/script/send_annotations.groovy
+ * --server "[--username,your_username,--password,your_password]" can be omitted and will be prompted if necessary.
  */
 
 // Open server
@@ -13,21 +17,16 @@ if (imageData == null) {
 def server = imageData.getServer()
 def omeroServer = (OmeroImageServer) server
 
-// Create annotation
-int z = 0
-int t = 0
-def plane = ImagePlane.getPlane(z, t)
-def roi = ROIs.createEllipseROI(0, 0, 100, 100, plane)
-def annotation = PathObjects.createAnnotationObject(roi)
-addObject(annotation)
-def annotations = [annotation]    // other annotations could be added to this list
+// Get all annotations of the current image
+def annotations = getAnnotationObjects()
 
 // Send annotation to OMERO
-def status = omeroServer.getClient().getApisHandler().writeROIs(omeroServer.getId(), annotations, true).get()
+def removeExistingAnnotations = true
+def status = omeroServer.sendPathObjects(annotations, removeExistingAnnotations)
 if (status) {
-    println "Annotation sent"
+    println "Annotations sent"
 } else {
-    println "Annotation not sent. Check the logs"
+    println "Annotations not sent. Check the logs"
 }
 
 // Close server

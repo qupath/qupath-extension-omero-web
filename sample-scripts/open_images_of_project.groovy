@@ -30,4 +30,5 @@ for (entry in project.getImageList()) {
     // Closing server. This is needed to free resources on the OMERO server
     server.close()
     println "Closing " + entry.getImageName()
+    println ""
 }

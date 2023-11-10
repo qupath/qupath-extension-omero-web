@@ -1,11 +1,9 @@
 package qupath.ext.omero.gui.annotationsender;
 
-import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.gui.UiUtilities;
 import qupath.ext.omero.imagesserver.OmeroImageServer;
-import qupath.ext.omero.core.entities.shapes.Shape;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
@@ -65,10 +63,6 @@ public class AnnotationSender {
 
                 if (!requestCanceled) {
                     Collection<PathObject> annotations = getAnnotations(viewer, annotationForm.areOnlySelectedAnnotationsSelected());
-                    List<Shape> shapes = annotations.stream()
-                            .map(Shape::createFromPathObject)
-                            .flatMap(List::stream)
-                            .toList();
 
                     if (annotations.isEmpty()) {
                         Dialogs.showErrorMessage(
@@ -90,40 +84,35 @@ public class AnnotationSender {
                             logger.error("Error while creating the confirmation form", e);
                         }
                         if (dialogConfirmed) {
-                            omeroImageServer.getClient().getApisHandler().writeROIs(
-                                    omeroImageServer.getId(),
-                                    shapes,
-                                    annotationForm.deleteExistingDataSelected()
-                            ).thenAccept(success -> Platform.runLater(() -> {
-                                if (success) {
-                                    String title;
-                                    String message = "";
+                            boolean success = omeroImageServer.sendPathObjects(annotations, annotationForm.deleteExistingDataSelected());
+                            if (success) {
+                                String title;
+                                String message = "";
 
-                                    if (annotationForm.deleteExistingDataSelected()) {
-                                        message += resources.getString("AnnotationsSender.existingAnnotationsDeleted") + "\n";
-                                    }
-
-                                    if (annotations.size() == 1) {
-                                        title = resources.getString("AnnotationsSender.1WrittenSuccessfully");
-                                        message += resources.getString("AnnotationsSender.1AnnotationWrittenSuccessfully");
-                                    } else {
-                                        title = resources.getString("AnnotationsSender.XWrittenSuccessfully");
-                                        message += MessageFormat.format(resources.getString("AnnotationsSender.XAnnotationsWrittenSuccessfully"), annotations.size());
-                                    }
-
-                                    Dialogs.showInfoNotification(
-                                            title,
-                                            message
-                                    );
-                                } else {
-                                    Dialogs.showErrorNotification(
-                                            annotations.size() == 1 ?
-                                                    resources.getString("AnnotationsSender.1AnnotationFailed") :
-                                                    MessageFormat.format(resources.getString("AnnotationsSender.XAnnotationFailed"), annotations.size()),
-                                            resources.getString("AnnotationsSender.seeLogs")
-                                    );
+                                if (annotationForm.deleteExistingDataSelected()) {
+                                    message += resources.getString("AnnotationsSender.existingAnnotationsDeleted") + "\n";
                                 }
-                            }));
+
+                                if (annotations.size() == 1) {
+                                    title = resources.getString("AnnotationsSender.1WrittenSuccessfully");
+                                    message += resources.getString("AnnotationsSender.1AnnotationWrittenSuccessfully");
+                                } else {
+                                    title = resources.getString("AnnotationsSender.XWrittenSuccessfully");
+                                    message += MessageFormat.format(resources.getString("AnnotationsSender.XAnnotationsWrittenSuccessfully"), annotations.size());
+                                }
+
+                                Dialogs.showInfoNotification(
+                                        title,
+                                        message
+                                );
+                            } else {
+                                Dialogs.showErrorNotification(
+                                        annotations.size() == 1 ?
+                                                resources.getString("AnnotationsSender.1AnnotationFailed") :
+                                                MessageFormat.format(resources.getString("AnnotationsSender.XAnnotationFailed"), annotations.size()),
+                                        resources.getString("AnnotationsSender.seeLogs")
+                                );
+                            }
                         }
                     }
                 }
