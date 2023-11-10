@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import qupath.ext.omero.OmeroServer;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.WebClients;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.pixelapis.web.WebAPI;
 import qupath.lib.images.servers.ImageServer;
 
