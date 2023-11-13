@@ -11,6 +11,8 @@ import omero.gateway.model.ExperimenterData;
 import omero.gateway.model.ImageData;
 import omero.gateway.model.PixelsData;
 import omero.model.ExperimenterGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.apis.ApisHandler;
 import qupath.lib.color.ColorModelFactory;
@@ -33,6 +35,7 @@ import java.util.concurrent.ExecutionException;
  */
 class IceReader implements PixelAPIReader {
 
+    private static final Logger logger = LoggerFactory.getLogger(IceReader.class);
     private final Gateway gateway = new Gateway(new IceLogger());
     private final RawPixelsStorePrx reader;
     private final int numberOfResolutionLevels;
@@ -150,20 +153,27 @@ class IceReader implements PixelAPIReader {
      * @throws DSOutOfServiceException when a connection cannot be established
      */
     private ExperimenterData connect(WebClient client) throws DSOutOfServiceException {
+        String firstURI = client.getApisHandler().getWebServerURI().getHost();
+        String secondURI = client.getApisHandler().getServerURI();
+
         try {
             return gateway.connect(new LoginCredentials(
                     client.getUsername().get(),
                     client.getPassword().map(String::valueOf).orElse(null),
-                    client.getApisHandler().getWebServerURI().getHost(),
+                    firstURI,
                     client.getApisHandler().getPort()
             ));
         } catch (DSOutOfServiceException e) {
-            System.err.println(client.getApisHandler().getWebServerURI().toString());
+            logger.warn(String.format(
+                    "Can't connect to %s. Trying %s...",
+                    firstURI,
+                    secondURI
+            ), e);
 
             return gateway.connect(new LoginCredentials(
                     client.getUsername().get(),
                     client.getPassword().map(String::valueOf).orElse(null),
-                    client.getApisHandler().getServerURI(),
+                    secondURI,
                     client.getApisHandler().getPort()
             ));
         }

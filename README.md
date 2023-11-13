@@ -3,18 +3,15 @@
 Welcome to the OMERO extension for [QuPath](http://qupath.github.io)!
 
 This adds support for accessing images hosted on an [OMERO](https://www.openmicroscopy.org/omero/) 
-server through OMERO's web API.
+server through OMERO's web (and other) API.
 
 > **Important!**
 > 
-> The use of the web API means that all images are 
-JPEG-compressed.
-This effectively means it is most useful for viewing and annotating RGB images 
-(including whole slide images), but is not suitable for quantitative analysis 
-where JPEG compression artifacts would be problematic.
+> By default, this extension uses the OMERO **web** API to read images, which 
+> has several limitations.
+> See the [Reading images](#reading-images) section.
 
-The extension is intended for the (at the time of writing) not-yet-released 
-QuPath v0.3.
+The extension is intended for QuPath v0.5 and later.
 It is not compatible with earlier QuPath versions.
 
 ## Installing
@@ -26,10 +23,24 @@ The extension will then be copied to a location inside that directory.
 
 You might then need to restart QuPath (but not your computer).
 
+## Reading images
+The extension uses two APIs to read images:
+* The **OMERO web API**. This method is enabled by default and available
+on every OMERO server. It is fast but only 8-bit RGB images
+can be read, and they are JPEG-compressed. This effectively means it is most useful
+for viewing and annotating RGB images (including whole slide images), but is not
+suitable for quantitative analysis where JPEG compression artifacts would be problematic.
+* The **OMERO Ice API**. It can read every image and access raw pixel values. However,
+you have to install the OMERO Java dependencies to enable it: from the
+[OMERO download page](https://www.openmicroscopy.org/omero/downloads/), under
+"OMERO Java", download the .zip file, unzip it and copy the *libs* folder in
+your extension directory. Note that it is not possible to use the Ice API
+when accessing an OMERO server with a guest account, you have to be 
+authenticated.
 
 ## Building
 
-You can build the extension using OpenJDK 11 or later with
+You can build the extension using OpenJDK 17 or later with
 
 ```bash
 gradlew clean build
