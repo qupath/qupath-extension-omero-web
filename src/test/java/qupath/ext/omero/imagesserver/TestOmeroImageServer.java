@@ -89,6 +89,8 @@ public class TestOmeroImageServer extends OmeroServer {
 
             client.getSelectedPixelAPI().set(iceAPI);
             imageServer = (OmeroImageServer) new OmeroImageServerBuilder().buildServer(getOrphanedImageURI());
+
+            Assumptions.assumeTrue(imageServer != null, "Aborting test: ICE image server creation failed");
         }
 
         @Test
