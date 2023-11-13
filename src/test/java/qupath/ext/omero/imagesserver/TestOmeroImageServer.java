@@ -1,13 +1,12 @@
 package qupath.ext.omero.imagesserver;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import qupath.ext.omero.OmeroServer;
 import qupath.ext.omero.TestUtilities;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.WebClients;
+import qupath.ext.omero.core.pixelapis.PixelAPI;
+import qupath.ext.omero.core.pixelapis.ice.IceAPI;
 import qupath.ext.omero.core.pixelapis.web.WebAPI;
 import qupath.lib.analysis.stats.Histogram;
 import qupath.lib.common.ColorTools;
@@ -44,33 +43,82 @@ public class TestOmeroImageServer extends OmeroServer {
         WebClients.removeClient(client);
     }
 
-    @Test
-    void Check_Image_Can_Be_Read() throws IOException {
-        TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
+    @Nested
+    class TestWebApi {
 
-        BufferedImage image = imageServer.readTile(tileRequest);
+        @Test
+        void Check_Image_Can_Be_Read() throws IOException {
+            TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
 
-        Assertions.assertNotNull(image);
+            BufferedImage image = imageServer.readTile(tileRequest);
+
+            Assertions.assertNotNull(image);
+        }
+
+        @Test
+        void Check_Image_Histogram() throws IOException {
+            TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
+            double expectedMean = 24.538;
+            double expectedStdDev = 48.053;
+
+            BufferedImage image = imageServer.readTile(tileRequest);
+
+            Histogram histogram = new Histogram(
+                    Arrays.stream(image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth()))
+                            .map(ColorTools::red)
+                            .toArray(),
+                    256,
+                    Double.NaN,
+                    Double.NaN
+            );
+            Assertions.assertEquals(expectedMean, histogram.getMeanValue(), 0.01);
+            Assertions.assertEquals(expectedStdDev, histogram.getStdDev(), 1);  // high delta because of JPEG compression
+        }
     }
 
-    @Test
-    void Check_Image_Histogram() throws IOException {
-        TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
-        double expectedMean = 24.538;
-        double expectedStdDev = 48.053;
+    @Nested
+    class TestIceApi {
 
-        BufferedImage image = imageServer.readTile(tileRequest);
+        private static OmeroImageServer imageServer;
 
-        Histogram histogram = new Histogram(
-                Arrays.stream(image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth()))
-                        .map(ColorTools::red)
-                        .toArray(),
-                256,
-                Double.NaN,
-                Double.NaN
-        );
-        Assertions.assertEquals(expectedMean, histogram.getMeanValue(), 0.01);
-        Assertions.assertEquals(expectedStdDev, histogram.getStdDev(), 1);  // high delta because of JPEG compression
+        @BeforeAll
+        static void createImageServerAndCheckIceAvailable() {
+            PixelAPI iceAPI = client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof IceAPI).findAny().orElse(null);
+
+            Assumptions.assumeTrue(iceAPI != null, "Aborting test: ICE not detected");
+
+            client.getSelectedPixelAPI().set(iceAPI);
+            imageServer = (OmeroImageServer) new OmeroImageServerBuilder().buildServer(getOrphanedImageURI());
+        }
+
+        @Test
+        void Check_Image_Can_Be_Read() throws IOException {
+            TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
+
+            BufferedImage image = imageServer.readTile(tileRequest);
+
+            Assertions.assertNotNull(image);
+        }
+
+        @Test
+        void Check_Image_Histogram() throws IOException {
+            TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
+            double expectedMean = 24.538;
+            double expectedStdDev = 48.053;
+
+            BufferedImage image = imageServer.readTile(tileRequest);
+
+            Histogram histogram = new Histogram(
+                    Arrays.stream(image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth()))
+                            .map(ColorTools::red)
+                            .toArray(),
+                    256,
+                    Double.NaN,
+                    Double.NaN
+            );
+            Assertions.assertEquals(expectedMean, histogram.getMeanValue(), 0.001);
+            Assertions.assertEquals(expectedStdDev, histogram.getStdDev(), 0.001);
+        }
     }
 
     @Test

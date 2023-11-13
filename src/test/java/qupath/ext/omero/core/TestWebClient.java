@@ -38,15 +38,6 @@ public class TestWebClient extends OmeroServer {
     }
 
     @Test
-    void Check_Client_URI() {
-        URI expectedURI = URI.create(OmeroServer.getServerURL());
-
-        URI uri = client.getServerURI();
-
-        Assertions.assertEquals(expectedURI, uri);
-    }
-
-    @Test
     void Check_Opened_Images_When_One_Image_Added() {
         int expectedSize = client.getOpenedImagesURIs().size() + 1;
 

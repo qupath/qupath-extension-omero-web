@@ -52,7 +52,7 @@ public class TestApisHandler extends OmeroServer {
     void Check_Host() {
         URI expectedHost = URI.create(OmeroServer.getServerURL());
 
-        URI host = apisHandler.getHost();
+        URI host = apisHandler.getWebServerURI();
 
         Assertions.assertEquals(expectedHost, host);
     }
@@ -61,7 +61,7 @@ public class TestApisHandler extends OmeroServer {
     void Check_Server_Host() {
         String expectedServerHost = OmeroServer.getServerHost();
 
-        String serverHost = apisHandler.getServerHost();
+        String serverHost = apisHandler.getServerURI();
 
         Assertions.assertEquals(expectedServerHost, serverHost);
     }

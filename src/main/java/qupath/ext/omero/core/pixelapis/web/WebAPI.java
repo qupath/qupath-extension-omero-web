@@ -88,6 +88,6 @@ public class WebAPI implements PixelAPI {
 
     @Override
     public String toString() {
-        return String.format("Web API of %s", client.getServerURI());
+        return String.format("Web API of %s", client.getApisHandler().getWebServerURI());
     }
 }

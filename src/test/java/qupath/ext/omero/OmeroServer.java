@@ -53,15 +53,13 @@ public abstract class OmeroServer {
     private static final int CLIENT_CREATION_ATTEMPTS = 3;
     private static final String OMERO_PASSWORD = "password";
     private static final int OMERO_SERVER_PORT = 4064;
+    private static final boolean dockerAvailable = DockerClientFactory.instance().isDockerAvailable();
     private static final GenericContainer<?> postgres;
     private static final GenericContainer<?> omeroServer;
     private static final GenericContainer<?> omeroWeb;
-    private static final boolean dockerAvailable;
     private static final String analysisFileId;
 
     static {
-        dockerAvailable = DockerClientFactory.instance().isDockerAvailable();
-
         if (!dockerAvailable || IS_LOCAL_OMERO_SERVER_RUNNING) {
             postgres = null;
             omeroServer = null;

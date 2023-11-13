@@ -19,7 +19,7 @@ public class IceAPI implements PixelAPI {
 
     private static final Logger logger = LoggerFactory.getLogger(IceAPI.class);
     static final String NAME = "Ice";
-    private static Boolean gatewayAvailable;
+    private static boolean gatewayAvailable;
     private final WebClient client;
 
     static {
@@ -98,6 +98,6 @@ public class IceAPI implements PixelAPI {
 
     @Override
     public String toString() {
-        return String.format("Ice API of %s", client.getServerURI());
+        return String.format("Ice API of %s", client.getApisHandler().getWebServerURI());
     }
 }

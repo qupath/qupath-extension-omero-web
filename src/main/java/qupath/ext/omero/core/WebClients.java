@@ -56,7 +56,7 @@ public class WebClients {
 
             return existingClient.map(CompletableFuture::completedFuture).orElseGet(() -> WebClient.create(serverURI.get(), args).thenApply(client -> {
                 if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
-                    ClientsPreferencesManager.addURI(client.getServerURI().toString());
+                    ClientsPreferencesManager.addURI(client.getApisHandler().getWebServerURI().toString());
                     updateClients(client, Operation.ADD);
                 }
                 return client;
@@ -87,7 +87,7 @@ public class WebClients {
             if (existingClient.isEmpty()) {
                 var client = WebClient.createSync(serverURI.get(), args);
                 if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
-                    ClientsPreferencesManager.addURI(client.getServerURI().toString());
+                    ClientsPreferencesManager.addURI(client.getApisHandler().getWebServerURI().toString());
                     updateClients(client, Operation.ADD);
                 }
 
@@ -142,6 +142,6 @@ public class WebClients {
     }
 
     private static Optional<WebClient> getExistingClient(URI uri) {
-        return clients.stream().filter(e -> e.getServerURI().equals(uri)).findAny();
+        return clients.stream().filter(e -> e.getApisHandler().getWebServerURI().equals(uri)).findAny();
     }
 }

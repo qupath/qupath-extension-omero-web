@@ -171,13 +171,6 @@ public class WebClient implements AutoCloseable {
         return username;
     }
 
-    /**
-     * @return the base URI of the server
-     */
-    public URI getServerURI() {
-        return apisHandler.getHost();
-    }
-
     public ObjectProperty<PixelAPI> getSelectedPixelAPI() {
         return selectedPixelAPI;
     }

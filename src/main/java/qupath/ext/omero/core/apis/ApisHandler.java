@@ -108,17 +108,17 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
-     * @return the base server URI (e.g. <a href="https://idr.openmicroscopy.org">https://idr.openmicroscopy.org</a>)
+     * @return the web server URI (e.g. <a href="https://idr.openmicroscopy.org">https://idr.openmicroscopy.org</a>)
      */
-    public URI getHost() {
+    public URI getWebServerURI() {
         return host;
     }
 
     /**
-     * See {@link JsonApi#getHost()}.
+     * See {@link JsonApi#getServerURI()}.
      */
-    public String getServerHost() {
-        return jsonApi.getHost();
+    public String getServerURI() {
+        return jsonApi.getServerURI();
     }
 
     /**

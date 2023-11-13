@@ -236,7 +236,7 @@ public class Browser extends Stage {
     }
 
     private void initUI() {
-        serverHost.setText(client.getServerURI().getHost());
+        serverHost.setText(client.getApisHandler().getWebServerURI().getHost());
 
         if (client.getSelectedPixelAPI().get().canAccessRawPixels()) {
             rawPixelAccess.setText(resources.getString("Browser.Browser.accessRawPixels"));

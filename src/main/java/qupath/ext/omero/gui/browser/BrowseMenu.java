@@ -73,7 +73,7 @@ public class BrowseMenu extends Menu {
             for (WebClient client: change.getList()) {
                 BrowserCommand browserCommand = getBrowserCommand(client);
 
-                MenuItem clientMenuItem = new MenuItem(client.getServerURI() + "...");
+                MenuItem clientMenuItem = new MenuItem(client.getApisHandler().getWebServerURI() + "...");
                 clientMenuItem.setOnAction(e -> browserCommand.run());
                 getItems().add(clientMenuItem);
             }

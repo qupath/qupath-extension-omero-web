@@ -66,7 +66,7 @@ public class Connection extends VBox {
      * @throws IOException if an error occurs while creating the pane
      */
     public Connection(WebClient client) throws IOException {
-        this(client, client.getServerURI().toString());
+        this(client, client.getApisHandler().getWebServerURI().toString());
     }
 
     /**
@@ -141,7 +141,7 @@ public class Connection extends VBox {
                                 resources.getString("ConnectionsManager.Connection.login"),
                                 MessageFormat.format(
                                         resources.getString("ConnectionsManager.Connection.loginSuccessful"),
-                                        client.getServerURI(),
+                                        client.getApisHandler().getWebServerURI(),
                                         client.getUsername().get()
                                 )
                         );

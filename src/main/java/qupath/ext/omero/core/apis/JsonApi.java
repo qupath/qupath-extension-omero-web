@@ -99,10 +99,22 @@ class JsonApi {
     }
 
     /**
-     * @return the server host of this server. This is the OMERO server
-     * host and may be different from the OMERO web host
+     * <p>
+     *     Get the server URI of this server. This is the <b>OMERO server</b>
+     *     URI and may be different from the <b>OMERO web</b> URI.
+     * </p>
+     * <p>
+     *     The returned address is the address used by OMERO web to communicate
+     *     with an OMERO server. If these two entities are running on the same server,
+     *     the returned value of this function may be {@code localhost} or any local IP.
+     *     Therefore, if you can't communicate with the returned value of this function,
+     *     you should be able to communicate with the address of OMERO web (returned by
+     *     {@link ApisHandler#getWebServerURI()}.
+     * </p>
+     *
+     * @return the server host
      */
-    public String getHost() {
+    public String getServerURI() {
         return serverHost;
     }
 

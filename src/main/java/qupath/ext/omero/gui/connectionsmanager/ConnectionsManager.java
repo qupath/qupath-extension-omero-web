@@ -87,6 +87,6 @@ public class ConnectionsManager extends Stage {
     }
 
     private static boolean clientWithURIExists(String uri) {
-        return ConnectionsManagerModel.getClients().stream().anyMatch(client -> client.getServerURI().toString().equals(uri));
+        return ConnectionsManagerModel.getClients().stream().anyMatch(client -> client.getApisHandler().getWebServerURI().toString().equals(uri));
     }
 }

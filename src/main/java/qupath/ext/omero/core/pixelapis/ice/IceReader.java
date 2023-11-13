@@ -12,6 +12,7 @@ import omero.gateway.model.ImageData;
 import omero.gateway.model.PixelsData;
 import omero.model.ExperimenterGroup;
 import qupath.ext.omero.core.WebClient;
+import qupath.ext.omero.core.apis.ApisHandler;
 import qupath.lib.color.ColorModelFactory;
 import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.PixelType;
@@ -32,7 +33,7 @@ import java.util.concurrent.ExecutionException;
  */
 class IceReader implements PixelAPIReader {
 
-    private final Gateway gateway;
+    private final Gateway gateway = new Gateway(new IceLogger());
     private final RawPixelsStorePrx reader;
     private final int numberOfResolutionLevels;
     private final int nChannels;
@@ -52,13 +53,7 @@ class IceReader implements PixelAPIReader {
      */
     public IceReader(WebClient client, long imageID, List<ImageChannel> channels) throws IOException {
         try {
-            gateway = new Gateway(new IceLogger());
-            ExperimenterData user = gateway.connect(new LoginCredentials(
-                    client.getUsername().get(),
-                    client.getPassword().map(String::valueOf).orElse(null),
-                    client.getApisHandler().getServerHost(),
-                    client.getApisHandler().getPort()
-            ));
+            ExperimenterData user = connect(client);
 
             context = new SecurityContext(user.getGroupId());
 
@@ -143,6 +138,35 @@ class IceReader implements PixelAPIReader {
     @Override
     public String toString() {
         return String.format("Ice reader for %s", context.getServerInformation());
+    }
+
+    /**
+     * Attempt to create a connection with the server. The OMERO web host will be
+     * used, and if not successful, the OMERO server host will be used (see
+     * {@link ApisHandler#getServerURI()}).
+     *
+     * @param client  the connection to use
+     * @return a valid connection
+     * @throws DSOutOfServiceException when a connection cannot be established
+     */
+    private ExperimenterData connect(WebClient client) throws DSOutOfServiceException {
+        try {
+            return gateway.connect(new LoginCredentials(
+                    client.getUsername().get(),
+                    client.getPassword().map(String::valueOf).orElse(null),
+                    client.getApisHandler().getWebServerURI().getHost(),
+                    client.getApisHandler().getPort()
+            ));
+        } catch (DSOutOfServiceException e) {
+            System.err.println(client.getApisHandler().getWebServerURI().toString());
+
+            return gateway.connect(new LoginCredentials(
+                    client.getUsername().get(),
+                    client.getPassword().map(String::valueOf).orElse(null),
+                    client.getApisHandler().getServerURI(),
+                    client.getApisHandler().getPort()
+            ));
+        }
     }
 
     private Optional<ImageData> getImage(long imageID) throws ExecutionException, DSOutOfServiceException, ServerError {
