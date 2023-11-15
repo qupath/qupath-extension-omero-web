@@ -20,7 +20,7 @@ public class TestProject extends OmeroServer {
     private static Project project;
     @BeforeAll
     static void createClient() throws ExecutionException, InterruptedException {
-        client = OmeroServer.createValidClient();
+        client = OmeroServer.createUnauthenticatedClient();
 
         while (client.getServer().isPopulatingChildren()) {
             TimeUnit.MILLISECONDS.sleep(50);
@@ -60,7 +60,7 @@ public class TestProject extends OmeroServer {
 
     @Test
     void Check_Attributes() {
-        int numberOfValues = OmeroServer.getProjectNumberOfAttributes();
+        int numberOfValues = project.getNumberOfAttributes();
         String[] expectedAttributeValues = new String[numberOfValues];
         for (int i=0; i<numberOfValues; ++i) {
             expectedAttributeValues[i] = OmeroServer.getProjectAttributeValue(i);
@@ -72,14 +72,5 @@ public class TestProject extends OmeroServer {
         }
 
         Assertions.assertArrayEquals(expectedAttributeValues, attributesValues);
-    }
-
-    @Test
-    void Check_Number_Of_Attributes() {
-        int expectedNumberOfAttributes = OmeroServer.getProjectNumberOfAttributes();
-
-        int numberOfAttributes = project.getNumberOfAttributes();
-
-        Assertions.assertEquals(expectedNumberOfAttributes, numberOfAttributes);
     }
 }

@@ -26,25 +26,16 @@ import java.util.concurrent.ExecutionException;
 
 public class TestOmeroImageServer extends OmeroServer {
 
-    private static WebClient client;
-    private static OmeroImageServer imageServer;
+    abstract static class GenericImageServer {
 
-    @BeforeAll
-    static void createClient() throws ExecutionException, InterruptedException {
-        client = OmeroServer.createValidClient();
+        protected static WebClient client;
+        protected static OmeroImageServer imageServer;
 
-        client.getSelectedPixelAPI().set(client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof WebAPI).findAny().orElse(null));
-        imageServer = (OmeroImageServer) new OmeroImageServerBuilder().buildServer(getOrphanedImageURI());
-    }
-
-    @AfterAll
-    static void removeClient() throws Exception {
-        imageServer.close();
-        WebClients.removeClient(client);
-    }
-
-    @Nested
-    class TestWebApi {
+        @AfterAll
+        static void removeClient() throws Exception {
+            imageServer.close();
+            WebClients.removeClient(client);
+        }
 
         @Test
         void Check_Image_Can_Be_Read() throws IOException {
@@ -56,6 +47,127 @@ public class TestOmeroImageServer extends OmeroServer {
         }
 
         @Test
+        abstract void Check_Image_Histogram() throws IOException;
+
+        @Test
+        void Check_Image_Thumbnail() throws IOException {
+            BufferedImage thumbnail = imageServer.getDefaultThumbnail(0, 0);
+
+            Assertions.assertNotNull(thumbnail);
+        }
+
+        @Test
+        void Check_Image_Metadata_Width() {
+            int expectedWidth = OmeroServer.getOrphanedImageWidth();
+
+            ImageServerMetadata metadata = imageServer.getOriginalMetadata();
+
+            Assertions.assertEquals(expectedWidth, metadata.getWidth());
+        }
+
+        @Test
+        void Check_Image_Metadata_Height() {
+            int expectedWidth = OmeroServer.getOrphanedImageWidth();
+
+            ImageServerMetadata metadata = imageServer.getOriginalMetadata();
+
+            Assertions.assertEquals(expectedWidth, metadata.getHeight());
+        }
+
+        @Test
+        void Check_Image_Metadata_Pixel_Type() {
+            PixelType expectedPixelType = OmeroServer.getOrphanedImagePixelType();
+
+            ImageServerMetadata metadata = imageServer.getOriginalMetadata();
+
+            Assertions.assertEquals(expectedPixelType, metadata.getPixelType());
+        }
+
+        @Test
+        void Check_Image_Metadata_Name() {
+            String expectedName = OmeroServer.getOrphanedImageName();
+
+            ImageServerMetadata metadata = imageServer.getOriginalMetadata();
+
+            Assertions.assertEquals(expectedName, metadata.getName());
+        }
+
+        @Test
+        void Check_Image_Metadata_Number_Slices() {
+            int expectedNumberOfSlices = OmeroServer.getOrphanedImageNumberOfSlices();
+
+            ImageServerMetadata metadata = imageServer.getOriginalMetadata();
+
+            Assertions.assertEquals(expectedNumberOfSlices, metadata.getSizeZ());
+        }
+
+        @Test
+        void Check_Image_Metadata_Number_Channels() {
+            int expectedNumberOfChannels = OmeroServer.getOrphanedImageNumberOfChannels();
+
+            ImageServerMetadata metadata = imageServer.getOriginalMetadata();
+
+            Assertions.assertEquals(expectedNumberOfChannels, metadata.getSizeC());
+        }
+
+        @Test
+        void Check_Image_Metadata_Number_Time_Points() {
+            int expectedNumberOfTimePoints = OmeroServer.getOrphanedImageNumberOfTimePoints();
+
+            ImageServerMetadata metadata = imageServer.getOriginalMetadata();
+
+            Assertions.assertEquals(expectedNumberOfTimePoints, metadata.getSizeT());
+        }
+
+        @Test
+        void Check_Path_Objects_Written() {
+            List<PathObject> pathObject = List.of(
+                    PathObjects.createAnnotationObject(ROIs.createRectangleROI(10, 10, 100, 100, null)),
+                    PathObjects.createAnnotationObject(ROIs.createLineROI(20, 20, 50, 50, null))
+            );
+
+            boolean success = imageServer.sendPathObjects(pathObject, true);
+
+            Assertions.assertTrue(success);
+        }
+
+        @Test
+        void Check_Path_Objects_Read() {
+            List<PathObject> expectedPathObject = List.of(
+                    PathObjects.createAnnotationObject(ROIs.createRectangleROI(10, 10, 100, 100, null)),
+                    PathObjects.createAnnotationObject(ROIs.createLineROI(20, 20, 50, 50, null))
+            );
+            imageServer.sendPathObjects(expectedPathObject, true);
+
+            Collection<PathObject> pathObjects = imageServer.readPathObjects();
+
+            TestUtilities.assertListEqualsWithoutOrder(
+                    expectedPathObject.stream().map(PathObject::getID).toList(),
+                    pathObjects.stream().map(PathObject::getID).toList()
+            );
+        }
+
+        @Test
+        void Check_Id() {
+            long id = imageServer.getId();
+
+            Assertions.assertEquals(getOrphanedImage().getId(), id);
+        }
+    }
+
+    @Nested
+    class WebPixelAPI extends GenericImageServer {
+
+        @BeforeAll
+        static void createClient() throws ExecutionException, InterruptedException {
+            client = OmeroServer.createAuthenticatedClient();
+
+            client.getSelectedPixelAPI().set(client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof WebAPI).findAny().orElse(null));
+            imageServer = (OmeroImageServer) new OmeroImageServerBuilder().buildServer(getOrphanedImageURI());
+        }
+
+        @Test
+        @Override
         void Check_Image_Histogram() throws IOException {
             TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
             double expectedMean = 24.538;
@@ -77,12 +189,11 @@ public class TestOmeroImageServer extends OmeroServer {
     }
 
     @Nested
-    class TestIceApi {
-
-        private static OmeroImageServer imageServer;
+    class IcePixelAPI extends GenericImageServer {
 
         @BeforeAll
-        static void createImageServerAndCheckIceAvailable() {
+        static void createImageServerAndCheckIceAvailable() throws ExecutionException, InterruptedException {
+            client = OmeroServer.createAuthenticatedClient();
             PixelAPI iceAPI = client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof IceAPI).findAny().orElse(null);
 
             Assumptions.assumeTrue(iceAPI != null, "Aborting test: ICE not detected");
@@ -94,15 +205,7 @@ public class TestOmeroImageServer extends OmeroServer {
         }
 
         @Test
-        void Check_Image_Can_Be_Read() throws IOException {
-            TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
-
-            BufferedImage image = imageServer.readTile(tileRequest);
-
-            Assertions.assertNotNull(image);
-        }
-
-        @Test
+        @Override
         void Check_Image_Histogram() throws IOException {
             TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
             double expectedMean = 24.538;
@@ -121,110 +224,5 @@ public class TestOmeroImageServer extends OmeroServer {
             Assertions.assertEquals(expectedMean, histogram.getMeanValue(), 0.001);
             Assertions.assertEquals(expectedStdDev, histogram.getStdDev(), 0.001);
         }
-    }
-
-    @Test
-    void Check_Image_Thumbnail() throws IOException {
-        BufferedImage thumbnail = imageServer.getDefaultThumbnail(0, 0);
-
-        Assertions.assertNotNull(thumbnail);
-    }
-
-    @Test
-    void Check_Image_Metadata_Width() {
-        int expectedWidth = OmeroServer.getOrphanedImageWidth();
-
-        ImageServerMetadata metadata = imageServer.getOriginalMetadata();
-
-        Assertions.assertEquals(expectedWidth, metadata.getWidth());
-    }
-
-    @Test
-    void Check_Image_Metadata_Height() {
-        int expectedWidth = OmeroServer.getOrphanedImageWidth();
-
-        ImageServerMetadata metadata = imageServer.getOriginalMetadata();
-
-        Assertions.assertEquals(expectedWidth, metadata.getHeight());
-    }
-
-    @Test
-    void Check_Image_Metadata_Pixel_Type() {
-        PixelType expectedPixelType = OmeroServer.getOrphanedImagePixelType();
-
-        ImageServerMetadata metadata = imageServer.getOriginalMetadata();
-
-        Assertions.assertEquals(expectedPixelType, metadata.getPixelType());
-    }
-
-    @Test
-    void Check_Image_Metadata_Name() {
-        String expectedName = OmeroServer.getOrphanedImageName();
-
-        ImageServerMetadata metadata = imageServer.getOriginalMetadata();
-
-        Assertions.assertEquals(expectedName, metadata.getName());
-    }
-
-    @Test
-    void Check_Image_Metadata_Number_Slices() {
-        int expectedNumberOfSlices = OmeroServer.getOrphanedImageNumberOfSlices();
-
-        ImageServerMetadata metadata = imageServer.getOriginalMetadata();
-
-        Assertions.assertEquals(expectedNumberOfSlices, metadata.getSizeZ());
-    }
-
-    @Test
-    void Check_Image_Metadata_Number_Channels() {
-        int expectedNumberOfChannels = OmeroServer.getOrphanedImageNumberOfChannels();
-
-        ImageServerMetadata metadata = imageServer.getOriginalMetadata();
-
-        Assertions.assertEquals(expectedNumberOfChannels, metadata.getSizeC());
-    }
-
-    @Test
-    void Check_Image_Metadata_Number_Time_Points() {
-        int expectedNumberOfTimePoints = OmeroServer.getOrphanedImageNumberOfTimePoints();
-
-        ImageServerMetadata metadata = imageServer.getOriginalMetadata();
-
-        Assertions.assertEquals(expectedNumberOfTimePoints, metadata.getSizeT());
-    }
-
-    @Test
-    void Check_Path_Objects_Written() {
-        List<PathObject> pathObject = List.of(
-                PathObjects.createAnnotationObject(ROIs.createRectangleROI(10, 10, 100, 100, null)),
-                PathObjects.createAnnotationObject(ROIs.createLineROI(20, 20, 50, 50, null))
-        );
-
-        boolean success = imageServer.sendPathObjects(pathObject, true);
-
-        Assertions.assertTrue(success);
-    }
-
-    @Test
-    void Check_Path_Objects_Read() {
-        List<PathObject> expectedPathObject = List.of(
-                PathObjects.createAnnotationObject(ROIs.createRectangleROI(10, 10, 100, 100, null)),
-                PathObjects.createAnnotationObject(ROIs.createLineROI(20, 20, 50, 50, null))
-        );
-        imageServer.sendPathObjects(expectedPathObject, true);
-
-        Collection<PathObject> pathObjects = imageServer.readPathObjects();
-
-        TestUtilities.assertListEqualsWithoutOrder(
-                expectedPathObject.stream().map(PathObject::getID).toList(),
-                pathObjects.stream().map(PathObject::getID).toList()
-        );
-    }
-
-    @Test
-    void Check_Id() {
-        long id = imageServer.getId();
-
-        Assertions.assertEquals(getOrphanedImage().getId(), id);
     }
 }

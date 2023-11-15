@@ -2,6 +2,11 @@
 
 /opt/omero/server/venv3/bin/omero login root@localhost:4064 -w password
 
+/opt/omero/server/venv3/bin/omero group add public-data --type=read-only
+/opt/omero/server/venv3/bin/omero user add public public access --group-name public-data -P password
+
+/opt/omero/server/venv3/bin/omero login public@localhost:4064 -w password
+
 project=$(/opt/omero/server/venv3/bin/omero obj new Project name=project)
 dataset=$(/opt/omero/server/venv3/bin/omero obj new Dataset name=dataset)
 /opt/omero/server/venv3/bin/omero obj new ProjectDatasetLink parent=$project child=$dataset

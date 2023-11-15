@@ -9,57 +9,112 @@ import java.util.concurrent.ExecutionException;
 
 public class TestWebClient extends OmeroServer {
 
-    private static WebClient client;
+    abstract static class GenericClient {
 
-    @BeforeAll
-    static void createClient() throws ExecutionException, InterruptedException {
-        client = OmeroServer.createValidClient();
+        protected static WebClient client;
+
+        @AfterAll
+        static void removeClient() {
+            WebClients.removeClient(client);
+        }
+
+        @Test
+        abstract void Check_Client_Authentication();
+
+        @Test
+        abstract void Check_Client_Username();
+
+        @Test
+        abstract void Check_Client_Password();
+
+        @Test
+        void Check_Opened_Images_When_One_Image_Added() {
+            int expectedSize = client.getOpenedImagesURIs().size() + 1;
+
+            client.addOpenedImage(URI.create(OmeroServer.getServerURL()));
+            Set<URI> openedImagesURIs = client.getOpenedImagesURIs();
+
+            Assertions.assertEquals(expectedSize, openedImagesURIs.size());
+        }
+
+        @Test
+        void Check_Client_Can_Be_Closed() {
+            boolean canBeClosed = client.canBeClosed();
+
+            Assertions.assertTrue(canBeClosed);
+        }
     }
 
-    @AfterAll
-    static void removeClient() {
-        WebClients.removeClient(client);
+    @Nested
+    class UnauthenticatedClient extends GenericClient {
+
+        @BeforeAll
+        static void createClient() throws ExecutionException, InterruptedException {
+            client = OmeroServer.createUnauthenticatedClient();
+        }
+
+        @Test
+        @Override
+        void Check_Client_Authentication() {
+            boolean isAuthenticated = client.getAuthenticated().get();
+
+            Assertions.assertFalse(isAuthenticated);
+        }
+        @Test
+        @Override
+        void Check_Client_Username() {
+            String expectedUsername = "";
+
+            String username = client.getUsername().get();
+
+            Assertions.assertEquals(expectedUsername, username);
+        }
+
+        @Test
+        @Override
+        void Check_Client_Password() {
+            char[] expectedPassword = new char[0];
+
+            char[] password = client.getPassword().orElse(new char[0]);
+
+            Assertions.assertArrayEquals(expectedPassword, password);
+        }
     }
 
-    @Test
-    void Check_Client_Authentication() {
-        boolean isAuthenticated = client.getAuthenticated().get();
+    @Nested
+    class AuthenticatedClient extends GenericClient {
 
-        Assertions.assertTrue(isAuthenticated);
-    }
+        @BeforeAll
+        static void createClient() throws ExecutionException, InterruptedException {
+            client = OmeroServer.createAuthenticatedClient();
+        }
 
-    @Test
-    void Check_Client_Username() {
-        String expectedUsername = OmeroServer.getUsername();
+        @Test
+        @Override
+        void Check_Client_Authentication() {
+            boolean isAuthenticated = client.getAuthenticated().get();
 
-        String username = client.getUsername().get();
+            Assertions.assertTrue(isAuthenticated);
+        }
 
-        Assertions.assertEquals(expectedUsername, username);
-    }
+        @Test
+        @Override
+        void Check_Client_Username() {
+            String expectedUsername = OmeroServer.getUserUsername();
 
-    @Test
-    void Check_Opened_Images_When_One_Image_Added() {
-        int expectedSize = client.getOpenedImagesURIs().size() + 1;
+            String username = client.getUsername().get();
 
-        client.addOpenedImage(URI.create(OmeroServer.getServerURL()));
-        Set<URI> openedImagesURIs = client.getOpenedImagesURIs();
+            Assertions.assertEquals(expectedUsername, username);
+        }
 
-        Assertions.assertEquals(expectedSize, openedImagesURIs.size());
-    }
+        @Test
+        @Override
+        void Check_Client_Password() {
+            char[] expectedPassword = OmeroServer.getUserPassword().toCharArray();
 
-    @Test
-    void Check_Client_Password() {
-        char[] expectedPassword = OmeroServer.getPassword().toCharArray();
+            char[] password = client.getPassword().orElse(new char[0]);
 
-        char[] password = client.getPassword().orElse(new char[0]);
-
-        Assertions.assertArrayEquals(expectedPassword, password);
-    }
-
-    @Test
-    void Check_Client_Can_Be_Closed() {
-        boolean canBeClosed = client.canBeClosed();
-
-        Assertions.assertTrue(canBeClosed);
+            Assertions.assertArrayEquals(expectedPassword, password);
+        }
     }
 }

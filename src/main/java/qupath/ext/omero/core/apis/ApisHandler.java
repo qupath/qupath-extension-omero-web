@@ -1,5 +1,6 @@
 package qupath.ext.omero.core.apis;
 
+import com.drew.lang.annotations.Nullable;
 import javafx.beans.property.*;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
 import qupath.ext.omero.core.entities.login.LoginResponse;
@@ -181,10 +182,10 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
-     * See {@link JsonApi#login(String...)}.
+     * See {@link JsonApi#login(String, String)}.
      */
-    public CompletableFuture<LoginResponse> login(String... args) {
-        return jsonApi.login(args);
+    public CompletableFuture<LoginResponse> login(@Nullable String username, @Nullable String password) {
+        return jsonApi.login(username, password);
     }
 
     /**

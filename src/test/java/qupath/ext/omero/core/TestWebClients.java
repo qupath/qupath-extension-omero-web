@@ -11,13 +11,25 @@ import java.util.concurrent.ExecutionException;
 public class TestWebClients extends OmeroServer {
 
     @Test
-    void Check_Client_Creation() throws ExecutionException, InterruptedException {
+    void Check_Client_Creation_With_Public_User() throws ExecutionException, InterruptedException {
+        WebClient client = WebClients.createClient(OmeroServer.getServerURL()).get();
+        WebClient.Status expectedStatus = WebClient.Status.SUCCESS;
+
+        WebClient.Status status = client.getStatus();
+
+        Assertions.assertEquals(expectedStatus, status);
+
+        WebClients.removeClient(client);
+    }
+
+    @Test
+    void Check_Client_Creation_With_Root_User() throws ExecutionException, InterruptedException {
         WebClient client = WebClients.createClient(
                 OmeroServer.getServerURL(),
                 "-u",
-                OmeroServer.getUsername(),
+                OmeroServer.getRootUsername(),
                 "-p",
-                OmeroServer.getPassword()
+                OmeroServer.getRootPassword()
         ).get();
         WebClient.Status expectedStatus = WebClient.Status.SUCCESS;
 
@@ -35,7 +47,7 @@ public class TestWebClients extends OmeroServer {
                 "-u",
                 "incorrect_username",
                 "-p",
-                OmeroServer.getPassword()
+                OmeroServer.getRootPassword()
         ).get();
         WebClient.Status expectedStatus = WebClient.Status.FAILED;
 
@@ -51,7 +63,7 @@ public class TestWebClients extends OmeroServer {
         WebClient client = WebClients.createClient(
                 OmeroServer.getServerURL(),
                 "-u",
-                OmeroServer.getUsername(),
+                OmeroServer.getRootUsername(),
                 "-p",
                 "incorrect_password"
         ).get();
@@ -69,9 +81,9 @@ public class TestWebClients extends OmeroServer {
         WebClient client = WebClients.createClientSync(
                 OmeroServer.getServerURL(),
                 "-u",
-                OmeroServer.getUsername(),
+                OmeroServer.getRootUsername(),
                 "-p",
-                OmeroServer.getPassword()
+                OmeroServer.getRootPassword()
         );
         WebClient.Status expectedStatus = WebClient.Status.SUCCESS;
 
@@ -84,13 +96,7 @@ public class TestWebClients extends OmeroServer {
 
     @Test
     void Check_Client_List_After_Added() {
-        WebClient client = WebClients.createClientSync(
-                OmeroServer.getServerURL(),
-                "-u",
-                OmeroServer.getUsername(),
-                "-p",
-                OmeroServer.getPassword()
-        );
+        WebClient client = WebClients.createClientSync(OmeroServer.getServerURL());
         List<WebClient> expectedClients = List.of(client);
 
         List<WebClient> clients = WebClients.getClients();
@@ -102,13 +108,7 @@ public class TestWebClients extends OmeroServer {
 
     @Test
     void Check_Client_List_After_Removed() {
-        WebClient client = WebClients.createClientSync(
-                OmeroServer.getServerURL(),
-                "-u",
-                OmeroServer.getUsername(),
-                "-p",
-                OmeroServer.getPassword()
-        );
+        WebClient client = WebClients.createClientSync(OmeroServer.getServerURL());
         List<WebClient> expectedClients = List.of();
 
         WebClients.removeClient(client);

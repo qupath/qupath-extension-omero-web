@@ -65,7 +65,6 @@ class IViewerApi {
         var uri = WebUtilities.createURI(String.format(ROIS_URL, host));
 
         if (uri.isPresent()) {
-
             Gson gson = new Gson();
             List<String> roisToAdd = shapesToAdd.stream().map(gson::toJson).toList();
             String roisToRemove = shapesToRemove.stream()

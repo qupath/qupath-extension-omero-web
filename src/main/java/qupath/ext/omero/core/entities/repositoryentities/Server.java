@@ -144,6 +144,7 @@ public class Server implements RepositoryEntity {
      * <p>Get the default group of this server. This is usually the group of the connected user.</p>
      *
      * @return the default group of this server, or an empty Optional if no default group was set
+     * (usually when the user is not authenticated)
      */
     public Optional<Group> getDefaultGroup() {
         return Optional.ofNullable(defaultGroup);
@@ -153,6 +154,7 @@ public class Server implements RepositoryEntity {
      * <p>Get the default owner of this server. This is usually the connected user.</p>
      *
      * @return the default owner of this server, or an empty Optional if no default owner was set
+     * (usually when the user is not authenticated)
      */
     public Optional<Owner> getDefaultOwner() {
         return Optional.ofNullable(defaultOwner);

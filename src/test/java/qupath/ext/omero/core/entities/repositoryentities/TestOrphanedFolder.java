@@ -19,7 +19,7 @@ public class TestOrphanedFolder extends OmeroServer {
     private static OrphanedFolder orphanedFolder;
     @BeforeAll
     static void createClient() throws ExecutionException, InterruptedException {
-        client = OmeroServer.createValidClient();
+        client = OmeroServer.createUnauthenticatedClient();
         orphanedFolder = OrphanedFolder.create(client.getApisHandler()).get();
     }
 

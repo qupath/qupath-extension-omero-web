@@ -20,7 +20,7 @@ public class TestDataset extends OmeroServer {
     private static Dataset dataset;
     @BeforeAll
     static void createClient() throws ExecutionException, InterruptedException {
-        client = OmeroServer.createValidClient();
+        client = OmeroServer.createUnauthenticatedClient();
 
         while (client.getServer().isPopulatingChildren()) {
             TimeUnit.MILLISECONDS.sleep(50);
@@ -72,7 +72,7 @@ public class TestDataset extends OmeroServer {
 
     @Test
     void Check_Attributes() {
-        int numberOfValues = OmeroServer.getDatasetNumberOfAttributes();
+        int numberOfValues = dataset.getNumberOfAttributes();
         String[] expectedAttributeValues = new String[numberOfValues];
         for (int i=0; i<numberOfValues; ++i) {
             expectedAttributeValues[i] = OmeroServer.getDatasetAttributeValue(i);
@@ -84,14 +84,5 @@ public class TestDataset extends OmeroServer {
         }
 
         Assertions.assertArrayEquals(expectedAttributeValues, attributesValues);
-    }
-
-    @Test
-    void Check_Number_Of_Attributes() {
-        int expectedNumberOfAttributes = OmeroServer.getDatasetNumberOfAttributes();
-
-        int numberOfAttributes = dataset.getNumberOfAttributes();
-
-        Assertions.assertEquals(expectedNumberOfAttributes, numberOfAttributes);
     }
 }

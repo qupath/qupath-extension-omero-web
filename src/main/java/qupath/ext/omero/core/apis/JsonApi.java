@@ -1,5 +1,6 @@
 package qupath.ext.omero.core.apis;
 
+import com.drew.lang.annotations.Nullable;
 import com.google.common.collect.Lists;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
@@ -150,15 +151,17 @@ class JsonApi {
      *
      * @return a CompletableFuture with the authentication status
      */
-    public CompletableFuture<LoginResponse> login(String... args) {
+    public CompletableFuture<LoginResponse> login(@Nullable String username, @Nullable String password) {
         var uri = WebUtilities.createURI(urls.get(LOGIN_URL_KEY));
 
-        PasswordAuthentication authentication = getPasswordAuthenticationFromArgs(args).orElseGet(() -> Authenticator.getPasswordAuthentication(webHost.toString()));
+        PasswordAuthentication authentication = username == null || password == null ?
+                Authenticator.getPasswordAuthentication(webHost.toString()) :
+                new PasswordAuthentication(username, password.toCharArray());
 
         if (uri.isEmpty() || authentication == null) {
             return CompletableFuture.completedFuture(LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.CANCELED));
         } else {
-            char[] password = Arrays.copyOf(authentication.getPassword(), authentication.getPassword().length);
+            char[] nonEncodedPassword = Arrays.copyOf(authentication.getPassword(), authentication.getPassword().length);
             char[] encodedPassword = ApiUtilities.urlEncode(authentication.getPassword());
 
             byte[] body = ApiUtilities.concatAndConvertToBytes(
@@ -175,9 +178,9 @@ class JsonApi {
                 Arrays.fill(body, (byte) 0);
 
                 if (response.isPresent()) {
-                    return LoginResponse.createSuccessLoginResponse(response.get(), password);
+                    return LoginResponse.createSuccessLoginResponse(response.get(), nonEncodedPassword);
                 } else {
-                    Arrays.fill(password, (char) 0);
+                    Arrays.fill(nonEncodedPassword, (char) 0);
                     return LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.FAILED);
                 }
             });
@@ -562,27 +565,6 @@ class JsonApi {
         } else {
             logger.error("Couldn't find the URL corresponding to " + url);
             return CompletableFuture.completedFuture(false);
-        }
-    }
-
-    private static Optional<PasswordAuthentication> getPasswordAuthenticationFromArgs(String... args) {
-        String username = null;
-        char[] password = null;
-        int i = 0;
-        while (i < args.length-1) {
-            String parameter = args[i++];
-            if ("--username".equals(parameter) || "-u".equals(parameter)) {
-                username = args[i++];
-            }
-            else if ("--password".equals(parameter) || "-p".equals(parameter)) {
-                password = args[i++].toCharArray();
-            }
-        }
-
-        if (username != null && password != null) {
-            return Optional.of(new PasswordAuthentication(username, password));
-        } else {
-            return Optional.empty();
         }
     }
 

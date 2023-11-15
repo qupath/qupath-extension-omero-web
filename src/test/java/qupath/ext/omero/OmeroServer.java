@@ -75,6 +75,10 @@ public abstract class OmeroServer {
             omeroWeb = new GenericContainer<>(DockerImageName.parse("openmicroscopy/omero-web-standalone"))
                     .withNetwork(Network.SHARED)
                     .withEnv("OMEROHOST", "omero-server")
+                    .withEnv("CONFIG_omero_web_public_enabled", "True")
+                    .withEnv("CONFIG_omero_web_public_user", "public")
+                    .withEnv("CONFIG_omero_web_public_password", "password")
+                    .withEnv("CONFIG_omero_web_public_url__filter", "(.*?)")
                     .withExposedPorts(4080);
             omeroWeb.start();
 
@@ -93,7 +97,7 @@ public abstract class OmeroServer {
                             // Wait for the server to accept connections
                             while (true) {
                                 try {
-                                    WebClient client = createValidClient();
+                                    WebClient client = createRootClient();
                                     WebClients.removeClient(client);
                                     return;
                                 } catch (IllegalStateException | ExecutionException | InterruptedException ignored) {}
@@ -146,25 +150,26 @@ public abstract class OmeroServer {
         return omeroWeb == null ? "http://localhost:4080" : "http://" + omeroWeb.getHost() + ":" + omeroWeb.getMappedPort(4080);
     }
 
-    protected static WebClient createValidClient() throws ExecutionException, InterruptedException {
-        WebClient webClient;
-        int attempt = 0;
+    protected static WebClient createUnauthenticatedClient() throws ExecutionException, InterruptedException {
+        return createValidClient();
+    }
 
-        do {
-            webClient = WebClients.createClient(
-                    getServerURL(),
-                    "-u",
-                    getUsername(),
-                    "-p",
-                    getPassword()
-            ).get();
-        } while (!webClient.getStatus().equals(WebClient.Status.SUCCESS) && ++attempt < CLIENT_CREATION_ATTEMPTS);
+    protected static WebClient createAuthenticatedClient() throws ExecutionException, InterruptedException {
+        return createValidClient(
+                "-u",
+                getUserUsername(),
+                "-p",
+                getUserPassword()
+        );
+    }
 
-        if (webClient.getStatus().equals(WebClient.Status.SUCCESS)) {
-            return webClient;
-        } else {
-            throw new IllegalStateException("Client creation failed");
-        }
+    protected static WebClient createRootClient() throws ExecutionException, InterruptedException {
+        return createValidClient(
+                "-u",
+                getRootUsername(),
+                "-p",
+                getRootPassword()
+        );
     }
 
     protected static String getServerHost() {
@@ -175,12 +180,20 @@ public abstract class OmeroServer {
         return OMERO_SERVER_PORT;
     }
 
-    protected static String getUsername() {
+    protected static String getRootUsername() {
         return "root";
     }
 
-    protected static String getPassword() {
+    protected static String getRootPassword() {
         return OMERO_PASSWORD;
+    }
+
+    protected static String getUserUsername() {
+        return "public";
+    }
+
+    protected static String getUserPassword() {
+        return "password";
     }
 
     protected static Project getProject() {
@@ -203,10 +216,6 @@ public abstract class OmeroServer {
         };
     }
 
-    protected static int getProjectNumberOfAttributes() {
-        return 6;
-    }
-
     protected static Dataset getOrphanedDataset() {
         return new Dataset(2);
     }
@@ -225,11 +234,11 @@ public abstract class OmeroServer {
                     "annotations": [
                         {
                             "owner": {
-                                "id": 0
+                                "id": 2
                             },
                             "link": {
                                 "owner": {
-                                    "id": 0
+                                    "id": 2
                                 }
                             },
                             "class": "CommentAnnotationI",
@@ -237,11 +246,11 @@ public abstract class OmeroServer {
                         },
                         {
                             "owner": {
-                                "id": 0
+                                "id": 2
                             },
                             "link": {
                                 "owner": {
-                                    "id": 0
+                                    "id": 2
                                 }
                             },
                             "class": "FileAnnotationI",
@@ -256,9 +265,9 @@ public abstract class OmeroServer {
                    ],
                    "experimenters": [
                         {
-                            "id": 0,
-                            "firstName": "root",
-                            "lastName": "root"
+                            "id": 2,
+                            "firstName": "public",
+                            "lastName": "access"
                         }
                    ]
                 }
@@ -275,10 +284,6 @@ public abstract class OmeroServer {
             case 5 -> "1";
             default -> "";
         };
-    }
-
-    protected static int getDatasetNumberOfAttributes() {
-        return 6;
     }
 
     protected static List<SearchResult> getSearchResultsOnDataset() {
@@ -352,6 +357,26 @@ public abstract class OmeroServer {
         return 0.08850000022125;
     }
 
+    protected static String getImageAttributeValue(int informationIndex) {
+        return switch (informationIndex) {
+            case 0 -> getImageName();
+            case 1 -> String.valueOf(getImage().getId());
+            case 2 -> getCurrentOwner().getFullName();
+            case 3 -> getCurrentGroup().getName();
+            case 4, 13 -> "-";
+            case 5 -> getImageWidth() + " px";
+            case 6 -> getImageHeight() + " px";
+            case 7 -> "32.6 MB";
+            case 8 -> String.valueOf(getImageNumberOfSlices());
+            case 9 -> String.valueOf(getImageNumberOfChannels());
+            case 10 -> String.valueOf(getImageNumberOfTimePoints());
+            case 11 -> getImagePixelWidthMicrons() + " µm";
+            case 12 -> getImagePixelHeightMicrons() + " µm";
+            case 14 -> getImagePixelType().toString().toLowerCase();
+            default -> "";
+        };
+    }
+
     protected static Image getOrphanedImage() {
         return new Image(2);
     }
@@ -406,30 +431,43 @@ public abstract class OmeroServer {
         };
     }
 
-    protected static int getOrphanedImageNumberOfAttributes() {
-        return 15;
-    }
-
     protected static List<Group> getGroups() {
         return List.of(
                 new Group(0, "system"),
                 new Group(1, "user"),
-                new Group(2, "guest")
+                new Group(2, "guest"),
+                new Group(3, "public-data")
         );
     }
 
     protected static List<Owner> getOwners() {
         return List.of(
                 new Owner(0, "root", "", "root", "", "", "root"),
-                new Owner(1, "Guest", "", "Account", "", "", "guest")
+                new Owner(1, "Guest", "", "Account", "", "", "guest"),
+                new Owner(2, "public", "", "access", "", "", "public")
         );
     }
 
     protected static Group getCurrentGroup() {
-        return getGroups().get(0);
+        return getGroups().get(3);
     }
 
     protected static Owner getCurrentOwner() {
-        return getOwners().get(0);
+        return getOwners().get(2);
+    }
+
+    private static WebClient createValidClient(String... args) throws ExecutionException, InterruptedException {
+        WebClient webClient;
+        int attempt = 0;
+
+        do {
+            webClient = WebClients.createClient(getServerURL(), args).get();
+        } while (!webClient.getStatus().equals(WebClient.Status.SUCCESS) && ++attempt < CLIENT_CREATION_ATTEMPTS);
+
+        if (webClient.getStatus().equals(WebClient.Status.SUCCESS)) {
+            return webClient;
+        } else {
+            throw new IllegalStateException("Client creation failed");
+        }
     }
 }

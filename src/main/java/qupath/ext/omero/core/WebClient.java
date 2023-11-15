@@ -1,5 +1,6 @@
 package qupath.ext.omero.core;
 
+import com.drew.lang.annotations.Nullable;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
@@ -79,10 +80,15 @@ public class WebClient implements AutoCloseable {
      *     {@link #getStatus()} function to check the validity of the returned client
      *     before using it.
      * </p>
+     * <p>The optional arguments must have one of the following format:</p>
+     * <ul>
+     *     <li>{@code --username [username] --password [password]}</li>
+     *     <li>{@code -u [username] -p [password]}</li>
+     * </ul>
      * <p>This function is asynchronous.</p>
      *
      * @param uri  the server URI to connect to
-     * @param args  optional arguments used to authenticate. See the {@link #login(String...) login()} function.
+     * @param args  optional arguments to authenticate (see description above)
      * @return a CompletableFuture with the client
      */
     static CompletableFuture<WebClient> create(URI uri, String... args) {
@@ -171,10 +177,24 @@ public class WebClient implements AutoCloseable {
         return username;
     }
 
+    /**
+     * @return the password of the authenticated user, or an empty Optional if
+     * there is no authentication
+     */
+    public Optional<char[]> getPassword() {
+        return Optional.ofNullable(password);
+    }
+
+    /**
+     * @return the currently selected pixel API
+     */
     public ObjectProperty<PixelAPI> getSelectedPixelAPI() {
         return selectedPixelAPI;
     }
 
+    /**
+     * @return a list of all pixel APIs available for this client
+     */
     public List<PixelAPI> getAvailablePixelAPIs() {
         return availablePixelAPIs;
     }
@@ -205,14 +225,6 @@ public class WebClient implements AutoCloseable {
     }
 
     /**
-     * @return the password of the authenticated user, or an empty Optional if
-     * there is no authentication
-     */
-    public Optional<char[]> getPassword() {
-        return Optional.ofNullable(password);
-    }
-
-    /**
      * Indicates if this client can be closed, by checking if there is any
      * opened image in the QuPath viewer that belongs to this client.
      *
@@ -225,22 +237,39 @@ public class WebClient implements AutoCloseable {
     }
 
     /**
-     * <p>Attempt to authenticate to the server using the optional arguments.</p>
+     * <p>Attempt to authenticate to the server using the provided credentials.</p>
      * <p>
-     *     Take a look at the {@link ApisHandler#login(String...) JsonApi.login()}
-     *     function to know the accepted format for the arguments.
-     * </p>
-     * <p>
-     *     If a username or a password cannot be retrieved from the arguments, a window (if the GUI is used)
-     *     or the command line (else) will be used to ask the user for credentials.
+     *     A window (if the GUI is used) or the command line (else) will ask the user for credentials
+     *     if one of the parameter is null.
      * </p>
      * <p>This function is asynchronous.</p>
      *
-     * @param args  the optional arguments containing username and password information
+     * @param username  the username used for login
+     * @param password  the password used for login
      * @return a CompletableFuture with the login response
      */
-    public CompletableFuture<LoginResponse> login(String... args) {
-        return apisHandler.login(args).thenApply(loginResponse -> {
+    public CompletableFuture<LoginResponse> login(@Nullable String username, @Nullable String password) {
+        return apisHandler.login(username, password).thenApply(loginResponse -> {
+            if (loginResponse.getStatus().equals(LoginResponse.Status.SUCCESS)) {
+                setAuthenticationInformation(loginResponse);
+                startTimer();
+            }
+
+            return loginResponse;
+        });
+    }
+
+    /**
+     * <p>Attempt to authenticate to the server.</p>
+     * <p>
+     *     A window (if the GUI is used) or the command line (else) will ask the user for credentials.
+     * </p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @return a CompletableFuture with the login response
+     */
+    public CompletableFuture<LoginResponse> login() {
+        return apisHandler.login(null, null).thenApply(loginResponse -> {
             if (loginResponse.getStatus().equals(LoginResponse.Status.SUCCESS)) {
                 setAuthenticationInformation(loginResponse);
                 startTimer();
@@ -255,10 +284,16 @@ public class WebClient implements AutoCloseable {
             if (apisHandler.isPresent()) {
                 this.apisHandler = apisHandler.get();
                 try {
-                    if (this.apisHandler.canSkipAuthentication().get()) {
+                    Optional<String> usernameFromArgs = getCredentialFromArgs("--username", "-u", args);
+                    Optional<String> passwordFromArgs = getCredentialFromArgs("--password", "-p", args);
+
+                    if ((usernameFromArgs.isEmpty() || passwordFromArgs.isEmpty()) && this.apisHandler.canSkipAuthentication().get()) {
                         return LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.UNAUTHENTICATED);
                     } else {
-                        return login(args).get();
+                        return login(
+                                usernameFromArgs.orElse(null),
+                                passwordFromArgs.orElse(null)
+                        ).get();
                     }
                 } catch (ExecutionException | InterruptedException e) {
                     logger.error("Error initializing client", e);
@@ -305,9 +340,18 @@ public class WebClient implements AutoCloseable {
             if (apisHandler.isPresent()) {
                 this.apisHandler = apisHandler.get();
 
-                LoginResponse loginResponse = this.apisHandler.canSkipAuthentication().get() ?
-                        LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.UNAUTHENTICATED) :
-                        login(args).get();
+                Optional<String> usernameFromArgs = getCredentialFromArgs("--username", "-u", args);
+                Optional<String> passwordFromArgs = getCredentialFromArgs("--password", "-p", args);
+
+                LoginResponse loginResponse;
+                if ((usernameFromArgs.isEmpty() || passwordFromArgs.isEmpty()) && this.apisHandler.canSkipAuthentication().get()) {
+                    loginResponse = LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.UNAUTHENTICATED);
+                } else {
+                    loginResponse = login(
+                            usernameFromArgs.orElse(null),
+                            passwordFromArgs.orElse(null)
+                    ).get();
+                }
 
                 LoginResponse.Status status = loginResponse.getStatus();
                 if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
@@ -343,14 +387,10 @@ public class WebClient implements AutoCloseable {
         }
     }
 
-    private synchronized void setUsername(String username) {
-        this.username.set(username);
-    }
-
     private synchronized void setAuthenticationInformation(LoginResponse loginResponse) {
         this.authenticated.set(true);
 
-        setUsername(loginResponse.getUsername());
+        username.set(loginResponse.getUsername());
         password = loginResponse.getPassword();
     }
 
@@ -368,6 +408,23 @@ public class WebClient implements AutoCloseable {
                 }
             }, PING_DELAY_MILLISECONDS, PING_DELAY_MILLISECONDS);
         }
+    }
+
+    private static Optional<String> getCredentialFromArgs(
+            String credentialLabel,
+            String credentialLabelAlternative,
+            String... args
+    ) {
+        String credential = null;
+        int i = 0;
+        while (i < args.length-1) {
+            String parameter = args[i++];
+            if (credentialLabel.equals(parameter) || credentialLabelAlternative.equals(parameter)) {
+                credential = args[i++];
+            }
+        }
+
+        return Optional.ofNullable(credential);
     }
 
     private void setUpPixelAPIs() {

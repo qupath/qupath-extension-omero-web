@@ -20,7 +20,7 @@ public class TestOmeroImageServerBuilder extends OmeroServer {
 
     @BeforeAll
     static void createClient() throws ExecutionException, InterruptedException {
-        client = OmeroServer.createValidClient();
+        client = OmeroServer.createUnauthenticatedClient();
         client.getSelectedPixelAPI().set(client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof WebAPI).findAny().orElse(null));
     }
 
