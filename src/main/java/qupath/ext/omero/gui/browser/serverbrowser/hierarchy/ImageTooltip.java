@@ -47,7 +47,7 @@ class ImageTooltip extends VBox {
         name.setText(image.getName());
 
         setErrorLine(image);
-        image.isSupported().addListener(change -> setErrorLine(image));
+        image.isSupported().addListener(change -> Platform.runLater(() -> setErrorLine(image)));
 
         client.getApisHandler().getThumbnail(image.getId()).thenAccept(thumbnail -> Platform.runLater(() ->
                 thumbnail.ifPresent(bufferedImage -> UiUtilities.paintBufferedImageOnCanvas(bufferedImage, canvas)))
@@ -68,8 +68,8 @@ class ImageTooltip extends VBox {
         if (image.isSupported().get()) {
             getChildren().remove(errorLine);
         } else {
-            setSupportedToLabel(image.isUint8(), uint8, "- " + resources.getString("Browser.Browser.Hierarchy.uint8") + " ");
-            setSupportedToLabel(image.has3Channels(), has3Channels, "- 3 " + resources.getString("Browser.Browser.Hierarchy.channels") + " ");
+            setSupportedToLabel(image.isUint8(), uint8, "- " + resources.getString("Browser.ServerBrowser.Hierarchy.uint8") + " ");
+            setSupportedToLabel(image.has3Channels(), has3Channels, "- 3 " + resources.getString("Browser.ServerBrowser.Hierarchy.channels") + " ");
         }
     }
 }

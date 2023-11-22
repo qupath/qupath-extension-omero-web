@@ -8,7 +8,9 @@ import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.WebClients;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
@@ -18,12 +20,14 @@ import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.search.SearchResult;
+import qupath.ext.omero.core.pixelapis.mspixelbuffer.MsPixelBufferAPI;
 import qupath.lib.images.servers.PixelType;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -32,6 +36,11 @@ import java.util.concurrent.TimeUnit;
  *     An abstract class that gives access to an OMERO server hosted
  *     on a local Docker container. Each subclass of this class will
  *     have access to the same OMERO server.
+ * </p>
+ * <p>
+ *     The OMERO server is populated by several projects, datasets, images,
+ *     users, groups. The <a href="https://github.com/glencoesoftware/omero-ms-pixel-buffer">OMERO
+ *     Pixel Data Microservice</a> is also installed on the server.
  * </p>
  * <p>
  *     All useful information of the OMERO server are returned by functions
@@ -53,8 +62,11 @@ public abstract class OmeroServer {
     private static final int CLIENT_CREATION_ATTEMPTS = 3;
     private static final String OMERO_PASSWORD = "password";
     private static final int OMERO_SERVER_PORT = 4064;
+    private static final int OMERO_WEB_PORT = 4080;
+    private static final int MS_PIXEL_BUFFER_PORT = 8082;
     private static final boolean dockerAvailable = DockerClientFactory.instance().isDockerAvailable();
     private static final GenericContainer<?> postgres;
+    private static final GenericContainer<?> redis;
     private static final GenericContainer<?> omeroServer;
     private static final GenericContainer<?> omeroWeb;
     private static final String analysisFileId;
@@ -62,25 +74,16 @@ public abstract class OmeroServer {
     static {
         if (!dockerAvailable || IS_LOCAL_OMERO_SERVER_RUNNING) {
             postgres = null;
+            redis = null;
             omeroServer = null;
             omeroWeb = null;
-            analysisFileId = "85";
+            analysisFileId = "84";
         } else {
+            // See https://hub.docker.com/r/openmicroscopy/omero-server
             postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
                     .withNetwork(Network.SHARED)
                     .withNetworkAliases("postgres")
                     .withEnv("POSTGRES_PASSWORD", "postgres");
-            postgres.start();
-
-            omeroWeb = new GenericContainer<>(DockerImageName.parse("openmicroscopy/omero-web-standalone"))
-                    .withNetwork(Network.SHARED)
-                    .withEnv("OMEROHOST", "omero-server")
-                    .withEnv("CONFIG_omero_web_public_enabled", "True")
-                    .withEnv("CONFIG_omero_web_public_user", "public")
-                    .withEnv("CONFIG_omero_web_public_password", "password")
-                    .withEnv("CONFIG_omero_web_public_url__filter", "(.*?)")
-                    .withExposedPorts(4080);
-            omeroWeb.start();
 
             omeroServer = new GenericContainer<>(DockerImageName.parse("openmicroscopy/omero-server"))
                     .withNetwork(Network.SHARED)
@@ -91,10 +94,10 @@ public abstract class OmeroServer {
                     .withEnv("CONFIG_omero_db_name", "postgres")
                     .withEnv("ROOTPASS", OMERO_PASSWORD)
                     .withExposedPorts(OMERO_SERVER_PORT)
+                    // Wait for the server to accept connections
                     .waitingFor(new AbstractWaitStrategy() {
                         @Override
                         protected void waitUntilReady() {
-                            // Wait for the server to accept connections
                             while (true) {
                                 try {
                                     WebClient client = createRootClient();
@@ -110,31 +113,59 @@ public abstract class OmeroServer {
                             }
                         }
                     })
-                    .withFileSystemBind(
-                            Objects.requireNonNull(OmeroServer.class.getResource("analysis.csv")).getPath(),
-                            "/analysis.csv"
-                    )
-                    .withFileSystemBind(
-                            Objects.requireNonNull(OmeroServer.class.getResource("Cardio.tif")).getPath(),
-                            "/Cardio.tif"
-                    )
-                    .withFileSystemBind(
-                            Objects.requireNonNull(OmeroServer.class.getResource("mitosis.tif")).getPath(),
-                            "/mitosis.tif"
-                    )
-                    .withFileSystemBind(
-                            Objects.requireNonNull(OmeroServer.class.getResource("setupOmeroServer.sh")).getPath(),
-                            "/setupOmeroServer.sh"
+                    // Send resources (images, installation script) to the container
+                    .withCopyFileToContainer(
+                            MountableFile.forClasspathResource("omero-server", 0777),
+                            "/resources"
                     )
                     .dependsOn(postgres);
+
+            // See https://github.com/glencoesoftware/omero-ms-pixel-buffer:
+            // OMERO.web needs to use Redis backed sessions
+            redis = new GenericContainer<>(DockerImageName.parse("redis"))
+                    .withNetwork(Network.SHARED)
+                    .withNetworkAliases("redis");
+
+            // See https://hub.docker.com/r/openmicroscopy/omero-web-standalone
+            omeroWeb = new GenericContainer<>(DockerImageName.parse("openmicroscopy/omero-web-standalone"))
+                    .withNetwork(Network.SHARED)
+                    .withEnv("OMEROHOST", "omero-server")
+                    // Enable public user (see https://omero.readthedocs.io/en/stable/sysadmins/public.html#configuring-public-user)
+                    .withEnv("CONFIG_omero_web_public_enabled", "True")
+                    .withEnv("CONFIG_omero_web_public_user", "public")
+                    .withEnv("CONFIG_omero_web_public_password", "password")
+                    .withEnv("CONFIG_omero_web_public_url__filter", "(.*?)")
+                    // Setup Django cached session (see https://omero.readthedocs.io/en/stable/sysadmins/config.html#omero-web-caches
+                    // and https://omero.readthedocs.io/en/stable/sysadmins/config.html#omero-web-session-engine)
+                    .withEnv("CONFIG_omero_web_caches", "{\"default\": {\"BACKEND\": \"django_redis.cache.RedisCache\",\"LOCATION\": \"redis://redis:6379/0\"}}")
+                    .withEnv("CONFIG_omero_web_session__engine", "django.contrib.sessions.backends.cache")
+                    .withExposedPorts(OMERO_WEB_PORT, MS_PIXEL_BUFFER_PORT)
+                    .waitingFor(Wait.forListeningPorts(OMERO_WEB_PORT))
+                    // Send resources (pixel buffer microservice files, installation script) to the container
+                    .withCopyFileToContainer(
+                            MountableFile.forClasspathResource("omero-web", 0777),
+                            "/resources"
+                    )
+                    .dependsOn(redis);
+
+            omeroWeb.start();
             omeroServer.start();
 
             try {
-                omeroServer.execInContainer("chmod", "+x", "/setupOmeroServer.sh");
+                // Set up the OMERO server (by creating users, importing images...)
+                Container.ExecResult result = omeroServer.execInContainer("/resources/setup.sh");
 
-                Container.ExecResult result = omeroServer.execInContainer("/setupOmeroServer.sh");
                 String[] logs = result.getStdout().split("\n");
                 analysisFileId = logs[logs.length-1].split(":")[1];
+
+                // Copy the /OMERO directory from the OMERO server container to the OMERO web container.
+                // This is needed for the pixel buffer microservice to work
+                Path omeroFolderPath = Paths.get(System.getProperty("java.io.tmpdir"), "OMERO.tar.gz");
+                omeroServer.copyFileFromContainer("/tmp/OMERO.tar.gz", omeroFolderPath.toString());
+                omeroWeb.copyFileToContainer(MountableFile.forHostPath(omeroFolderPath, 0777), "/tmp/OMERO.tar.gz");
+
+                // Set up the OMERO web container (by starting the pixel buffer microservice)
+                omeroWeb.execInContainerWithUser("root", "/resources/setup.sh");
             } catch (InterruptedException | IOException e) {
                 throw new RuntimeException(e);
             }
@@ -147,7 +178,9 @@ public abstract class OmeroServer {
     }
 
     protected static String getServerURL() {
-        return omeroWeb == null ? "http://localhost:4080" : "http://" + omeroWeb.getHost() + ":" + omeroWeb.getMappedPort(4080);
+        return omeroWeb == null ?
+                "http://localhost:" + OMERO_WEB_PORT :
+                "http://" + omeroWeb.getHost() + ":" + omeroWeb.getMappedPort(OMERO_WEB_PORT);
     }
 
     protected static WebClient createUnauthenticatedClient() throws ExecutionException, InterruptedException {
@@ -258,7 +291,7 @@ public abstract class OmeroServer {
                                 "id": %s,
                                 "name": "analysis.csv",
                                 "size": 15,
-                                "path": "//",
+                                "path": "/resources/",
                                 "mimetype": "text/csv"
                             }
                         }
@@ -465,9 +498,14 @@ public abstract class OmeroServer {
         } while (!webClient.getStatus().equals(WebClient.Status.SUCCESS) && ++attempt < CLIENT_CREATION_ATTEMPTS);
 
         if (webClient.getStatus().equals(WebClient.Status.SUCCESS)) {
+            webClient.getPixelAPI(MsPixelBufferAPI.class).setPort(getMsPixelBufferApiPort(), true);
             return webClient;
         } else {
             throw new IllegalStateException("Client creation failed");
         }
+    }
+
+    private static int getMsPixelBufferApiPort() {
+        return omeroWeb == null ? MS_PIXEL_BUFFER_PORT : omeroWeb.getMappedPort(MS_PIXEL_BUFFER_PORT);
     }
 }

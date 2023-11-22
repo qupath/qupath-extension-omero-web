@@ -83,7 +83,7 @@ public class OmeroImageServerBuilder implements ImageServerBuilder<BufferedImage
 
     private static Optional<WebClient> getClientAndCheckURIReachable(URI uri, String... args) {
         try {
-            if (RequestSender.isLinkReachable(uri).get()) {
+            if (RequestSender.isLinkReachableWithGet(uri).get()) {
                 WebClient client = WebClients.createClientSync(uri.toString(), args);
                 if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
                     return Optional.of(client);

@@ -69,11 +69,11 @@ public class AdvancedInformation extends Stage {
     }
 
     private Node createObjectDetailPane() throws IOException {
-        FormPane formPane = new FormPane(resources.getString("Browser.Browser.AdvancedInformation.details"));
+        FormPane formPane = new FormPane(resources.getString("Browser.ServerBrowser.AdvancedInformation.details"));
         
-        formPane.addRow(resources.getString("Browser.Browser.AdvancedInformation.id"), String.valueOf(serverEntity.getId()));
-        formPane.addRow(resources.getString("Browser.Browser.AdvancedInformation.owner"), serverEntity.getOwner().getFullName());
-        formPane.addRow(resources.getString("Browser.Browser.AdvancedInformation.group"), serverEntity.getGroup().getName());
+        formPane.addRow(resources.getString("Browser.ServerBrowser.AdvancedInformation.id"), String.valueOf(serverEntity.getId()));
+        formPane.addRow(resources.getString("Browser.ServerBrowser.AdvancedInformation.owner"), serverEntity.getOwner().getFullName());
+        formPane.addRow(resources.getString("Browser.ServerBrowser.AdvancedInformation.group"), serverEntity.getGroup().getName());
 
         if (serverEntity instanceof Image image) {
             int startingIndex = 4;  // The first image attributes are already used before
@@ -117,7 +117,7 @@ public class AdvancedInformation extends Stage {
             TagAnnotation tagAnnotation = (TagAnnotation) annotation;
 
             tagPane.addRow(tagAnnotation.getValue().orElse(""), MessageFormat.format(
-                    resources.getString("Browser.Browser.AdvancedInformation.addedOwned"),
+                    resources.getString("Browser.ServerBrowser.AdvancedInformation.addedOwned"),
                     tagAnnotation.getAdderFullName(),
                     tagAnnotation.getOwnerFullName()
             ));
@@ -136,7 +136,7 @@ public class AdvancedInformation extends Stage {
                         value.getKey(),
                         value.getValue().isEmpty() ? "-" : value.getValue(),
                         MessageFormat.format(
-                                resources.getString("Browser.Browser.AdvancedInformation.addedOwned"),
+                                resources.getString("Browser.ServerBrowser.AdvancedInformation.addedOwned"),
                                 mapAnnotation.getAdderFullName(),
                                 mapAnnotation.getOwnerFullName()
                         )
@@ -156,9 +156,9 @@ public class AdvancedInformation extends Stage {
             FileAnnotation fileAnnotation = (FileAnnotation) annotation;
             attachmentPane.addRow(
                     fileAnnotation.getFilename().orElse("") +
-                            " (" + fileAnnotation.getFileSize().orElse(0L) + " " + resources.getString("Browser.Browser.AdvancedInformation.bytes") + ")",
+                            " (" + fileAnnotation.getFileSize().orElse(0L) + " " + resources.getString("Browser.ServerBrowser.AdvancedInformation.bytes") + ")",
                     MessageFormat.format(
-                            resources.getString("Browser.Browser.AdvancedInformation.addedOwnedType"),
+                            resources.getString("Browser.ServerBrowser.AdvancedInformation.addedOwnedType"),
                             fileAnnotation.getAdderFullName(),
                             fileAnnotation.getOwnerFullName(),
                             fileAnnotation.getMimeType().orElse("")
@@ -175,7 +175,7 @@ public class AdvancedInformation extends Stage {
             CommentAnnotation commentAnnotation = (CommentAnnotation) annotation;
             commentPane.addRow(commentAnnotation.getValue().orElse(""),
                     MessageFormat.format(
-                            resources.getString("Browser.Browser.AdvancedInformation.added"),
+                            resources.getString("Browser.ServerBrowser.AdvancedInformation.added"),
                             commentAnnotation.getAdderFullName()
                     )
             );

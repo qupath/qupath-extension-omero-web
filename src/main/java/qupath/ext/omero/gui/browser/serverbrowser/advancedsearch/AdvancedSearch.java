@@ -138,7 +138,7 @@ public class AdvancedSearch extends Stage {
                 owner.getSelectionModel().getSelectedItem()
         )).thenAccept(searchResults -> Platform.runLater(() -> {
             search.setGraphic(null);
-            search.setText(resources.getString("Browser.Browser.AdvancedSearch.search"));
+            search.setText(resources.getString("Browser.ServerBrowser.AdvancedSearch.search"));
 
             results.getItems().setAll(searchResults);
         }));
@@ -178,8 +178,6 @@ public class AdvancedSearch extends Stage {
 
         results.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-
-
         typeColumn.setCellValueFactory(n -> new ReadOnlyObjectWrapper<>(n.getValue()));
         nameColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getName()));
         acquiredColumn.setCellValueFactory(n -> new ReadOnlyStringWrapper(n.getValue().getDateAcquired().isPresent() ?
@@ -207,8 +205,8 @@ public class AdvancedSearch extends Stage {
 
         importImage.textProperty().bind(Bindings.createStringBinding(
                 () -> results.getSelectionModel().getSelectedItems().size() == 1 ?
-                        resources.getString("Browser.Browser.AdvancedSearch.import") + " " + results.getSelectionModel().getSelectedItems().get(0).getType() :
-                        resources.getString("Browser.Browser.AdvancedSearch.importObjects"),
+                        resources.getString("Browser.ServerBrowser.AdvancedSearch.import") + " " + results.getSelectionModel().getSelectedItems().get(0).getType() :
+                        resources.getString("Browser.ServerBrowser.AdvancedSearch.importObjects"),
                 results.getSelectionModel().getSelectedItems()
         ));
         importImage.disableProperty().bind(results.getSelectionModel().selectedItemProperty().isNull());

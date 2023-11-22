@@ -4,19 +4,35 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import qupath.lib.gui.prefs.PathPrefs;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
- * <p>Utility class to handle client information stored in the preferences of the application.</p>
- * <p>These preferences can store a list of server URI, the last server URI, and the last username given.</p>
+ * Utility class to handle client information stored in the preferences of the application.
  */
 public class ClientsPreferencesManager {
 
-    private static final StringProperty serverListPreference = PathPrefs.createPersistentPreference("omero_ext.server_list", "");
-    private static final StringProperty latestServerPreference = PathPrefs.createPersistentPreference("omero_ext.last_server", "");
-    private static final StringProperty latestUsernamePreference = PathPrefs.createPersistentPreference("omero_ext.last_username", "");
+    private static final Logger logger = LoggerFactory.getLogger(ClientsPreferencesManager.class);
+    private static final StringProperty serverListPreference = PathPrefs.createPersistentPreference(
+            "omero_ext.server_list",
+            ""
+    );
+    private static final StringProperty latestServerPreference = PathPrefs.createPersistentPreference(
+            "omero_ext.last_server",
+            ""
+    );
+    private static final StringProperty latestUsernamePreference = PathPrefs.createPersistentPreference(
+            "omero_ext.last_username",
+            ""
+    );
+    private static final StringProperty msPixelBufferPortPreference = PathPrefs.createPersistentPreference(
+            "omero_ext.ms_pixel_buffer_port",
+            ""
+    );
     private static final ObservableList<String> uris = FXCollections.observableArrayList(
             Arrays.stream(serverListPreference.get().split(","))
                     .filter(uri -> !uri.isEmpty())
@@ -99,6 +115,62 @@ public class ClientsPreferencesManager {
      */
     public static void setLastUsername(String username) {
         setLatestUsernamePreference(username);
+    }
+
+    /**
+     * Get the saved port used by the pixel buffer microservice of the OMERO server
+     * corresponding to the provided URI.
+     *
+     * @param serverURI  the URI of the OMERO server to whose port should be retrieved
+     * @return the port, or an empty optional if not found
+     */
+    public static synchronized Optional<Integer> getMsPixelBufferPort(String serverURI) {
+        String[] uriPorts = msPixelBufferPortPreference.get().split(",");
+
+        for (String uriPort: uriPorts) {
+            String uri = uriPort.split("%")[0];
+
+            if (uri.equals(serverURI)) {
+                String port = uriPort.split("%")[1];
+
+                try {
+                    return Optional.of(Integer.valueOf(port));
+                } catch (NumberFormatException e) {
+                    logger.error(String.format("Can't convert %s to int", port), e);
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Set the saved port used by the pixel buffer microservice of the OMERO server
+     * corresponding to the provided URI.
+     *
+     * @param serverURI  the URI of the OMERO server to whose port should be set
+     * @param port  the pixel buffer microservice port
+     */
+    public static synchronized void setMsPixelBufferPort(String serverURI, int port) {
+        String[] uriPorts = msPixelBufferPortPreference.get().split(",");
+
+        boolean portAdded = false;
+        for (int i=0; i<uriPorts.length; ++i) {
+            String uri = uriPorts[i].split("%")[0];
+
+            if (uri.equals(serverURI)) {
+                uriPorts[i] = uri + "%" + port;
+                portAdded = true;
+            }
+        }
+
+        String newPreference = String.join(",", uriPorts);
+
+        if (!portAdded) {
+            newPreference += "," + serverURI + "%" + port;
+        }
+
+        msPixelBufferPortPreference.set(newPreference);
     }
 
     private static synchronized void setServerListPreference(String serverListPreference) {

@@ -400,7 +400,7 @@ class JsonApi {
         var uri = WebUtilities.createURI(urls.get(PROJECTS_URL_KEY));
 
         if (uri.isPresent()) {
-            return RequestSender.isLinkReachable(uri.get());
+            return RequestSender.isLinkReachableWithGet(uri.get());
         } else {
             return CompletableFuture.completedFuture(false);
         }

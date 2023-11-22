@@ -3,6 +3,7 @@ package qupath.ext.omero.gui.browser.serverbrowser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.WebClient;
+import qupath.ext.omero.gui.UiUtilities;
 
 import java.io.IOException;
 
@@ -33,13 +34,7 @@ public class BrowserCommand implements Runnable {
                 logger.error("Error while creating the browser", e);
             }
         } else {
-            browser.show();
-            browser.requestFocus();
-
-            // This is necessary to avoid a bug on Linux
-            // that reset the browser size
-            browser.setWidth(browser.getWidth() + 1);
-            browser.setHeight(browser.getHeight() + 1);
+            UiUtilities.showHiddenWindow(browser);
         }
     }
 

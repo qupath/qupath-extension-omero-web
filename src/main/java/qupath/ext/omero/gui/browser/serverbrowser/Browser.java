@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.gui.browser.serverbrowser.hierarchy.HierarchyCellFactory;
 import qupath.ext.omero.gui.browser.serverbrowser.hierarchy.HierarchyItem;
+import qupath.ext.omero.gui.browser.serverbrowser.settings.Settings;
 import qupath.lib.gui.QuPathGUI;
 import qupath.fx.dialogs.Dialogs;
 import qupath.ext.omero.gui.browser.serverbrowser.advancedsearch.AdvancedSearch;
@@ -98,8 +99,6 @@ public class Browser extends Stage {
     @FXML
     private TextField nameFilter;
     @FXML
-    private Button advanced;
-    @FXML
     private Button importImage;
     @FXML
     private Canvas canvas;
@@ -109,6 +108,8 @@ public class Browser extends Stage {
     private TableColumn<Integer, String> attributeColumn;
     @FXML
     private TableColumn<Integer, String> valueColumn;
+    private AdvancedSearch advancedSearch = null;
+    private Settings settings = null;
 
     /**
      * Create the browser window.
@@ -124,6 +125,19 @@ public class Browser extends Stage {
 
         initUI();
         setUpListeners();
+    }
+
+    @FXML
+    private void onSettingsClicked(ActionEvent ignoredEvent) {
+        if (settings == null) {
+            try {
+                settings = new Settings(this, client);
+            } catch (IOException e) {
+                logger.error("Error while creating the settings window", e);
+            }
+        } else {
+            UiUtilities.showHiddenWindow(settings);
+        }
     }
 
     @FXML
@@ -151,8 +165,8 @@ public class Browser extends Stage {
                     }
                 } else {
                     Dialogs.showErrorMessage(
-                            resources.getString("Browser.Browser.cantDisplayInformation"),
-                            MessageFormat.format(resources.getString("Browser.Browser.errorWhenFetchingInformation"), serverEntity.getName())
+                            resources.getString("Browser.ServerBrowser.cantDisplayInformation"),
+                            MessageFormat.format(resources.getString("Browser.ServerBrowser.errorWhenFetchingInformation"), serverEntity.getName())
                     );
                 }
             }));
@@ -190,13 +204,13 @@ public class Browser extends Stage {
             Clipboard.getSystemClipboard().setContent(content);
 
             Dialogs.showInfoNotification(
-                    resources.getString("Browser.Browser.copyURIToClipboard"),
-                    resources.getString("Browser.Browser.uriSuccessfullyCopied")
+                    resources.getString("Browser.ServerBrowser.copyURIToClipboard"),
+                    resources.getString("Browser.ServerBrowser.uriSuccessfullyCopied")
             );
         } else {
             Dialogs.showWarningNotification(
-                    resources.getString("Browser.Browser.copyURIToClipboard"),
-                    resources.getString("Browser.Browser.itemNeedsSelected")
+                    resources.getString("Browser.ServerBrowser.copyURIToClipboard"),
+                    resources.getString("Browser.ServerBrowser.itemNeedsSelected")
             );
         }
     }
@@ -208,10 +222,14 @@ public class Browser extends Stage {
 
     @FXML
     private void onAdvancedClicked(ActionEvent ignoredEvent) {
-        try {
-            new AdvancedSearch(this, client);
-        } catch (IOException e) {
-            logger.error("Error while creating the advanced search window", e);
+        if (advancedSearch == null) {
+            try {
+                advancedSearch = new AdvancedSearch(this, client);
+            } catch (IOException e) {
+                logger.error("Error while creating the settings window", e);
+            }
+        } else {
+            UiUtilities.showHiddenWindow(advancedSearch);
         }
     }
 
@@ -238,26 +256,26 @@ public class Browser extends Stage {
     private void initUI() {
         serverHost.setText(client.getApisHandler().getWebServerURI().getHost());
 
-        if (client.getSelectedPixelAPI().get().canAccessRawPixels()) {
-            rawPixelAccess.setText(resources.getString("Browser.Browser.accessRawPixels"));
+        if (browserModel.getSelectedPixelAPI().get() != null && browserModel.getSelectedPixelAPI().get().canAccessRawPixels()) {
+            rawPixelAccess.setText(resources.getString("Browser.ServerBrowser.accessRawPixels"));
             rawPixelAccess.setGraphic(UiUtilities.createStateNode(true));
         } else {
-            rawPixelAccess.setText(resources.getString("Browser.Browser.noAccessRawPixels"));
+            rawPixelAccess.setText(resources.getString("Browser.ServerBrowser.noAccessRawPixels"));
             rawPixelAccess.setGraphic(UiUtilities.createStateNode(false));
         }
 
-        pixelAPI.getItems().addAll(client.getAvailablePixelAPIs());
+        pixelAPI.setItems(browserModel.getAvailablePixelAPIs());
         pixelAPI.setConverter(new StringConverter<>() {
             @Override
             public String toString(PixelAPI pixelAPI) {
-                return pixelAPI.getName();
+                return pixelAPI == null ? "" : pixelAPI.getName();
             }
             @Override
             public PixelAPI fromString(String string) {
                 return null;
             }
         });
-        pixelAPI.getSelectionModel().select(client.getSelectedPixelAPI().get());
+        pixelAPI.getSelectionModel().select(browserModel.getSelectedPixelAPI().get());
 
         groupOwner.getItems().addAll(client.getServer().getGroups().stream()
                 .map(group -> {
@@ -340,22 +358,24 @@ public class Browser extends Stage {
 
         numberOpenImages.textProperty().bind(Bindings.size(browserModel.getOpenedImagesURIs()).asString());
 
-        client.getSelectedPixelAPI().addListener(change -> {
-            if (client.getSelectedPixelAPI().get().canAccessRawPixels()) {
-                rawPixelAccess.setText(resources.getString("Browser.Browser.accessRawPixels"));
+        browserModel.getSelectedPixelAPI().addListener(change -> {
+            if (browserModel.getSelectedPixelAPI().get() != null && browserModel.getSelectedPixelAPI().get().canAccessRawPixels()) {
+                rawPixelAccess.setText(resources.getString("Browser.ServerBrowser.accessRawPixels"));
                 rawPixelAccess.setGraphic(UiUtilities.createStateNode(true));
             } else {
-                rawPixelAccess.setText(resources.getString("Browser.Browser.noAccessRawPixels"));
+                rawPixelAccess.setText(resources.getString("Browser.ServerBrowser.noAccessRawPixels"));
                 rawPixelAccess.setGraphic(UiUtilities.createStateNode(false));
             }
+
+            pixelAPI.getSelectionModel().select(browserModel.getSelectedPixelAPI().get());
         });
 
-        client.getSelectedPixelAPI().bind(pixelAPI.valueProperty());
+        pixelAPI.valueProperty().addListener((p, o, n) -> client.setSelectedPixelAPI(pixelAPI.getValue()));
 
         loadingObjects.visibleProperty().bind(Bindings.notEqual(browserModel.getNumberOfEntitiesLoading(), 0));
 
         loadingOrphaned.textProperty().bind(Bindings.concat(
-                resources.getString("Browser.Browser.loadingOrphanedImages"),
+                resources.getString("Browser.ServerBrowser.loadingOrphanedImages"),
                 " (",
                 browserModel.getNumberOfOrphanedImagesLoaded(),
                 "/",
@@ -389,8 +409,8 @@ public class Browser extends Stage {
         valueColumn.prefWidthProperty().bind(description.widthProperty().multiply(1 - DESCRIPTION_ATTRIBUTE_PROPORTION));
 
         description.placeholderProperty().bind(Bindings.when(Bindings.isEmpty(hierarchy.getSelectionModel().getSelectedItems()))
-                .then(new Label(resources.getString("Browser.Browser.noElementSelected")))
-                .otherwise(new Label(resources.getString("Browser.Browser.multipleElementsSelected")))
+                .then(new Label(resources.getString("Browser.ServerBrowser.noElementSelected")))
+                .otherwise(new Label(resources.getString("Browser.ServerBrowser.multipleElementsSelected")))
         );
 
         canvas.managedProperty().bind(Bindings.createBooleanBinding(() ->
@@ -398,7 +418,7 @@ public class Browser extends Stage {
                                 hierarchy.getSelectionModel().getSelectedItems().get(0).getValue() instanceof Image,
                 hierarchy.getSelectionModel().getSelectedItems()));
 
-        client.getSelectedPixelAPI().addListener(change -> updateImportButton());
+        browserModel.getSelectedPixelAPI().addListener(change -> updateImportButton());
     }
 
     private static void collapseTreeView(TreeItem<RepositoryEntity> item){
@@ -438,7 +458,8 @@ public class Browser extends Stage {
                 .map(TreeItem::getValue)
                 .filter(repositoryEntity -> {
                     if (repositoryEntity instanceof Image image) {
-                        return client.getSelectedPixelAPI().get().canReadImage(image.isUint8(), image.has3Channels());
+                        return browserModel.getSelectedPixelAPI().get() != null &&
+                                browserModel.getSelectedPixelAPI().get().canReadImage(image.isUint8(), image.has3Channels());
                     } else {
                         return repositoryEntity instanceof Dataset || repositoryEntity instanceof Project;
                     }
@@ -448,17 +469,17 @@ public class Browser extends Stage {
         importImage.setDisable(importableEntities.isEmpty());
 
         if (importableEntities.isEmpty()) {
-            importImage.setText(resources.getString("Browser.Browser.cantImportSelectedToQuPath"));
+            importImage.setText(resources.getString("Browser.ServerBrowser.cantImportSelectedToQuPath"));
         } else if (importableEntities.size() == 1) {
             if (importableEntities.get(0) instanceof Image) {
-                importImage.setText(resources.getString("Browser.Browser.importImageToQuPath"));
+                importImage.setText(resources.getString("Browser.ServerBrowser.importImageToQuPath"));
             } else if (importableEntities.get(0) instanceof Dataset) {
-                importImage.setText(resources.getString("Browser.Browser.importDatasetToQuPath"));
+                importImage.setText(resources.getString("Browser.ServerBrowser.importDatasetToQuPath"));
             } else if (importableEntities.get(0) instanceof Project) {
-                importImage.setText(resources.getString("Browser.Browser.importProjectToQuPath"));
+                importImage.setText(resources.getString("Browser.ServerBrowser.importProjectToQuPath"));
             }
         } else {
-            importImage.setText(resources.getString("Browser.Browser.importSelectedToQuPath"));
+            importImage.setText(resources.getString("Browser.ServerBrowser.importSelectedToQuPath"));
         }
     }
 }

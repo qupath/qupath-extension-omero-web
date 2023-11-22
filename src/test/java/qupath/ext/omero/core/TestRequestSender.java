@@ -20,7 +20,7 @@ public class TestRequestSender extends OmeroServer {
     void Check_Link_Reachable() throws ExecutionException, InterruptedException {
         URI reachableLink = URI.create(OmeroServer.getServerURL());
 
-        boolean linkReachable = RequestSender.isLinkReachable(reachableLink).get();
+        boolean linkReachable = RequestSender.isLinkReachableWithGet(reachableLink).get();
 
         Assertions.assertTrue(linkReachable);
     }
@@ -29,7 +29,7 @@ public class TestRequestSender extends OmeroServer {
     void Check_Link_Unreachable() throws ExecutionException, InterruptedException {
         URI unreachableLink = URI.create("http://invalid.invalid");
 
-        boolean linkReachable = RequestSender.isLinkReachable(unreachableLink).get();
+        boolean linkReachable = RequestSender.isLinkReachableWithGet(unreachableLink).get();
 
         Assertions.assertFalse(linkReachable);
     }

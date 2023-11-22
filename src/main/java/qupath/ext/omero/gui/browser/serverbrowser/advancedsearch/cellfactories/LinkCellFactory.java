@@ -17,7 +17,7 @@ public class LinkCellFactory extends TableCell<SearchResult, SearchResult> {
     private final Button button;
 
     public LinkCellFactory() {
-        button = new Button(resources.getString("Browser.Browser.AdvancedSearch.link"));
+        button = new Button(resources.getString("Browser.ServerBrowser.AdvancedSearch.link"));
     }
 
     @Override

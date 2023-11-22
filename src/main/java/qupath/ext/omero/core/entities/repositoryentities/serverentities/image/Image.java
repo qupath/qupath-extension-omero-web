@@ -162,13 +162,14 @@ public class Image extends ServerEntity {
     public void setWebClient(WebClient client) {
         isSupported = new SimpleBooleanProperty();
         isSupported.bind(Bindings.createBooleanBinding(
-                () -> client.getSelectedPixelAPI().get().canReadImage(isUint8(), has3Channels()),
+                () -> client.getSelectedPixelAPI().get() != null && client.getSelectedPixelAPI().get().canReadImage(isUint8(), has3Channels()),
                 client.getSelectedPixelAPI()
         ));
     }
 
     /**
-     * @return whether this image can be opened within QuPath
+     * @return whether this image can be opened within QuPath. This property may be updated
+     * from any thread
      * @throws IllegalStateException when the APIs handler has not been set (see {@link #setWebClient(WebClient)})
      */
     public ReadOnlyBooleanProperty isSupported() {

@@ -124,7 +124,7 @@ class WebclientApi implements AutoCloseable {
         if (pingUri == null) {
             return CompletableFuture.completedFuture(false);
         } else {
-            return RequestSender.isLinkReachable(pingUri);
+            return RequestSender.isLinkReachableWithGet(pingUri);
         }
     }
 

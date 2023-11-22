@@ -47,7 +47,7 @@ class Image extends HBox {
             ));
         }
 
-        RequestSender.isLinkReachable(imageUri).thenAccept(success -> Platform.runLater(() ->
+        RequestSender.isLinkReachableWithGet(imageUri).thenAccept(success -> Platform.runLater(() ->
                 setStatus(success ? imageUri.toString() : resources.getString("ConnectionsManager.Image.unreachableImage"), success))
         );
     }

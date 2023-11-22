@@ -191,7 +191,7 @@ public class TestImage extends OmeroServer {
         void Check_Supported() {
             boolean isSupported = image.isSupported().get();
 
-            Assertions.assertFalse(isSupported);
+            Assertions.assertTrue(isSupported);
         }
 
         @Test

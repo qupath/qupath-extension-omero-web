@@ -1,0 +1,16 @@
+[Unit]
+Description=OMERO pixel data microservice server
+Requires=redis.service
+After=network.service
+
+[Service]
+Type=simple
+Environment="JAVA_OPTS=-Dlogback.configurationFile=/opt/omero/OMERO.ms/omero-ms-pixel-buffer/current/conf/logback.xml"
+WorkingDirectory=/opt/omero/OMERO.ms/omero-ms-pixel-buffer/current
+ExecStart=/opt/omero/OMERO.ms/omero-ms-pixel-buffer/current/bin/omero-ms-pixel-buffer
+User=omero
+Group=omero
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

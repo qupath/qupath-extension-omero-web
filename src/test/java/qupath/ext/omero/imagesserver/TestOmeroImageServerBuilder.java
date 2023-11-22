@@ -12,6 +12,7 @@ import qupath.lib.images.servers.ImageServer;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 public class TestOmeroImageServerBuilder extends OmeroServer {
@@ -21,7 +22,9 @@ public class TestOmeroImageServerBuilder extends OmeroServer {
     @BeforeAll
     static void createClient() throws ExecutionException, InterruptedException {
         client = OmeroServer.createUnauthenticatedClient();
-        client.getSelectedPixelAPI().set(client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof WebAPI).findAny().orElse(null));
+        client.setSelectedPixelAPI(Objects.requireNonNull(
+                client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof WebAPI).findAny().orElse(null)
+        ));
     }
 
     @AfterAll

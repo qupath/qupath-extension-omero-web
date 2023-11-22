@@ -1,5 +1,6 @@
 package qupath.ext.omero.core;
 
+import com.drew.lang.annotations.Nullable;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -69,12 +70,21 @@ public class RequestSender {
      * @param uri  the link of the request
      * @return whether the provided link is reachable
      */
-    public static CompletableFuture<Boolean> isLinkReachable(URI uri) {
-        return getGETRequest(uri, false)
-                .map(getRequest ->
-                        httpClient.sendAsync(getRequest, HttpResponse.BodyHandlers.ofString())
-                                .handle((response, error) -> !hasRequestFailed(response, error))
-                )
+    public static CompletableFuture<Boolean> isLinkReachableWithGet(URI uri) {
+        return getGETRequest(uri)
+                .map(RequestSender::isLinkReachable)
+                .orElse(CompletableFuture.completedFuture(false));
+    }
+
+    /**
+     * Performs an OPTIONS request to the specified URI to determine if it is reachable.
+     *
+     * @param uri  the link of the request
+     * @return whether the provided link is reachable
+     */
+    public static CompletableFuture<Boolean> isLinkReachableWithOptions(URI uri) {
+        return getOPTIONSRequest(uri)
+                .map(RequestSender::isLinkReachable)
                 .orElse(CompletableFuture.completedFuture(false));
     }
 
@@ -85,7 +95,7 @@ public class RequestSender {
      * @return the raw HTTP response with in text format, or an empty Optional if the request failed
      */
     public static CompletableFuture<Optional<String>> get(URI uri) {
-        return getGETRequest(uri, true)
+        return getGETRequest(uri)
                 .map(RequestSender::request)
                 .orElse(CompletableFuture.completedFuture(Optional.empty()));
     }
@@ -155,12 +165,12 @@ public class RequestSender {
      * @return the HTTP response converted to an image, or an empty Optional if the request or the conversion failed
      */
     public static CompletableFuture<Optional<BufferedImage>> getImage(URI uri) {
-        var getRequest = getGETRequest(uri, true);
+        var getRequest = getGETRequest(uri);
         if (getRequest.isPresent()) {
             return httpClient
                     .sendAsync(getRequest.get(), HttpResponse.BodyHandlers.ofByteArray())
                     .handle((response, error) -> {
-                        if (hasRequestFailed(uri, response, error)) {
+                        if (hasRequestFailed(response, error, uri)) {
                             return Optional.empty();
                         } else {
                             try (InputStream targetStream = new ByteArrayInputStream(response.body())) {
@@ -268,6 +278,12 @@ public class RequestSender {
                 .orElse(CompletableFuture.completedFuture(Optional.empty()));
     }
 
+    private static CompletableFuture<Boolean> isLinkReachable(HttpRequest httpRequest, int... acceptedHttpCodes) {
+        return httpClient
+                .sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
+                .handle((response, error) -> !hasRequestFailed(response, error, null));
+    }
+
     private static CompletableFuture<Optional<String>> request(HttpRequest request) {
         return httpClient
                 .sendAsync(
@@ -275,11 +291,11 @@ public class RequestSender {
                         HttpResponse.BodyHandlers.ofString()
                 )
                 .handle((response, error) ->
-                        hasRequestFailed(request.uri(), response, error) ? Optional.empty() : Optional.ofNullable(response.body())
+                        hasRequestFailed(response, error, request.uri()) ? Optional.empty() : Optional.ofNullable(response.body())
                 );
     }
 
-    private static Optional<HttpRequest> getGETRequest(URI uri, boolean logError) {
+    private static Optional<HttpRequest> getGETRequest(URI uri) {
         try {
             return Optional.ofNullable(HttpRequest.newBuilder()
                     .uri(uri)
@@ -288,9 +304,20 @@ public class RequestSender {
                     .timeout(Duration.of(REQUEST_TIMEOUT, SECONDS))
                     .build());
         } catch (Exception e) {
-            if (logError) {
-                logger.error("Error when creating GET request", e);
-            }
+            logger.error("Error when creating GET request", e);
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<HttpRequest> getOPTIONSRequest(URI uri) {
+        try {
+            return Optional.ofNullable(HttpRequest.newBuilder()
+                    .uri(uri)
+                    .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .timeout(Duration.of(REQUEST_TIMEOUT, SECONDS))
+                    .build());
+        } catch (Exception e) {
             return Optional.empty();
         }
     }
@@ -307,11 +334,7 @@ public class RequestSender {
                 .toList();
     }
 
-    private static boolean hasRequestFailed(HttpResponse<?> response, Throwable error) {
-        return hasRequestFailed(null, response, error);
-    }
-
-    private static boolean hasRequestFailed(URI uri, HttpResponse<?> response, Throwable error) {
+    private static boolean hasRequestFailed(HttpResponse<?> response, Throwable error, @Nullable URI uri) {
         if (error != null) {
             if (uri != null) {
                 logger.error("Connection to " + uri + " failed", error);

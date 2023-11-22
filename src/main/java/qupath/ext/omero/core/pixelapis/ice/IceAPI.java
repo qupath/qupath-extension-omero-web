@@ -1,5 +1,8 @@
 package qupath.ext.omero.core.pixelapis.ice;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ObservableBooleanValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.WebClient;
@@ -45,27 +48,13 @@ public class IceAPI implements PixelAPI {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this)
-            return true;
-        if (!(obj instanceof IceAPI iceAPI))
-            return false;
-        return iceAPI.client.equals(client);
-    }
-
-    @Override
-    public int hashCode() {
-        return client.hashCode();
-    }
-
-    @Override
     public String getName() {
         return NAME;
     }
 
     @Override
-    public boolean isAvailable() {
-        return client.getAuthenticated().get() && gatewayAvailable;
+    public ObservableBooleanValue isAvailable() {
+        return Bindings.and(client.getAuthenticated(), new SimpleBooleanProperty(gatewayAvailable));
     }
 
     @Override
@@ -86,7 +75,7 @@ public class IceAPI implements PixelAPI {
             int nResolutions,
             String... args
     ) throws IOException {
-        if (!isAvailable()) {
+        if (!isAvailable().get()) {
             throw new IllegalStateException("This API is not available and cannot be used");
         }
         if (!canReadImage(metadata)) {
@@ -94,6 +83,20 @@ public class IceAPI implements PixelAPI {
         }
 
         return new IceReader(client, id, metadata.getChannels());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof IceAPI iceAPI))
+            return false;
+        return iceAPI.client.equals(client);
+    }
+
+    @Override
+    public int hashCode() {
+        return client.hashCode();
     }
 
     @Override

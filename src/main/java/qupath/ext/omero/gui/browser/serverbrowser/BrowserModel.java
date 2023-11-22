@@ -5,6 +5,7 @@ import javafx.beans.property.*;
 import javafx.collections.*;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.apis.ApisHandler;
+import qupath.ext.omero.core.pixelapis.PixelAPI;
 import qupath.ext.omero.gui.UiUtilities;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
@@ -33,6 +34,9 @@ public class BrowserModel {
     private final IntegerProperty numberOfOrphanedImages = new SimpleIntegerProperty();
     private final IntegerProperty numberOfOrphanedImagesLoaded = new SimpleIntegerProperty(0);
     private final IntegerProperty numberOfThumbnailsLoading = new SimpleIntegerProperty(0);
+    private final ObjectProperty<PixelAPI> selectedPixelAPI = new SimpleObjectProperty<>();
+    private final ObservableList<PixelAPI> availablePixelAPIs = FXCollections.observableArrayList();
+    private final ObservableList<PixelAPI> availablePixelAPIsImmutable = FXCollections.unmodifiableObservableList(availablePixelAPIs);
     private final ObservableSet<URI> openedImagesURIs = FXCollections.observableSet();
     private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
     private final ObjectProperty<Owner> selectedOwner;
@@ -50,6 +54,9 @@ public class BrowserModel {
         UiUtilities.bindPropertyInUIThread(areOrphanedImagesLoading, client.getApisHandler().areOrphanedImagesLoading());
         UiUtilities.bindPropertyInUIThread(numberOfOrphanedImagesLoaded, client.getApisHandler().getNumberOfOrphanedImagesLoaded());
         UiUtilities.bindPropertyInUIThread(numberOfThumbnailsLoading, client.getApisHandler().getNumberOfThumbnailsLoading());
+        UiUtilities.bindPropertyInUIThread(selectedPixelAPI, client.getSelectedPixelAPI());
+
+        UiUtilities.bindListInUIThread(availablePixelAPIs, client.getAvailablePixelAPIs());
 
         UiUtilities.bindSetInUIThread(openedImagesURIs, client.getOpenedImagesURIs());
 
@@ -121,6 +128,20 @@ public class BrowserModel {
      */
     public ReadOnlyIntegerProperty getNumberOfThumbnailsLoading() {
         return numberOfThumbnailsLoading;
+    }
+
+    /**
+     * See {@link WebClient#getSelectedPixelAPI()}.
+     */
+    public ReadOnlyObjectProperty<PixelAPI> getSelectedPixelAPI() {
+        return selectedPixelAPI;
+    }
+
+    /**
+     * See {@link WebClient#getAvailablePixelAPIs()}.
+     */
+    public ObservableList<PixelAPI> getAvailablePixelAPIs() {
+        return availablePixelAPIsImmutable;
     }
 
     /**

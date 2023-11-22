@@ -7,14 +7,14 @@
 
 <fx:root alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" spacing="5.0" stylesheets="@../../../styles.css" type="VBox" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <Label text="%Browser.NewServerForm.enterOmeroUrlToBrowse">
+      <Label text="%Browser.NewServer.enterOmeroUrlToBrowse">
          <tooltip>
-            <Tooltip text="%Browser.NewServerForm.enterOmeroUrl" />
+            <Tooltip text="%Browser.NewServer.enterOmeroUrl" />
          </tooltip>
       </Label>
       <TextField fx:id="url">
          <tooltip>
-            <Tooltip text="%Browser.NewServerForm.enterOmeroUrl" />
+            <Tooltip text="%Browser.NewServer.enterOmeroUrl" />
          </tooltip>
       </TextField>
    </children>

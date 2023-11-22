@@ -45,7 +45,6 @@ class IceReader implements PixelAPIReader {
     private final ColorModel colorModel;
     private SecurityContext context;
 
-
     /**
      * Creates a new Ice reader.
      *
@@ -165,9 +164,11 @@ class IceReader implements PixelAPIReader {
             ));
         } catch (DSOutOfServiceException e) {
             logger.warn(String.format(
-                    "Can't connect to %s. Trying %s...",
+                    "Can't connect to %s:%d. Trying %s:%d...",
                     firstURI,
-                    secondURI
+                    client.getApisHandler().getPort(),
+                    secondURI,
+                    client.getApisHandler().getPort()
             ), e);
 
             return gateway.connect(new LoginCredentials(

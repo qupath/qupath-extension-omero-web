@@ -7,6 +7,7 @@ import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.WebClients;
 import qupath.ext.omero.core.pixelapis.PixelAPI;
 import qupath.ext.omero.core.pixelapis.ice.IceAPI;
+import qupath.ext.omero.core.pixelapis.mspixelbuffer.MsPixelBufferAPI;
 import qupath.ext.omero.core.pixelapis.web.WebAPI;
 import qupath.lib.analysis.stats.Histogram;
 import qupath.lib.common.ColorTools;
@@ -162,11 +163,13 @@ public class TestOmeroImageServer extends OmeroServer {
     class WebPixelAPI extends GenericImageServer {
 
         @BeforeAll
-        static void createClient() throws ExecutionException, InterruptedException {
+        static void createImageServer() throws ExecutionException, InterruptedException {
             client = OmeroServer.createAuthenticatedClient();
 
-            client.getSelectedPixelAPI().set(client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof WebAPI).findAny().orElse(null));
+            client.setSelectedPixelAPI(client.getPixelAPI(WebAPI.class));
             imageServer = (OmeroImageServer) new OmeroImageServerBuilder().buildServer(getOrphanedImageURI());
+
+            Assertions.assertNotNull(imageServer);
         }
 
         @Test
@@ -197,14 +200,50 @@ public class TestOmeroImageServer extends OmeroServer {
         @BeforeAll
         static void createImageServerAndCheckIceAvailable() throws ExecutionException, InterruptedException {
             client = OmeroServer.createAuthenticatedClient();
-            PixelAPI iceAPI = client.getAvailablePixelAPIs().stream().filter(pixelAPI -> pixelAPI instanceof IceAPI).findAny().orElse(null);
+            PixelAPI iceAPI = client.getPixelAPI(IceAPI.class);
 
-            Assumptions.assumeTrue(iceAPI != null, "Aborting test: ICE not detected");
+            Assumptions.assumeTrue(iceAPI.isAvailable().get(), "Aborting test: ICE not available");
 
-            client.getSelectedPixelAPI().set(iceAPI);
+            client.setSelectedPixelAPI(iceAPI);
             imageServer = (OmeroImageServer) new OmeroImageServerBuilder().buildServer(getOrphanedImageURI());
 
             Assumptions.assumeTrue(imageServer != null, "Aborting test: ICE image server creation failed");
+        }
+
+        @Test
+        @Override
+        void Check_Image_Histogram() throws IOException {
+            TileRequest tileRequest = imageServer.getTileRequestManager().getTileRequest(0, 0, 0, 0, 0);
+            double expectedMean = 24.538;
+            double expectedStdDev = 48.053;
+
+            BufferedImage image = imageServer.readTile(tileRequest);
+
+            Histogram histogram = new Histogram(
+                    Arrays.stream(image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth()))
+                            .map(ColorTools::red)
+                            .toArray(),
+                    256,
+                    Double.NaN,
+                    Double.NaN
+            );
+            Assertions.assertEquals(expectedMean, histogram.getMeanValue(), 0.001);
+            Assertions.assertEquals(expectedStdDev, histogram.getStdDev(), 0.001);
+        }
+    }
+
+
+    @Nested
+    class MsPixelBufferPixelAPI extends GenericImageServer {
+
+        @BeforeAll
+        static void createImageServer() throws ExecutionException, InterruptedException {
+            client = OmeroServer.createAuthenticatedClient();
+
+            client.setSelectedPixelAPI(client.getPixelAPI(MsPixelBufferAPI.class));
+            imageServer = (OmeroImageServer) new OmeroImageServerBuilder().buildServer(getOrphanedImageURI());
+
+            Assertions.assertNotNull(imageServer);
         }
 
         @Test

@@ -18,6 +18,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Circle;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.fx.dialogs.Dialogs;
@@ -233,6 +234,21 @@ public class UiUtilities {
                 Platform.runLater(() -> listToUpdate.setAll(change.getList()));
             }
         }));
+    }
+
+    /**
+     * Show a window that is hidden. the focus is also set to it.
+     *
+     * @param window  the window to show
+     */
+    public static void showHiddenWindow(Stage window) {
+        window.show();
+        window.requestFocus();
+
+        // This is necessary to avoid a bug on Linux
+        // that reset the window size
+        window.setWidth(window.getWidth() + 1);
+        window.setHeight(window.getHeight() + 1);
     }
 
     private static void promptToImportOmeroImages(String... validUris) {

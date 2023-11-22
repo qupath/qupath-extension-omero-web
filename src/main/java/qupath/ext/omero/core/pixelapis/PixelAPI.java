@@ -1,5 +1,7 @@
 package qupath.ext.omero.core.pixelapis;
 
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.value.ObservableBooleanValue;
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.PixelType;
 
@@ -18,9 +20,23 @@ public interface PixelAPI {
     String getName();
 
     /**
-     * @return whether this API can be used
+     * @return arguments used internally by this pixel API
      */
-    boolean isAvailable();
+    default String[] getArgs() {
+        return new String[0];
+    }
+
+    /**
+     * Change parameters of this API based on the provided arguments.
+     *
+     * @param args  the arguments containing parameters
+     */
+    default void setParametersFromArgs(String... args) {}
+
+    /**
+     * @return whether this API can be used. This property may be updated from any thread
+     */
+    ObservableBooleanValue isAvailable();
 
     /**
      * @return whether pixel values returned by this API are accurate (and not JPEG-compressed for example)

@@ -36,13 +36,7 @@ public class ConnectionsManagerCommand implements Runnable {
 				logger.error("Error while creating the connection manager window", e);
 			}
 		} else {
-			connectionsManager.show();
-			connectionsManager.requestFocus();
-
-			// This is necessary to avoid a bug on Linux
-			// that reset the connections manager size
-			connectionsManager.setWidth(connectionsManager.getWidth() + 1);
-			connectionsManager.setHeight(connectionsManager.getHeight() + 1);
+			UiUtilities.showHiddenWindow(connectionsManager);
 		}
 	}
 

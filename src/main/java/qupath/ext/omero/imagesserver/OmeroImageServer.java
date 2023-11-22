@@ -58,8 +58,15 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
                     pixelAPI = pixelAPIFromArgs.get();
                 } else {
                     pixelAPI = client.getSelectedPixelAPI().get();
+                    if (pixelAPI == null) {
+                        logger.error("No selected pixel API");
+                        return Optional.empty();
+                    }
+
                     omeroImageServer.savePixelAPIToArgs(pixelAPI);
                 }
+
+                pixelAPI.setParametersFromArgs(args);
 
                 if (pixelAPI.canReadImage(omeroImageServer.getMetadata())) {
                     omeroImageServer.pixelAPIReader = pixelAPI.createReader(
@@ -292,8 +299,16 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
     }
 
     private void savePixelAPIToArgs(PixelAPI pixelAPI) {
-        args = Arrays.copyOf(args, args.length + 2);
-        args[args.length - 2] = PIXEL_API_ARGUMENT;
-        args[args.length - 1] = pixelAPI.getName();
+        String[] pixelApiArgs = pixelAPI.getArgs();
+        int currentArgsSize = args.length;
+
+        args = Arrays.copyOf(args, args.length + 2 + pixelApiArgs.length);
+
+        args[currentArgsSize] = PIXEL_API_ARGUMENT;
+        args[currentArgsSize + 1] = pixelAPI.getName();
+
+        for (int i=0; i<pixelApiArgs.length; ++i) {
+            args[currentArgsSize + 2 + i] = pixelApiArgs[i];
+        }
     }
 }

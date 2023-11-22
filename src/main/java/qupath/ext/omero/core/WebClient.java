@@ -2,8 +2,7 @@ package qupath.ext.omero.core;
 
 import com.drew.lang.annotations.Nullable;
 import javafx.beans.property.*;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableSet;
+import javafx.collections.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.apis.ApisHandler;
@@ -14,13 +13,13 @@ import qupath.ext.omero.core.entities.repositoryentities.Server;
 import qupath.ext.omero.core.pixelapis.ice.IceAPI;
 import qupath.ext.omero.core.pixelapis.PixelAPI;
 import qupath.ext.omero.core.pixelapis.web.WebAPI;
+import qupath.ext.omero.core.pixelapis.mspixelbuffer.MsPixelBufferAPI;
 import qupath.lib.gui.viewer.QuPathViewer;
 
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Stream;
 
 /**
  * <p>Class representing an OMERO Web Client.</p>
@@ -46,14 +45,16 @@ public class WebClient implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(WebClient.class);
     private static final long PING_DELAY_MILLISECONDS = 60000L;
+    private final ObservableList<PixelAPI> availablePixelAPIs = FXCollections.observableArrayList();
+    private final ObservableList<PixelAPI> availablePixelAPIsImmutable = FXCollections.unmodifiableObservableList(availablePixelAPIs);
     private final StringProperty username = new SimpleStringProperty("");
     private final BooleanProperty authenticated = new SimpleBooleanProperty(false);
     private final ObjectProperty<PixelAPI> selectedPixelAPI = new SimpleObjectProperty<>();
     private final ObservableSet<URI> openedImagesURIs = FXCollections.observableSet();
     private final ObservableSet<URI> openedImagesURIsImmutable = FXCollections.unmodifiableObservableSet(openedImagesURIs);
     private Server server;
-    private List<PixelAPI> availablePixelAPIs;
     private ApisHandler apisHandler;
+    private List<PixelAPI> allPixelAPIs;
     private Timer timeoutTimer;
     private char[] password;
     private Status status;
@@ -78,7 +79,8 @@ public class WebClient implements AutoCloseable {
      * <p>
      *     Note that this function is not guaranteed to create a valid client. Call the
      *     {@link #getStatus()} function to check the validity of the returned client
-     *     before using it.
+     *     before using it. If a client is not valid, some functions of this class
+     *     will throw exceptions.
      * </p>
      * <p>The optional arguments must have one of the following format:</p>
      * <ul>
@@ -186,17 +188,59 @@ public class WebClient implements AutoCloseable {
     }
 
     /**
-     * @return the currently selected pixel API
+     * @return the currently selected pixel API. This property may be updated from any thread
+     * and may be null
      */
-    public ObjectProperty<PixelAPI> getSelectedPixelAPI() {
+    public ReadOnlyObjectProperty<PixelAPI> getSelectedPixelAPI() {
         return selectedPixelAPI;
     }
 
     /**
-     * @return a list of all pixel APIs available for this client
+     * Set the currently selected pixel API of this client.
+     *
+     * @param pixelAPI  the pixel API to select
+     * @throws IllegalArgumentException when the provided pixel API is not available
+     * or not part of the pixel APIs of this client
      */
-    public List<PixelAPI> getAvailablePixelAPIs() {
-        return availablePixelAPIs;
+    public void setSelectedPixelAPI(PixelAPI pixelAPI) {
+        if (!pixelAPI.isAvailable().get()) {
+            throw new IllegalArgumentException("The provided pixel API is not available");
+        }
+        if (!allPixelAPIs.contains(pixelAPI)) {
+            throw new IllegalArgumentException("The provided pixel API is not part of the pixel APIs of this client");
+        }
+
+        selectedPixelAPI.set(pixelAPI);
+    }
+
+    /**
+     * @return an immutable observable list of all pixel APIs available for this client.
+     * This set may be updated from any thread
+     */
+    public ObservableList<PixelAPI> getAvailablePixelAPIs() {
+        return availablePixelAPIsImmutable;
+    }
+
+    /**
+     * Return the pixel API corresponding to the class passed in parameter.
+     * This pixel API is not guaranteed to be available.
+     *
+     * @param pixelAPIClass  the class of the pixel API to retrieve
+     * @return the pixel API corresponding to the class passed in parameter
+     * @param <T>  the class of the pixel API to retrieve
+     * @throws IllegalArgumentException if the pixel API was not found
+     */
+    public <T extends PixelAPI> T getPixelAPI(Class<T> pixelAPIClass) {
+        var pixelAPI = allPixelAPIs.stream()
+                .filter(pixelAPIClass::isInstance)
+                .map(pixelAPIClass::cast)
+                .findAny();
+
+        if (pixelAPI.isPresent()) {
+            return pixelAPI.get();
+        } else {
+            throw new IllegalArgumentException("The pixel API was not found");
+        }
     }
 
     /**
@@ -320,14 +364,15 @@ public class WebClient implements AutoCloseable {
                     status = LoginResponse.Status.FAILED;
                 }
             }
-            if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
-                setUpPixelAPIs();
-            }
             this.status = switch (status) {
                 case SUCCESS, UNAUTHENTICATED -> Status.SUCCESS;
                 case FAILED -> Status.FAILED;
                 case CANCELED -> Status.CANCELED;
             };
+
+            if (this.status.equals(Status.SUCCESS)) {
+                setUpPixelAPIs();
+            }
 
             return this;
         });
@@ -370,14 +415,15 @@ public class WebClient implements AutoCloseable {
                         status = LoginResponse.Status.FAILED;
                     }
                 }
-                if (status.equals(LoginResponse.Status.SUCCESS) || status.equals(LoginResponse.Status.UNAUTHENTICATED)) {
-                    setUpPixelAPIs();
-                }
                 this.status = switch (status) {
                     case SUCCESS, UNAUTHENTICATED -> Status.SUCCESS;
                     case FAILED -> Status.FAILED;
                     case CANCELED -> Status.CANCELED;
                 };
+
+                if (this.status.equals(Status.SUCCESS)) {
+                    setUpPixelAPIs();
+                }
             } else {
                 status = Status.FAILED;
             }
@@ -428,13 +474,36 @@ public class WebClient implements AutoCloseable {
     }
 
     private void setUpPixelAPIs() {
-        availablePixelAPIs = Stream.of(new WebAPI(this), new IceAPI(this))
-                .filter(PixelAPI::isAvailable)
-                .toList();
+        allPixelAPIs = List.of(
+                new WebAPI(this),
+                new IceAPI(this),
+                new MsPixelBufferAPI(this)
+        );
+
+        availablePixelAPIs.setAll(allPixelAPIs.stream()
+                .filter(pixelAPI -> pixelAPI.isAvailable().get())
+                .toList()
+        );
+        for (PixelAPI pixelAPI: allPixelAPIs) {
+            pixelAPI.isAvailable().addListener((p, o, n) -> {
+                if (n && !availablePixelAPIs.contains(pixelAPI)) {
+                    availablePixelAPIs.add(pixelAPI);
+                } else {
+                    availablePixelAPIs.remove(pixelAPI);
+                }
+            });
+        }
+
         selectedPixelAPI.set(availablePixelAPIs.stream()
                 .filter(PixelAPI::canAccessRawPixels)
                 .findAny()
                 .orElse(availablePixelAPIs.get(0))
         );
+        availablePixelAPIs.addListener((ListChangeListener<? super PixelAPI>) change ->
+                selectedPixelAPI.set(availablePixelAPIs.stream()
+                        .filter(PixelAPI::canAccessRawPixels)
+                        .findAny()
+                        .orElse(availablePixelAPIs.get(0))
+        ));
     }
 }

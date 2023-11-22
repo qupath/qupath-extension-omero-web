@@ -72,7 +72,7 @@ public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {
                                 .then(Bindings.concat(
                                         orphanedFolder.getName(),
                                         " (",
-                                        resources.getString("Browser.Browser.Hierarchy.loading"),
+                                        resources.getString("Browser.ServerBrowser.Hierarchy.loading"),
                                         "...)")
                                 )
                                 .otherwise(Bindings.concat(orphanedFolder.getName(), " (", orphanedFolder.getNumberOfChildren(), ")")));
@@ -86,10 +86,8 @@ public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {
             } else if (repositoryEntity instanceof Image image) {
                 setText(repositoryEntity.getName());
 
-                opacityProperty().bind(Bindings.when(image.isSupported())
-                        .then(1.0)
-                        .otherwise(0.5)
-                );
+                setOpacity(image.isSupported().get() ? 1 : 0.5);
+                image.isSupported().addListener((p, o, n) -> Platform.runLater(() -> setOpacity(n ? 1 : 0.5)));
 
                 try {
                     tooltip.setGraphic(new ImageTooltip(image, client));

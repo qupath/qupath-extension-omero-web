@@ -1,5 +1,7 @@
 package qupath.ext.omero.core.pixelapis.web;
 
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import qupath.ext.omero.core.WebClient;
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.ext.omero.core.pixelapis.PixelAPI;
@@ -46,8 +48,8 @@ public class WebAPI implements PixelAPI {
     }
 
     @Override
-    public boolean isAvailable() {
-        return true;
+    public ReadOnlyBooleanProperty isAvailable() {
+        return new SimpleBooleanProperty(true);
     }
 
     @Override
@@ -68,7 +70,7 @@ public class WebAPI implements PixelAPI {
             int nResolutions,
             String... args
     ) {
-        if (!isAvailable()) {
+        if (!isAvailable().get()) {
             throw new IllegalStateException("This API is not available and cannot be used");
         }
         if (!canReadImage(metadata)) {
