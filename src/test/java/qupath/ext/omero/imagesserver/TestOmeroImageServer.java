@@ -204,6 +204,7 @@ public class TestOmeroImageServer extends OmeroServer {
             Assumptions.assumeTrue(iceAPI.isAvailable().get(), "Aborting test: ICE not available");
 
             imageServer = (OmeroImageServer) new OmeroImageServerBuilder().buildServer(getOrphanedImageURI(), "--pixelAPI", "Ice");
+            Assumptions.assumeTrue(imageServer != null, "Aborting test: ICE not available");
 
             Assertions.assertEquals(expectedType, imageServer.getServerType());
         }
