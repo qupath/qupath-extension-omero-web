@@ -279,8 +279,8 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
         int i = 0;
         while (i < args.length-1) {
             String parameter = args[i++];
-            if (PIXEL_API_ARGUMENT.equalsIgnoreCase(parameter)) {
-                pixelAPIName = args[i++];
+            if (PIXEL_API_ARGUMENT.equalsIgnoreCase(parameter.trim())) {
+                pixelAPIName = args[i++].trim();
             }
         }
 
@@ -291,7 +291,8 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
                 }
             }
             logger.warn(
-                    "The provided pixel API " + pixelAPIName + " was not recognized, or the corresponding OMERO server doesn't support it."
+                    "The provided pixel API (" + pixelAPIName + ") was not recognized, or the corresponding OMERO server doesn't support it." +
+                            "Another one will be used."
             );
         }
 
