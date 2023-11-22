@@ -67,6 +67,10 @@ public class TestImage extends OmeroServer {
         static void createClient() throws ExecutionException, InterruptedException {
             client = OmeroServer.createUnauthenticatedClient();
 
+            while (client.getServer().isPopulatingChildren()) {
+                TimeUnit.MILLISECONDS.sleep(50);
+            }
+
             OrphanedFolder orphanedFolder = client.getServer().getChildren().stream()
                     .filter(child -> child instanceof OrphanedFolder)
                     .map(p -> (OrphanedFolder) p)

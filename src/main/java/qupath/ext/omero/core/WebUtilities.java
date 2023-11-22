@@ -47,15 +47,22 @@ public class WebUtilities {
     }
 
     /**
-     * Attempt to create a URI from the provided text. If the attempt fails,
+     * Attempt to create a web URI from the provided text. If the attempt fails,
      * the reason is logged.
+     * The provided text must contain a valid scheme (http or https).
      *
      * @param url  the text the URI should be created from. It can be null
      * @return a URI if it was successfully created, or an empty Optional otherwise
      */
     public static Optional<URI> createURI(String url) {
         try {
-            return Optional.of(new URI(url));
+            URI uri = new URI(url);
+            if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) {
+                return Optional.of(uri);
+            } else {
+                logger.error(String.format("Couldn't create URI %s: no valid scheme (http or https) detected", url));
+                return Optional.empty();
+            }
         } catch (URISyntaxException e) {
             logger.error("Couldn't create URI " + url, e);
             return Optional.empty();

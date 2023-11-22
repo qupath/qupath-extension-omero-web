@@ -94,10 +94,7 @@ public class Server implements RepositoryEntity {
     public static CompletableFuture<Optional<Server>> create(ApisHandler apisHandler, Group defaultGroup, int defaultUserId) {
         Server server = new Server();
 
-        return OrphanedFolder.create(apisHandler).thenCompose(orphanedFolder -> {
-            server.children.add(orphanedFolder);
-            return apisHandler.getGroups();
-        }).thenCompose(groups -> {
+        return apisHandler.getGroups().thenCompose(groups -> {
             server.groups.addAll(groups);
 
             if (groups.isEmpty() || (defaultGroup != null && !groups.contains(defaultGroup))) {
@@ -183,8 +180,13 @@ public class Server implements RepositoryEntity {
             children.addAll(projects);
 
             return apisHandler.getOrphanedDatasets();
-        }).thenAccept(orphanedDatasets -> {
+        }).thenCompose(orphanedDatasets -> {
             children.addAll(orphanedDatasets);
+
+            return OrphanedFolder.create(apisHandler);
+        }).thenAccept(orphanedFolder -> {
+            children.add(orphanedFolder);
+
             isPopulating = false;
         });
     }

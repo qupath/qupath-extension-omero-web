@@ -58,11 +58,17 @@ public class WebClient implements AutoCloseable {
     private Timer timeoutTimer;
     private char[] password;
     private Status status;
+    private FailReason failReason;
 
     public enum Status {
         CANCELED,
         FAILED,
         SUCCESS
+    }
+
+    public enum FailReason {
+        ALREADY_CREATING,
+        INVALID_URI_FORMAT
     }
 
     private WebClient() {}
@@ -113,11 +119,14 @@ public class WebClient implements AutoCloseable {
      *     This function should only be used by {@link WebClients WebClients}
      *     which monitors opened clients.
      * </p>
+     *
+     * @param failReason  the reason why the creation failed
      * @return an invalid client
      */
-    static WebClient createInvalidClient() {
+    static WebClient createInvalidClient(FailReason failReason) {
         WebClient webClient = new WebClient();
         webClient.status = Status.FAILED;
+        webClient.failReason = failReason;
         return webClient;
     }
 
@@ -147,6 +156,14 @@ public class WebClient implements AutoCloseable {
      */
     public Status getStatus() {
         return status;
+    }
+
+    /**
+     * @return the reason why the client creation failed, or an empty Optional
+     * if the reason was not specified
+     */
+    public Optional<FailReason> getFailReason() {
+        return Optional.ofNullable(failReason);
     }
 
     /**

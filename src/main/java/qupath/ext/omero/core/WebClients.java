@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>
@@ -22,6 +24,7 @@ public class WebClients {
     private static final Logger logger = LoggerFactory.getLogger(WebClients.class);
     private static final ObservableList<WebClient> clients = FXCollections.observableArrayList();
     private static final ObservableList<WebClient> clientsImmutable = FXCollections.unmodifiableObservableList(clients);
+    private static final Set<URI> clientsBeingCreated = ConcurrentHashMap.newKeySet();
     private enum Operation {
         ADD,
         REMOVE
@@ -54,15 +57,26 @@ public class WebClients {
         if (serverURI.isPresent()) {
             var existingClient = getExistingClient(serverURI.get());
 
-            return existingClient.map(CompletableFuture::completedFuture).orElseGet(() -> WebClient.create(serverURI.get(), args).thenApply(client -> {
-                if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
-                    ClientsPreferencesManager.addURI(client.getApisHandler().getWebServerURI().toString());
-                    updateClients(client, Operation.ADD);
+            return existingClient.map(CompletableFuture::completedFuture).orElseGet(() -> {
+                if (clientsBeingCreated.contains(serverURI.get())) {
+                    logger.warn(String.format("Client for %s already being created", serverURI.get()));
+                    return CompletableFuture.completedFuture(WebClient.createInvalidClient(WebClient.FailReason.ALREADY_CREATING));
+                } else {
+                    clientsBeingCreated.add(serverURI.get());
+
+                    return WebClient.create(serverURI.get(), args).thenApply(client -> {
+                        if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
+                            ClientsPreferencesManager.addURI(client.getApisHandler().getWebServerURI().toString());
+                            updateClients(client, Operation.ADD);
+                        }
+                        clientsBeingCreated.remove(serverURI.get());
+
+                        return client;
+                    });
                 }
-                return client;
-            }));
+            });
         } else {
-            return CompletableFuture.completedFuture(WebClient.createInvalidClient());
+            return CompletableFuture.completedFuture(WebClient.createInvalidClient(WebClient.FailReason.INVALID_URI_FORMAT));
         }
     }
 
@@ -85,18 +99,26 @@ public class WebClients {
             var existingClient = getExistingClient(serverURI.get());
 
             if (existingClient.isEmpty()) {
-                var client = WebClient.createSync(serverURI.get(), args);
-                if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
-                    ClientsPreferencesManager.addURI(client.getApisHandler().getWebServerURI().toString());
-                    updateClients(client, Operation.ADD);
-                }
+                if (clientsBeingCreated.contains(serverURI.get())) {
+                    logger.warn(String.format("Client for %s already being created", serverURI.get()));
+                    return WebClient.createInvalidClient(WebClient.FailReason.ALREADY_CREATING);
+                } else {
+                    clientsBeingCreated.add(serverURI.get());
 
-                return client;
+                    var client = WebClient.createSync(serverURI.get(), args);
+                    if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
+                        ClientsPreferencesManager.addURI(client.getApisHandler().getWebServerURI().toString());
+                        updateClients(client, Operation.ADD);
+                    }
+                    clientsBeingCreated.remove(serverURI.get());
+
+                    return client;
+                }
             } else {
                 return existingClient.get();
             }
         } else {
-            return WebClient.createInvalidClient();
+            return WebClient.createInvalidClient(WebClient.FailReason.INVALID_URI_FORMAT);
         }
     }
 

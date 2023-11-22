@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -101,10 +102,25 @@ public class BrowseMenu extends Menu {
                             BrowserCommand browser = getBrowserCommand(client);
                             browser.run();
                         } else if (client.getStatus().equals(WebClient.Status.FAILED)) {
-                            Dialogs.showErrorMessage(
-                                    resources.getString("Browser.BrowseMenu.webServer"),
-                                    MessageFormat.format(resources.getString("Browser.BrowseMenu.connectionFailed"), url)
-                            );
+                            Optional<WebClient.FailReason> failReason = client.getFailReason();
+                            String message = null;
+
+                            if (failReason.isPresent()) {
+                                if (failReason.get().equals(WebClient.FailReason.INVALID_URI_FORMAT)) {
+                                    message = MessageFormat.format(resources.getString("Browser.BrowseMenu.invalidURI"), url);
+                                } else if (failReason.get().equals(WebClient.FailReason.ALREADY_CREATING)) {
+                                    message = MessageFormat.format(resources.getString("Browser.BrowseMenu.alreadyCreating"), url);
+                                }
+                            } else {
+                                message = MessageFormat.format(resources.getString("Browser.BrowseMenu.connectionFailed"), url);
+                            }
+
+                            if (message != null) {
+                                Dialogs.showErrorMessage(
+                                        resources.getString("Browser.BrowseMenu.webServer"),
+                                        message
+                                );
+                            }
                         }
                     }));
                 }

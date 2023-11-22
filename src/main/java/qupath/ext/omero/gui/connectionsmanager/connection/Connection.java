@@ -22,6 +22,7 @@ import qupath.fx.dialogs.Dialogs;
 import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -111,10 +112,25 @@ public class Connection extends VBox {
                             MessageFormat.format(resources.getString("ConnectionsManager.Connection.connectedTo"), serverURI)
                     );
                 } else if (newClient.getStatus().equals(WebClient.Status.FAILED)) {
-                    Dialogs.showErrorMessage(
-                            resources.getString("ConnectionsManager.Connection.webServer"),
-                            MessageFormat.format(resources.getString("ConnectionsManager.Connection.connectionFailed"), serverURI)
-                    );
+                    Optional<WebClient.FailReason> failReason = newClient.getFailReason();
+                    String message = null;
+
+                    if (failReason.isPresent()) {
+                        if (failReason.get().equals(WebClient.FailReason.INVALID_URI_FORMAT)) {
+                            message = MessageFormat.format(resources.getString("ConnectionsManager.Connection.invalidURI"), serverURI);
+                        } else if (failReason.get().equals(WebClient.FailReason.ALREADY_CREATING)) {
+                            message = MessageFormat.format(resources.getString("ConnectionsManager.Connection.alreadyCreating"), serverURI);
+                        }
+                    } else {
+                        message = MessageFormat.format(resources.getString("ConnectionsManager.Connection.connectionFailed"), serverURI);
+                    }
+
+                    if (message != null) {
+                        Dialogs.showErrorMessage(
+                                resources.getString("ConnectionsManager.Connection.webServer"),
+                                message
+                        );
+                    }
                 }
             }));
         } else {

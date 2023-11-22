@@ -1,6 +1,7 @@
 package qupath.ext.omero.core;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import qupath.ext.omero.OmeroServer;
 import qupath.ext.omero.TestUtilities;
@@ -10,110 +11,150 @@ import java.util.concurrent.ExecutionException;
 
 public class TestWebClients extends OmeroServer {
 
-    @Test
-    void Check_Client_Creation_With_Public_User() throws ExecutionException, InterruptedException {
-        WebClient client = WebClients.createClient(OmeroServer.getServerURL()).get();
-        WebClient.Status expectedStatus = WebClient.Status.SUCCESS;
+    abstract static class GenericWebClientCreation {
 
-        WebClient.Status status = client.getStatus();
+        protected abstract WebClient createClient(String url, String... args) throws ExecutionException, InterruptedException;
 
-        Assertions.assertEquals(expectedStatus, status);
+        @Test
+        void Check_Client_Creation_With_Public_User() throws ExecutionException, InterruptedException {
+            int numberOfAttempts = 3;       // This test might sometimes fail because of the responsiveness of the OMERO server
+            WebClient.Status expectedStatus = WebClient.Status.SUCCESS;
+            WebClient client;
 
-        WebClients.removeClient(client);
+            int attempt = 0;
+            do {
+                client = createClient(OmeroServer.getServerURL());
+            } while (!client.getStatus().equals(expectedStatus) && ++attempt < numberOfAttempts);
+            WebClient.Status status = client.getStatus();
+
+            Assertions.assertEquals(expectedStatus, status);
+
+            WebClients.removeClient(client);
+        }
+
+        @Test
+        void Check_Client_Creation_With_Root_User() throws ExecutionException, InterruptedException {
+            WebClient client = createClient(
+                    OmeroServer.getServerURL(),
+                    "-u",
+                    OmeroServer.getRootUsername(),
+                    "-p",
+                    OmeroServer.getRootPassword()
+            );
+            WebClient.Status expectedStatus = WebClient.Status.SUCCESS;
+
+            WebClient.Status status = client.getStatus();
+
+            Assertions.assertEquals(expectedStatus, status);
+
+            WebClients.removeClient(client);
+        }
+
+        @Test
+        void Check_Client_Creation_With_Incorrect_Username() throws ExecutionException, InterruptedException {
+            WebClient client = createClient(
+                    OmeroServer.getServerURL(),
+                    "-u",
+                    "incorrect_username",
+                    "-p",
+                    OmeroServer.getRootPassword()
+            );
+            WebClient.Status expectedStatus = WebClient.Status.FAILED;
+
+            WebClient.Status status = client.getStatus();
+
+            Assertions.assertEquals(expectedStatus, status);
+
+            WebClients.removeClient(client);
+        }
+
+        @Test
+        void Check_Client_Creation_With_Incorrect_Password() throws ExecutionException, InterruptedException {
+            WebClient client = createClient(
+                    OmeroServer.getServerURL(),
+                    "-u",
+                    OmeroServer.getRootUsername(),
+                    "-p",
+                    "incorrect_password"
+            );
+            WebClient.Status expectedStatus = WebClient.Status.FAILED;
+
+            WebClient.Status status = client.getStatus();
+
+            Assertions.assertEquals(expectedStatus, status);
+
+            WebClients.removeClient(client);
+        }
+
+        @Test
+        void Check_Client_Creation_With_Invalid_URI() throws ExecutionException, InterruptedException {
+            WebClient client = createClient(
+                    "",
+                    "-u",
+                    OmeroServer.getRootUsername(),
+                    "-p",
+                    OmeroServer.getRootPassword()
+            );
+            WebClient.FailReason expectedFailReason = WebClient.FailReason.INVALID_URI_FORMAT;
+
+            WebClient.FailReason failReason = client.getFailReason().orElse(null);
+
+            Assertions.assertEquals(expectedFailReason, failReason);
+
+            WebClients.removeClient(client);
+        }
+
+        @Test
+        void Check_Client_List_After_Added() throws ExecutionException, InterruptedException {
+            WebClient client = createClient(
+                    OmeroServer.getServerURL(),
+                    "-u",
+                    OmeroServer.getRootUsername(),
+                    "-p",
+                    OmeroServer.getRootPassword()
+            );
+            List<WebClient> expectedClients = List.of(client);
+
+            List<WebClient> clients = WebClients.getClients();
+
+            TestUtilities.assertListEqualsWithoutOrder(expectedClients, clients);
+
+            WebClients.removeClient(client);
+        }
+
+        @Test
+        void Check_Client_List_After_Removed() throws ExecutionException, InterruptedException {
+            WebClient client = createClient(
+                    OmeroServer.getServerURL(),
+                    "-u",
+                    OmeroServer.getRootUsername(),
+                    "-p",
+                    OmeroServer.getRootPassword()
+            );
+            List<WebClient> expectedClients = List.of();
+
+            WebClients.removeClient(client);
+            List<WebClient> clients = WebClients.getClients();
+
+            TestUtilities.assertListEqualsWithoutOrder(expectedClients, clients);
+        }
     }
 
-    @Test
-    void Check_Client_Creation_With_Root_User() throws ExecutionException, InterruptedException {
-        WebClient client = WebClients.createClient(
-                OmeroServer.getServerURL(),
-                "-u",
-                OmeroServer.getRootUsername(),
-                "-p",
-                OmeroServer.getRootPassword()
-        ).get();
-        WebClient.Status expectedStatus = WebClient.Status.SUCCESS;
+    @Nested
+    class AsyncCreation extends GenericWebClientCreation {
 
-        WebClient.Status status = client.getStatus();
-
-        Assertions.assertEquals(expectedStatus, status);
-
-        WebClients.removeClient(client);
+        @Override
+        protected WebClient createClient(String url, String... args) throws ExecutionException, InterruptedException {
+            return WebClients.createClient(url, args).get();
+        }
     }
 
-    @Test
-    void Check_Client_Creation_With_Incorrect_Username() throws ExecutionException, InterruptedException {
-        WebClient client = WebClients.createClient(
-                OmeroServer.getServerURL(),
-                "-u",
-                "incorrect_username",
-                "-p",
-                OmeroServer.getRootPassword()
-        ).get();
-        WebClient.Status expectedStatus = WebClient.Status.FAILED;
+    @Nested
+    class SyncCreation extends GenericWebClientCreation {
 
-        WebClient.Status status = client.getStatus();
-
-        Assertions.assertEquals(expectedStatus, status);
-
-        WebClients.removeClient(client);
-    }
-
-    @Test
-    void Check_Client_Creation_With_Incorrect_Password() throws ExecutionException, InterruptedException {
-        WebClient client = WebClients.createClient(
-                OmeroServer.getServerURL(),
-                "-u",
-                OmeroServer.getRootUsername(),
-                "-p",
-                "incorrect_password"
-        ).get();
-        WebClient.Status expectedStatus = WebClient.Status.FAILED;
-
-        WebClient.Status status = client.getStatus();
-
-        Assertions.assertEquals(expectedStatus, status);
-
-        WebClients.removeClient(client);
-    }
-
-    @Test
-    void Check_Client_Creation_Sync() {
-        WebClient client = WebClients.createClientSync(
-                OmeroServer.getServerURL(),
-                "-u",
-                OmeroServer.getRootUsername(),
-                "-p",
-                OmeroServer.getRootPassword()
-        );
-        WebClient.Status expectedStatus = WebClient.Status.SUCCESS;
-
-        WebClient.Status status = client.getStatus();
-
-        Assertions.assertEquals(expectedStatus, status);
-
-        WebClients.removeClient(client);
-    }
-
-    @Test
-    void Check_Client_List_After_Added() {
-        WebClient client = WebClients.createClientSync(OmeroServer.getServerURL());
-        List<WebClient> expectedClients = List.of(client);
-
-        List<WebClient> clients = WebClients.getClients();
-
-        TestUtilities.assertListEqualsWithoutOrder(expectedClients, clients);
-
-        WebClients.removeClient(client);
-    }
-
-    @Test
-    void Check_Client_List_After_Removed() {
-        WebClient client = WebClients.createClientSync(OmeroServer.getServerURL());
-        List<WebClient> expectedClients = List.of();
-
-        WebClients.removeClient(client);
-        List<WebClient> clients = WebClients.getClients();
-
-        TestUtilities.assertListEqualsWithoutOrder(expectedClients, clients);
+        @Override
+        protected WebClient createClient(String url, String... args) throws ExecutionException, InterruptedException {
+            return WebClients.createClientSync(url, args);
+        }
     }
 }
