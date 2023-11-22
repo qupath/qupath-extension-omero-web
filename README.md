@@ -24,19 +24,24 @@ The extension will then be copied to a location inside that directory.
 You might then need to restart QuPath (but not your computer).
 
 ## Reading images
-The extension uses two APIs to read images:
+The extension uses several APIs to read images:
 * The **OMERO web API**. This method is enabled by default and available
 on every OMERO server. It is fast but only 8-bit RGB images
 can be read, and they are JPEG-compressed. This effectively means it is most useful
 for viewing and annotating RGB images (including whole slide images), but is not
 suitable for quantitative analysis where JPEG compression artifacts would be problematic.
-* The **OMERO Ice API**. It can read every image and access raw pixel values. However,
+* The **OMERO Ice API**. This method can read every image and access raw pixel values. However,
 you have to install the OMERO Java dependencies to enable it: from the
 [OMERO download page](https://www.openmicroscopy.org/omero/downloads/), under
 "OMERO Java", download the .zip file, unzip it and copy the *libs* folder in
 your extension directory. Note that it is not possible to use the Ice API
 when accessing an OMERO server with a guest account, you have to be 
 authenticated.
+* The **OMERO Pixel Data Microservice** (available [here](https://github.com/glencoesoftware/omero-ms-pixel-buffer)).
+If this microservice is installed on your OMERO server, the extension will automatically
+detect it. If that's not the case, check that the port indicated in the settings
+of the extension corresponds to the port used by the microservice on the OMERO
+server (by default *8082*). This API can read every image and access raw pixel values.
 
 ## Building
 
