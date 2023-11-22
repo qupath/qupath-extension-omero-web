@@ -1,6 +1,5 @@
 package qupath.ext.omero.core.pixelapis;
 
-import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.value.ObservableBooleanValue;
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.PixelType;
