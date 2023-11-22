@@ -80,7 +80,7 @@ public class WebClient implements AutoCloseable {
      * </p>
      * <p>
      *     This function should only be used by {@link WebClients WebClients}
-     *     which monitors opened clients (see {@link WebClients#createClient(String, String...)}).
+     *     which monitors opened clients (see {@link WebClients#createClient(String, boolean, String...)}).
      * </p>
      * <p>
      *     Note that this function is not guaranteed to create a valid client. Call the
@@ -96,20 +96,21 @@ public class WebClient implements AutoCloseable {
      * <p>This function is asynchronous.</p>
      *
      * @param uri  the server URI to connect to
+     * @param canSkipAuthentication  whether authentication can be skipped if the server allows it
      * @param args  optional arguments to authenticate (see description above)
      * @return a CompletableFuture with the client
      */
-    static CompletableFuture<WebClient> create(URI uri, String... args) {
-        return new WebClient().initialize(uri, args);
+    static CompletableFuture<WebClient> create(URI uri, boolean canSkipAuthentication, String... args) {
+        return new WebClient().initialize(uri, canSkipAuthentication, args);
     }
 
     /**
-     * <p>Synchronous version of {@link #create(URI, String...)}.</p>
+     * <p>Synchronous version of {@link #create(URI, boolean, String...)}.</p>
      * <p>This function may block the calling thread for around a second.</p>
      */
-    static WebClient createSync(URI uri, String... args) {
+    static WebClient createSync(URI uri, boolean canSkipAuthentication, String... args) {
         WebClient webClient = new WebClient();
-        webClient.initializeSync(uri, args);
+        webClient.initializeSync(uri, canSkipAuthentication, args);
         return webClient;
     }
 
@@ -340,7 +341,7 @@ public class WebClient implements AutoCloseable {
         });
     }
 
-    private CompletableFuture<WebClient> initialize(URI uri, String... args) {
+    private CompletableFuture<WebClient> initialize(URI uri, boolean canSkipAuthentication, String... args) {
         return ApisHandler.create(this, uri).thenApplyAsync(apisHandler -> {
             if (apisHandler.isPresent()) {
                 this.apisHandler = apisHandler.get();
@@ -348,7 +349,11 @@ public class WebClient implements AutoCloseable {
                     Optional<String> usernameFromArgs = getCredentialFromArgs("--username", "-u", args);
                     Optional<String> passwordFromArgs = getCredentialFromArgs("--password", "-p", args);
 
-                    if ((usernameFromArgs.isEmpty() || passwordFromArgs.isEmpty()) && this.apisHandler.canSkipAuthentication().get()) {
+                    if (
+                            (usernameFromArgs.isEmpty() || passwordFromArgs.isEmpty())
+                                    && canSkipAuthentication
+                                    && this.apisHandler.canSkipAuthentication().get()
+                    ) {
                         return LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.UNAUTHENTICATED);
                     } else {
                         return login(
@@ -395,7 +400,7 @@ public class WebClient implements AutoCloseable {
         });
     }
 
-    private void initializeSync(URI uri, String... args) {
+    private void initializeSync(URI uri, boolean canSkipAuthentication, String... args) {
         try {
             var apisHandler = ApisHandler.create(this, uri).get();
 
@@ -406,7 +411,11 @@ public class WebClient implements AutoCloseable {
                 Optional<String> passwordFromArgs = getCredentialFromArgs("--password", "-p", args);
 
                 LoginResponse loginResponse;
-                if ((usernameFromArgs.isEmpty() || passwordFromArgs.isEmpty()) && this.apisHandler.canSkipAuthentication().get()) {
+                if (
+                        (usernameFromArgs.isEmpty() || passwordFromArgs.isEmpty())
+                                && canSkipAuthentication
+                                && this.apisHandler.canSkipAuthentication().get()
+                ) {
                     loginResponse = LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.UNAUTHENTICATED);
                 } else {
                     loginResponse = login(

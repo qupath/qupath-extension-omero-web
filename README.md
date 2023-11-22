@@ -43,6 +43,10 @@ detect it. If that's not the case, check that the port indicated in the settings
 of the extension corresponds to the port used by the microservice on the OMERO
 server (by default *8082*). This API can read every image and access raw pixel values.
 
+## Scripting
+Script examples are located in the `sample-scripts` folder. They show how the
+extension can be used from scripts (with or without the graphical user interface).
+
 ## Building
 
 You can build the extension using OpenJDK 17 or later with

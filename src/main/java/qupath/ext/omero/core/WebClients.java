@@ -37,7 +37,7 @@ public class WebClients {
     /**
      * <p>
      *     Create a WebClient from the server URI provided. Basically, this function will
-     *     call {@link WebClient#create(URI, String...) WebClient.create()}
+     *     call {@link WebClient#create(URI, boolean, String...) WebClient.create()}
      *     and internally stores the newly created client.
      * </p>
      * <p>
@@ -48,10 +48,11 @@ public class WebClients {
      * <p>This function is asynchronous.</p>
      *
      * @param url  the URL of the server. It doesn't have to be the base URL of the server
-     * @param args  optional arguments to login. See {@link WebClient#create(URI, String...) WebClient.create()}
+     * @param canSkipAuthentication  whether authentication can be skipped if the server allows it
+     * @param args  optional arguments to login. See {@link WebClient#create(URI, boolean, String...) WebClient.create()}
      * @return a CompletableFuture with the client
      */
-    public static CompletableFuture<WebClient> createClient(String url, String... args) {
+    public static CompletableFuture<WebClient> createClient(String url, boolean canSkipAuthentication, String... args) {
         var serverURI = getServerURI(url);
 
         if (serverURI.isPresent()) {
@@ -64,7 +65,7 @@ public class WebClients {
                 } else {
                     clientsBeingCreated.add(serverURI.get());
 
-                    return WebClient.create(serverURI.get(), args).thenApply(client -> {
+                    return WebClient.create(serverURI.get(), canSkipAuthentication, args).thenApply(client -> {
                         if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
                             ClientsPreferencesManager.addURI(client.getApisHandler().getWebServerURI().toString());
                             updateClients(client, Operation.ADD);
@@ -82,8 +83,8 @@ public class WebClients {
 
     /**
      * <p>
-     *     Synchronous version of {@link #createClient(String, String...)} that calls
-     *     {@link WebClient#createSync(URI, String...) WebClient.createSync()}.
+     *     Synchronous version of {@link #createClient(String, boolean, String...)} that calls
+     *     {@link WebClient#createSync(URI, boolean, String...) WebClient.createSync()}.
      * </p>
      * <p>
      *     Note that this function is not guaranteed to create a valid client. Call the
@@ -92,7 +93,7 @@ public class WebClients {
      * </p>
      * <p>This function may block the calling thread for around a second.</p>
      */
-    public static WebClient createClientSync(String url, String... args) {
+    public static WebClient createClientSync(String url, boolean canSkipAuthentication, String... args) {
         var serverURI = getServerURI(url);
 
         if (serverURI.isPresent()) {
@@ -105,7 +106,7 @@ public class WebClients {
                 } else {
                     clientsBeingCreated.add(serverURI.get());
 
-                    var client = WebClient.createSync(serverURI.get(), args);
+                    var client = WebClient.createSync(serverURI.get(), canSkipAuthentication, args);
                     if (client.getStatus().equals(WebClient.Status.SUCCESS)) {
                         ClientsPreferencesManager.addURI(client.getApisHandler().getWebServerURI().toString());
                         updateClients(client, Operation.ADD);

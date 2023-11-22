@@ -1,6 +1,7 @@
 package qupath.ext.omero.gui.browser.newserver;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import qupath.ext.omero.core.ClientsPreferencesManager;
@@ -16,6 +17,9 @@ public class NewServerForm extends VBox {
     @FXML
     private TextField url;
 
+    @FXML
+    private CheckBox skipAuthentication;
+
     /**
      * Creates the new server form.
      * @throws IOException if an error occurs while creating the form
@@ -28,5 +32,9 @@ public class NewServerForm extends VBox {
 
     public String getURL() {
         return url.getText();
+    }
+
+    public boolean canSkipAuthentication() {
+        return skipAuthentication.isSelected();
     }
 }

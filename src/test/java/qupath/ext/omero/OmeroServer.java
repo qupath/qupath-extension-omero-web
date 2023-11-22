@@ -494,7 +494,7 @@ public abstract class OmeroServer {
         int attempt = 0;
 
         do {
-            webClient = WebClients.createClient(getServerURL(), args).get();
+            webClient = WebClients.createClient(getServerURL(), true, args).get();
         } while (!webClient.getStatus().equals(WebClient.Status.SUCCESS) && ++attempt < CLIENT_CREATION_ATTEMPTS);
 
         if (webClient.getStatus().equals(WebClient.Status.SUCCESS)) {

@@ -145,7 +145,7 @@ public class TestWebClients extends OmeroServer {
 
         @Override
         protected WebClient createClient(String url, String... args) throws ExecutionException, InterruptedException {
-            return WebClients.createClient(url, args).get();
+            return WebClients.createClient(url, true, args).get();
         }
     }
 
@@ -154,7 +154,7 @@ public class TestWebClients extends OmeroServer {
 
         @Override
         protected WebClient createClient(String url, String... args) throws ExecutionException, InterruptedException {
-            return WebClients.createClientSync(url, args);
+            return WebClients.createClientSync(url, true, args);
         }
     }
 }

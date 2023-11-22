@@ -105,7 +105,7 @@ public class Connection extends VBox {
     @FXML
     private void onConnectionClicked(ActionEvent ignoredEvent) {
         if (client == null) {
-            WebClients.createClient(serverURI).thenAccept(newClient -> Platform.runLater(() -> {
+            WebClients.createClient(serverURI, true).thenAccept(newClient -> Platform.runLater(() -> {
                 if (newClient.getStatus().equals(WebClient.Status.SUCCESS)) {
                     Dialogs.showInfoNotification(
                             resources.getString("ConnectionsManager.Connection.webServer"),
