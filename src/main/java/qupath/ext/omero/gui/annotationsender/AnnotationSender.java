@@ -51,17 +51,17 @@ public class AnnotationSender {
      * This method doesn't return anything but will show a dialog indicating the success of the operation.
      */
     public static void sendAnnotations() {
-        var viewer = QuPathGUI.getInstance().getViewer();
+        QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
 
-        if (viewer.getServer() instanceof OmeroImageServer omeroImageServer) {
+        if (viewer != null && viewer.getServer() instanceof OmeroImageServer omeroImageServer) {
             try {
                 AnnotationForm annotationForm = new AnnotationForm();
-                boolean requestCanceled = !Dialogs.showConfirmDialog(
+                boolean confirmed = Dialogs.showConfirmDialog(
                         resources.getString("AnnotationsSender.dataToSend"),
                         annotationForm
                 );
 
-                if (!requestCanceled) {
+                if (confirmed) {
                     Collection<PathObject> annotations = getAnnotations(viewer, annotationForm.areOnlySelectedAnnotationsSelected());
 
                     if (annotations.isEmpty()) {

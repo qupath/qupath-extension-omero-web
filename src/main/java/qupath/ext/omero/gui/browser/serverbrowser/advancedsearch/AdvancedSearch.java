@@ -156,7 +156,7 @@ public class AdvancedSearch extends Stage {
         owner.setConverter(new StringConverter<>() {
             @Override
             public String toString(Owner owner) {
-                return owner.getFullName();
+                return owner == null ? "" : owner.getFullName();
             }
             @Override
             public Owner fromString(String string) {

@@ -370,7 +370,11 @@ public class Browser extends Stage {
             pixelAPI.getSelectionModel().select(browserModel.getSelectedPixelAPI().get());
         });
 
-        pixelAPI.valueProperty().addListener((p, o, n) -> client.setSelectedPixelAPI(pixelAPI.getValue()));
+        pixelAPI.valueProperty().addListener((p, o, n) -> {
+            if (pixelAPI.getValue() != null) {
+                client.setSelectedPixelAPI(pixelAPI.getValue());
+            }
+        });
 
         loadingObjects.visibleProperty().bind(Bindings.notEqual(browserModel.getNumberOfEntitiesLoading(), 0));
 
