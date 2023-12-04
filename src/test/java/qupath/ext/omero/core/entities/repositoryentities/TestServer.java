@@ -27,15 +27,12 @@ public class TestServer extends OmeroServer {
         }
 
         @Test
-        void Check_Number_Of_Children() throws InterruptedException {
-            int expectedNumberOfChildren = 3;    // project + orphaned dataset + orphaned folder
-            while (server.isPopulatingChildren()) {
-                TimeUnit.MILLISECONDS.sleep(50);
-            }
+        void Check_Has_Children() {
+            boolean expectedChildren = true;    // a server always has children
 
-            int numberOfChildren = server.getNumberOfChildren();
+            boolean hasChildren = server.hasChildren();
 
-            Assertions.assertEquals(expectedNumberOfChildren, numberOfChildren);
+            Assertions.assertEquals(expectedChildren, hasChildren);
         }
 
         @Test
@@ -43,7 +40,9 @@ public class TestServer extends OmeroServer {
             List<? extends RepositoryEntity> expectedChildren = List.of(
                     OmeroServer.getOrphanedDataset(),
                     OmeroServer.getProject(),
-                    OrphanedFolder.create(client.getApisHandler()).get()
+                    OrphanedFolder.create(client.getApisHandler()).get(),
+                    OmeroServer.getScreen(),
+                    OmeroServer.getOrphanedPlate()
             );
             while (server.isPopulatingChildren()) {
                 TimeUnit.MILLISECONDS.sleep(50);
@@ -51,7 +50,7 @@ public class TestServer extends OmeroServer {
 
             List<? extends RepositoryEntity> children = server.getChildren();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedChildren, children);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedChildren, children);
         }
 
         @Test
@@ -74,7 +73,7 @@ public class TestServer extends OmeroServer {
 
             List<Group> groups = server.getGroups();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedGroups, groups);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedGroups, groups);
         }
 
         @Test
@@ -84,7 +83,7 @@ public class TestServer extends OmeroServer {
 
             List<Owner> owners = server.getOwners();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedOwners, owners);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedOwners, owners);
         }
     }
 

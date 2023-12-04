@@ -56,7 +56,7 @@ public class WebClient implements AutoCloseable {
     private ApisHandler apisHandler;
     private List<PixelAPI> allPixelAPIs;
     private Timer timeoutTimer;
-    private char[] password;
+    private String sessionUuid;
     private Status status;
     private FailReason failReason;
 
@@ -198,11 +198,11 @@ public class WebClient implements AutoCloseable {
     }
 
     /**
-     * @return the password of the authenticated user, or an empty Optional if
+     * @return the session UUID of the authenticated user, or an empty Optional if
      * there is no authentication
      */
-    public Optional<char[]> getPassword() {
-        return Optional.ofNullable(password);
+    public Optional<String> getSessionUuid() {
+        return Optional.ofNullable(sessionUuid);
     }
 
     /**
@@ -463,7 +463,7 @@ public class WebClient implements AutoCloseable {
         this.authenticated.set(true);
 
         username.set(loginResponse.getUsername());
-        password = loginResponse.getPassword();
+        sessionUuid = loginResponse.getSessionUuid();
     }
 
     private synchronized void startTimer() {

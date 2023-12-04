@@ -1,29 +1,20 @@
 package qupath.ext.omero.core.entities.repositoryentities.serverentities.image;
 
 import com.google.gson.annotations.SerializedName;
-import javafx.beans.binding.Bindings;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.ext.omero.core.WebClient;
+import qupath.ext.omero.core.apis.ApisHandler;
 import qupath.ext.omero.gui.UiUtilities;
-import qupath.ext.omero.core.entities.imagemetadata.ImageMetadataResponse;
-import qupath.ext.omero.core.entities.repositoryentities.OrphanedFolder;
 import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
 
-import java.util.Date;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * <p>
  *     Provides some information on an OMERO image.
- *     An image is a child of a {@link Dataset Dataset}
- *     or of an {@link OrphanedFolder OrphanedFolder}.
  * </p>
  * <p>
  *     This class uses the {@link PixelInfo} class to get information about pixels.
@@ -49,9 +40,15 @@ public class Image extends ServerEntity {
             resources.getString("Web.Entities.Image.pixelSizeZ"),
             resources.getString("Web.Entities.Image.pixelType")
     };
+    private transient EnumSet<UNSUPPORTED_REASON> unsupportedReasons;
     private transient BooleanProperty isSupported;
     @SerializedName(value = "AcquisitionDate") private long acquisitionDate;
     @SerializedName(value = "Pixels") private PixelInfo pixels;
+    public enum UNSUPPORTED_REASON {
+        NUMBER_OF_CHANNELS,
+        PIXEL_TYPE,
+        PIXEL_API_UNAVAILABLE
+    }
 
     /**
      * Creates an empty image only defined by its ID.
@@ -61,13 +58,18 @@ public class Image extends ServerEntity {
     }
 
     @Override
-    public int getNumberOfChildren() {
-        return 0;
+    public boolean hasChildren() {
+        return false;
     }
 
     @Override
     public ObservableList<? extends RepositoryEntity> getChildren() {
         return FXCollections.emptyObservableList();
+    }
+
+    @Override
+    public ReadOnlyStringProperty getLabel() {
+        return new SimpleStringProperty(name == null || name.isEmpty() ? "-" : name);
     }
 
     @Override
@@ -99,7 +101,7 @@ public class Image extends ServerEntity {
                 var pixelType = getPixelType();
 
                 if (dimensions.isPresent() && pixelType.isPresent()) {
-                    var quPathPixelType = ImageMetadataResponse.getPixelType(pixelType.get());
+                    var quPathPixelType = ApisHandler.getPixelType(pixelType.get());
 
                     if (quPathPixelType.isPresent()) {
                         int width = dimensions.get()[0];
@@ -161,16 +163,16 @@ public class Image extends ServerEntity {
      */
     public void setWebClient(WebClient client) {
         isSupported = new SimpleBooleanProperty();
-        isSupported.bind(Bindings.createBooleanBinding(
-                () -> client.getSelectedPixelAPI().get() != null && client.getSelectedPixelAPI().get().canReadImage(isUint8(), has3Channels()),
-                client.getSelectedPixelAPI()
-        ));
+        unsupportedReasons = EnumSet.noneOf(UNSUPPORTED_REASON.class);
+
+        setSupported(client);
+        client.getSelectedPixelAPI().addListener(change -> setSupported(client));
     }
 
     /**
      * @return whether this image can be opened within QuPath. This property may be updated
      * from any thread
-     * @throws IllegalStateException when the APIs handler has not been set (see {@link #setWebClient(WebClient)})
+     * @throws IllegalStateException when the web client has not been set (see {@link #setWebClient(WebClient)})
      */
     public ReadOnlyBooleanProperty isSupported() {
         if (isSupported == null) {
@@ -182,17 +184,23 @@ public class Image extends ServerEntity {
     }
 
     /**
-     * @return whether this is an 8-bit image
+     * @return the reasons why this image is unsupported (empty if this image is supported)
+     * @throws IllegalStateException when the web client has not been set (see {@link #setWebClient(WebClient)})
      */
-    public boolean isUint8() {
-        return getPixelType().map(s -> s.equals("uint8")).orElse(false);
+    public Set<UNSUPPORTED_REASON> getUnsupportedReasons() {
+        if (unsupportedReasons == null) {
+            throw new IllegalStateException(
+                    "The web client has not been set on this image. See the setWebClient(WebClient) function."
+            );
+        }
+        return unsupportedReasons;
     }
 
     /**
-     * @return whether this image has 3 channels (RGB)
+     * @return a text describing the pixel type of this image, or an empty Optional if not found
      */
-    public boolean has3Channels() {
-        return getImageDimensions().filter(ints -> ints[3] == 3).isPresent();
+    public Optional<String> getPixelType() {
+        return pixels == null ? Optional.empty() : pixels.getPixelType();
     }
 
     private Optional<int[]> getImageDimensions() {
@@ -215,7 +223,30 @@ public class Image extends ServerEntity {
         return pixels == null ? Optional.empty() : pixels.getPhysicalSizeZ();
     }
 
-    private Optional<String> getPixelType() {
-        return pixels == null ? Optional.empty() : pixels.getPixelType();
+    private void setSupported(WebClient client) {
+        isSupported.set(true);
+        unsupportedReasons.clear();
+
+        if (client.getSelectedPixelAPI() == null) {
+            isSupported.set(false);
+            unsupportedReasons.add(UNSUPPORTED_REASON.PIXEL_API_UNAVAILABLE);
+        } else {
+            if (!getPixelType()
+                    .flatMap(ApisHandler::getPixelType)
+                    .map(pixelType -> client.getSelectedPixelAPI().get().canReadImage(pixelType))
+                    .orElse(false)
+            ) {
+                isSupported.set(false);
+                unsupportedReasons.add(UNSUPPORTED_REASON.PIXEL_TYPE);
+            }
+
+            if (!getImageDimensions()
+                    .map(imageDimensions -> client.getSelectedPixelAPI().get().canReadImage(imageDimensions[3]))
+                    .orElse(false)
+            ) {
+                isSupported.set(false);
+                unsupportedReasons.add(UNSUPPORTED_REASON.NUMBER_OF_CHANNELS);
+            }
+        }
     }
 }

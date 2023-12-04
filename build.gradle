@@ -5,6 +5,8 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '7.1.2'
     // Add JavaFX dependencies
     alias(libs.plugins.javafx)
+    // Version in settings.gradle
+    id 'org.bytedeco.gradle-javacpp-platform'
 }
 
 ext.moduleName = 'qupath.extension.omero'

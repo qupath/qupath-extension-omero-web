@@ -6,8 +6,7 @@ import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
 import qupath.ext.omero.core.entities.login.LoginResponse;
 import qupath.ext.omero.core.entities.repositoryentities.OrphanedFolder;
 import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.*;
 import qupath.ext.omero.core.entities.search.SearchQuery;
 import qupath.ext.omero.core.entities.search.SearchResult;
 import qupath.ext.omero.core.entities.shapes.Shape;
@@ -18,7 +17,6 @@ import qupath.ext.omero.core.entities.imagemetadata.ImageMetadataResponse;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;
@@ -37,7 +35,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ApisHandler implements AutoCloseable {
 
     private static final int THUMBNAIL_SIZE = 256;
-    private final WebClient client;
+    private static final Map<String, PixelType> PIXEL_TYPE_MAP = Map.of(
+            "uint8", PixelType.UINT8,
+            "int8", PixelType.INT8,
+            "uint16", PixelType.UINT16,
+            "int16", PixelType.INT16,
+            "int32", PixelType.INT32,
+            "uint32", PixelType.UINT32,
+            "float", PixelType.FLOAT32,
+            "double", PixelType.FLOAT64
+    );
     private final URI host;
     private final WebclientApi webclientApi;
     private final WebGatewayApi webGatewayApi;
@@ -46,8 +53,7 @@ public class ApisHandler implements AutoCloseable {
     private final Map<Class<? extends RepositoryEntity>, BufferedImage> omeroIcons = new ConcurrentHashMap<>();
     private JsonApi jsonApi;
 
-    private ApisHandler(WebClient client, URI host) {
-        this.client = client;
+    private ApisHandler(URI host) {
         this.host = host;
 
         webclientApi = new WebclientApi(host);
@@ -64,9 +70,9 @@ public class ApisHandler implements AutoCloseable {
      * @return a CompletableFuture with the request handler, an empty Optional if an error occurred
      */
     public static CompletableFuture<Optional<ApisHandler>> create(WebClient client, URI host) {
-        ApisHandler apisHandler = new ApisHandler(client, host);
+        ApisHandler apisHandler = new ApisHandler(host);
 
-        return JsonApi.create(apisHandler, host).thenApply(jsonApi -> {
+        return JsonApi.create(client, host).thenApply(jsonApi -> {
             if (jsonApi.isPresent()) {
                 apisHandler.jsonApi = jsonApi.get();
                 apisHandler.webclientApi.setToken(jsonApi.get().getToken());
@@ -102,10 +108,13 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
-     * @return the web client using this APIs handler
+     * Convert a pixel type returned by OMERO to a QuPath {@link PixelType}
+     *
+     * @param pixelType  the OMERO pixel type
+     * @return the QuPath pixel type, or an empty Optional if the OMERO pixel type was not recognized
      */
-    public WebClient getClient() {
-        return client;
+    public static Optional<PixelType> getPixelType(String pixelType) {
+        return Optional.ofNullable(PIXEL_TYPE_MAP.get(pixelType));
     }
 
     /**
@@ -123,10 +132,10 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
-     * See {@link JsonApi#getPort()}.
+     * See {@link JsonApi#getServerPort()}.
      */
-    public int getPort() {
-        return jsonApi.getPort();
+    public int getServerPort() {
+        return jsonApi.getServerPort();
     }
 
     /**
@@ -280,6 +289,48 @@ public class ApisHandler implements AutoCloseable {
     }
 
     /**
+     * See {@link JsonApi#getScreens()}.
+     */
+    public CompletableFuture<List<Screen>> getScreens() {
+        return jsonApi.getScreens();
+    }
+
+    /**
+     * See {@link JsonApi#getOrphanedPlates()}.
+     */
+    public CompletableFuture<List<Plate>> getOrphanedPlates() {
+        return jsonApi.getOrphanedPlates();
+    }
+
+    /**
+     * See {@link JsonApi#getPlates(long)}.
+     */
+    public CompletableFuture<List<Plate>> getPlates(long screenID) {
+        return jsonApi.getPlates(screenID);
+    }
+
+    /**
+     * See {@link JsonApi#getPlateAcquisitions(long)}.
+     */
+    public CompletableFuture<List<PlateAcquisition>> getPlateAcquisitions(long plateID) {
+        return jsonApi.getPlateAcquisitions(plateID);
+    }
+
+    /**
+     * See {@link JsonApi#getWellsFromPlate(long)}.
+     */
+    public CompletableFuture<List<Well>> getWellsFromPlate(long plateID) {
+        return jsonApi.getWellsFromPlate(plateID);
+    }
+
+    /**
+     * See {@link JsonApi#getWellsFromPlateAcquisition(long,int)}.
+     */
+    public CompletableFuture<List<Well>> getWellsFromPlateAcquisition(long plateAcquisitionID, int wellSampleIndex) {
+        return jsonApi.getWellsFromPlateAcquisition(plateAcquisitionID, wellSampleIndex);
+    }
+
+    /**
      * See {@link WebclientApi#getAnnotations(ServerEntity)}.
      */
     public CompletableFuture<Optional<AnnotationGroup>> getAnnotations(ServerEntity entity) {
@@ -295,7 +346,7 @@ public class ApisHandler implements AutoCloseable {
 
     /**
      * <p>Attempt to retrieve the icon of an OMERO entity.</p>
-     * <p>Icons for orphaned folders, projects, datasets, and images can be retrieved.</p>
+     * <p>Icons for orphaned folders, projects, datasets, images, screens, plates, and plate acquisitions can be retrieved.</p>
      * <p>This function is asynchronous.</p>
      *
      * @param type  the class of the entity whose icon is to be retrieved
@@ -322,6 +373,21 @@ public class ApisHandler implements AutoCloseable {
                 });
             } else if (type.equals(Image.class)) {
                 return webclientApi.getImageIcon().thenApply(icon -> {
+                    icon.ifPresent(bufferedImage -> omeroIcons.put(type, bufferedImage));
+                    return icon;
+                });
+            } else if (type.equals(Screen.class)) {
+                return webclientApi.getScreenIcon().thenApply(icon -> {
+                    icon.ifPresent(bufferedImage -> omeroIcons.put(type, bufferedImage));
+                    return icon;
+                });
+            } else if (type.equals(Plate.class)) {
+                return webclientApi.getPlateIcon().thenApply(icon -> {
+                    icon.ifPresent(bufferedImage -> omeroIcons.put(type, bufferedImage));
+                    return icon;
+                });
+            } else if (type.equals(PlateAcquisition.class)) {
+                return webclientApi.getPlateAcquisitionIcon().thenApply(icon -> {
                     icon.ifPresent(bufferedImage -> omeroIcons.put(type, bufferedImage));
                     return icon;
                 });

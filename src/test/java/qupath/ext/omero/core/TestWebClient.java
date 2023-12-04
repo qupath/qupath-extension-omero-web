@@ -6,6 +6,7 @@ import qupath.ext.omero.core.pixelapis.PixelAPI;
 import qupath.ext.omero.core.pixelapis.web.WebAPI;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -27,7 +28,7 @@ public class TestWebClient extends OmeroServer {
         abstract void Check_Client_Username();
 
         @Test
-        abstract void Check_Client_Password();
+        abstract void Check_Client_Session_UUID();
 
         @Test
         void Check_Selected_Pixel_API() {
@@ -43,7 +44,7 @@ public class TestWebClient extends OmeroServer {
         void Check_Opened_Images_When_One_Image_Added() {
             int expectedSize = client.getOpenedImagesURIs().size() + 1;
 
-            client.addOpenedImage(URI.create(OmeroServer.getServerURL()));
+            client.addOpenedImage(URI.create(OmeroServer.getWebServerURI()));
             Set<URI> openedImagesURIs = client.getOpenedImagesURIs();
 
             Assertions.assertEquals(expectedSize, openedImagesURIs.size());
@@ -84,12 +85,10 @@ public class TestWebClient extends OmeroServer {
 
         @Test
         @Override
-        void Check_Client_Password() {
-            char[] expectedPassword = new char[0];
+        void Check_Client_Session_UUID() {
+            Optional<String> sessionUuid = client.getSessionUuid();
 
-            char[] password = client.getPassword().orElse(new char[0]);
-
-            Assertions.assertArrayEquals(expectedPassword, password);
+            Assertions.assertTrue(sessionUuid.isEmpty());
         }
     }
 
@@ -121,12 +120,10 @@ public class TestWebClient extends OmeroServer {
 
         @Test
         @Override
-        void Check_Client_Password() {
-            char[] expectedPassword = OmeroServer.getUserPassword().toCharArray();
+        void Check_Client_Session_UUID() {
+            Optional<String> sessionUuid = client.getSessionUuid();
 
-            char[] password = client.getPassword().orElse(new char[0]);
-
-            Assertions.assertArrayEquals(expectedPassword, password);
+            Assertions.assertTrue(sessionUuid.isPresent());     // the exact value changes every time, so only the presence is checked
         }
     }
 }

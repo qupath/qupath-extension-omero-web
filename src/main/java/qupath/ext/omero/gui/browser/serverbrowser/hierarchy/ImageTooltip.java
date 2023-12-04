@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
@@ -21,18 +20,14 @@ class ImageTooltip extends VBox {
 
     private static final ResourceBundle resources = UiUtilities.getResources();
     private static final String INVALID_CLASS_NAME = "invalid-image";
-    private static final char VALID_CHARACTER = 10003;
-    private static final char ERROR_CHARACTER = 10007;
     @FXML
     private Canvas canvas;
     @FXML
     private Label name;
     @FXML
-    private HBox errorLine;
+    private VBox errorContainer;
     @FXML
-    private Label uint8;
-    @FXML
-    private Label has3Channels;
+    private VBox errors;
 
     /**
      * Creates the ImageTooltip.
@@ -44,7 +39,7 @@ class ImageTooltip extends VBox {
     public ImageTooltip(Image image, WebClient client) throws IOException {
         UiUtilities.loadFXML(this, ImageTooltip.class.getResource("image_tooltip.fxml"));
 
-        name.setText(image.getName());
+        name.setText(image.getLabel().get());
 
         setErrorLine(image);
         image.isSupported().addListener(change -> Platform.runLater(() -> setErrorLine(image)));
@@ -54,22 +49,23 @@ class ImageTooltip extends VBox {
         );
     }
 
-    private void setSupportedToLabel(boolean supported, Label label, String feature) {
-        if (supported) {
-            label.getStyleClass().remove(INVALID_CLASS_NAME);
-            label.setText(feature + VALID_CHARACTER);
-        } else {
-            label.getStyleClass().add(INVALID_CLASS_NAME);
-            label.setText(feature + ERROR_CHARACTER);
-        }
-    }
-
     private void setErrorLine(Image image) {
-        if (image.isSupported().get()) {
-            getChildren().remove(errorLine);
-        } else {
-            setSupportedToLabel(image.isUint8(), uint8, "- " + resources.getString("Browser.ServerBrowser.Hierarchy.uint8") + " ");
-            setSupportedToLabel(image.has3Channels(), has3Channels, "- 3 " + resources.getString("Browser.ServerBrowser.Hierarchy.channels") + " ");
+        getChildren().remove(errorContainer);
+        errors.getChildren().clear();
+
+        if (!image.isSupported().get()) {
+            getChildren().add(errorContainer);
+
+            for (Image.UNSUPPORTED_REASON reason: image.getUnsupportedReasons()) {
+                Label error = new Label(switch (reason) {
+                    case NUMBER_OF_CHANNELS -> resources.getString("Browser.ServerBrowser.Hierarchy.numberOfChannels");
+                    case PIXEL_TYPE -> resources.getString("Browser.ServerBrowser.Hierarchy.pixelType");
+                    case PIXEL_API_UNAVAILABLE -> resources.getString("Browser.ServerBrowser.Hierarchy.pixelAPI");
+                });
+                error.getStyleClass().add(INVALID_CLASS_NAME);
+
+                errors.getChildren().add(error);
+            }
         }
     }
 }

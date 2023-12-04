@@ -23,7 +23,7 @@ public class TestWebClients extends OmeroServer {
 
             int attempt = 0;
             do {
-                client = createClient(OmeroServer.getServerURL());
+                client = createClient(OmeroServer.getWebServerURI());
             } while (!client.getStatus().equals(expectedStatus) && ++attempt < numberOfAttempts);
             WebClient.Status status = client.getStatus();
 
@@ -35,7 +35,7 @@ public class TestWebClients extends OmeroServer {
         @Test
         void Check_Client_Creation_With_Root_User() throws ExecutionException, InterruptedException {
             WebClient client = createClient(
-                    OmeroServer.getServerURL(),
+                    OmeroServer.getWebServerURI(),
                     "-u",
                     OmeroServer.getRootUsername(),
                     "-p",
@@ -53,7 +53,7 @@ public class TestWebClients extends OmeroServer {
         @Test
         void Check_Client_Creation_With_Incorrect_Username() throws ExecutionException, InterruptedException {
             WebClient client = createClient(
-                    OmeroServer.getServerURL(),
+                    OmeroServer.getWebServerURI(),
                     "-u",
                     "incorrect_username",
                     "-p",
@@ -71,7 +71,7 @@ public class TestWebClients extends OmeroServer {
         @Test
         void Check_Client_Creation_With_Incorrect_Password() throws ExecutionException, InterruptedException {
             WebClient client = createClient(
-                    OmeroServer.getServerURL(),
+                    OmeroServer.getWebServerURI(),
                     "-u",
                     OmeroServer.getRootUsername(),
                     "-p",
@@ -107,7 +107,7 @@ public class TestWebClients extends OmeroServer {
         @Test
         void Check_Client_List_After_Added() throws ExecutionException, InterruptedException {
             WebClient client = createClient(
-                    OmeroServer.getServerURL(),
+                    OmeroServer.getWebServerURI(),
                     "-u",
                     OmeroServer.getRootUsername(),
                     "-p",
@@ -117,7 +117,7 @@ public class TestWebClients extends OmeroServer {
 
             List<WebClient> clients = WebClients.getClients();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedClients, clients);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedClients, clients);
 
             WebClients.removeClient(client);
         }
@@ -125,7 +125,7 @@ public class TestWebClients extends OmeroServer {
         @Test
         void Check_Client_List_After_Removed() throws ExecutionException, InterruptedException {
             WebClient client = createClient(
-                    OmeroServer.getServerURL(),
+                    OmeroServer.getWebServerURI(),
                     "-u",
                     OmeroServer.getRootUsername(),
                     "-p",
@@ -136,7 +136,7 @@ public class TestWebClients extends OmeroServer {
             WebClients.removeClient(client);
             List<WebClient> clients = WebClients.getClients();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedClients, clients);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedClients, clients);
         }
     }
 
@@ -153,7 +153,7 @@ public class TestWebClients extends OmeroServer {
     class SyncCreation extends GenericWebClientCreation {
 
         @Override
-        protected WebClient createClient(String url, String... args) throws ExecutionException, InterruptedException {
+        protected WebClient createClient(String url, String... args) {
             return WebClients.createClientSync(url, true, args);
         }
     }

@@ -68,6 +68,6 @@ public class HierarchyItem extends TreeItem<RepositoryEntity> {
 
     @Override
     public boolean isLeaf() {
-        return getValue().getNumberOfChildren() == 0;
+        return !getValue().hasChildren();
     }
 }

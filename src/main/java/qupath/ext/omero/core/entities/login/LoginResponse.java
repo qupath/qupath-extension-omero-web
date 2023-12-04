@@ -22,7 +22,7 @@ public class LoginResponse {
     private Group group;
     private int userId;
     private String username;
-    private char[] password;
+    private String sessionUuid;
     public enum Status {
         CANCELED,
         FAILED,
@@ -34,12 +34,12 @@ public class LoginResponse {
         this.status = reason;
     }
 
-    private LoginResponse(Group group, int userId, String username, char[] password) {
+    private LoginResponse(Group group, int userId, String username, String sessionUuid) {
         this(Status.SUCCESS);
         this.group = group;
         this.userId = userId;
         this.username = username;
-        this.password = password;
+        this.sessionUuid = sessionUuid;
     }
 
     @Override
@@ -69,7 +69,7 @@ public class LoginResponse {
      * @return a successful LoginResponse if all necessary information was correctly
      * parsed, or a response with a failed status
      */
-    public static LoginResponse createSuccessLoginResponse(String serverResponse, char[] password) {
+    public static LoginResponse createSuccessfulLoginResponse(String serverResponse) {
         try {
             JsonElement element = JsonParser.parseString(serverResponse).getAsJsonObject().get("eventContext");
 
@@ -77,7 +77,7 @@ public class LoginResponse {
                     new Gson().fromJson(element, Group.class),
                     element.getAsJsonObject().get("userId").getAsInt(),
                     element.getAsJsonObject().get("userName").getAsString(),
-                    password
+                    element.getAsJsonObject().get("sessionUuid").getAsString()
             );
         } catch (Exception e) {
             logger.error("Error when reading login response", e);
@@ -90,14 +90,6 @@ public class LoginResponse {
      */
     public Status getStatus() {
         return status;
-    }
-
-    /**
-     * @return the group of the authenticated user, or null if the login
-     * attempt failed
-     */
-    public Group getGroup() {
-        return group;
     }
 
     /**
@@ -117,10 +109,18 @@ public class LoginResponse {
     }
 
     /**
-     * @return the password of the authenticated user, or null if the login
+     * @return the session UUID of the authenticated user, or null if the login
      * attempt failed
      */
-    public char[] getPassword() {
-        return password;
+    public String getSessionUuid() {
+        return sessionUuid;
+    }
+
+    /**
+     * @return the group of the authenticated user, or null if the login
+     * attempt failed
+     */
+    public Group getGroup() {
+        return group;
     }
 }

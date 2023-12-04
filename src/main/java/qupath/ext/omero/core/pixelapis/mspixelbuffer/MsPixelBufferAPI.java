@@ -11,6 +11,7 @@ import qupath.ext.omero.core.WebUtilities;
 import qupath.ext.omero.core.pixelapis.PixelAPI;
 import qupath.ext.omero.core.pixelapis.PixelAPIReader;
 import qupath.lib.images.servers.ImageServerMetadata;
+import qupath.lib.images.servers.PixelType;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,8 +28,8 @@ public class MsPixelBufferAPI implements PixelAPI {
 
     static final String NAME = "Pixel Buffer Microservice";
     private static final int DEFAULT_PORT = 8082;
-    private static final Logger logger = LoggerFactory.getLogger(MsPixelBufferAPI.class);
     private static final String PORT_PARAMETER = "--msPixelBufferPort";
+    private static final Logger logger = LoggerFactory.getLogger(MsPixelBufferAPI.class);
     private final WebClient client;
     private final BooleanProperty isAvailable = new SimpleBooleanProperty(false);
     private final IntegerProperty port;
@@ -83,16 +84,21 @@ public class MsPixelBufferAPI implements PixelAPI {
     }
 
     @Override
-    public boolean canReadImage(boolean isUint8, boolean has3Channels) {
+    public boolean canReadImage(PixelType pixelType) {
+        return !pixelType.equals(PixelType.INT8) && !pixelType.equals(PixelType.UINT32);
+    }
+
+    @Override
+    public boolean canReadImage(int numberOfChannels) {
         return true;
     }
 
     @Override
-    public PixelAPIReader createReader(long id, ImageServerMetadata metadata, boolean allowSmoothInterpolation, int nResolutions, String... args) {
+    public PixelAPIReader createReader(long id, ImageServerMetadata metadata, boolean allowSmoothInterpolation, int nResolutions) {
         if (!isAvailable().get()) {
             throw new IllegalStateException("This API is not available and cannot be used");
         }
-        if (!canReadImage(metadata)) {
+        if (!canReadImage(metadata.getPixelType(), metadata.getSizeC())) {
             throw new IllegalArgumentException("The provided image cannot be read by this API");
         }
 

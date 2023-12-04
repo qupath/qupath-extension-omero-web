@@ -4,14 +4,12 @@ import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.*;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.search.SearchQuery;
 import qupath.ext.omero.core.entities.search.SearchResult;
 import qupath.ext.omero.core.WebUtilities;
 import qupath.ext.omero.core.RequestSender;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;
@@ -41,10 +39,16 @@ class WebclientApi implements AutoCloseable {
             "?query=%s&%s&%s&searchGroup=%s&ownedBy=%s" +
             "&useAcquisitionDate=false&startdateinput=&enddateinput=&_=%d";
     private static final String IMAGE_ICON_URL = "%s/static/webclient/image/image16.png";
-    Map<Class<? extends ServerEntity>, String> TYPE_TO_URI_LABEL = Map.of(
+    private static final String SCREEN_ICON_URL = "%s/static/webclient/image/folder_screen16.png";
+    private static final String PLATE_ICON_URL = "%s/static/webclient/image/folder_plate16.png";
+    private static final String PLATE_ACQUISITION_ICON_URL = "%s/static/webclient/image/run16.png";
+    private static final Map<Class<? extends ServerEntity>, String> TYPE_TO_URI_LABEL = Map.of(
             Image.class, "image",
             Dataset.class, "dataset",
-            Project.class, "project"
+            Project.class, "project",
+            Screen.class, "screen",
+            Plate.class, "plate",
+            PlateAcquisition.class, "run"
     );
     private final URI host;
     private final URI pingUri;
@@ -62,7 +66,7 @@ class WebclientApi implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         if (token != null) {
             WebUtilities.createURI(String.format(LOGOUT_URL, host)).ifPresent(value -> RequestSender.post(
                     value,
@@ -92,14 +96,16 @@ class WebclientApi implements AutoCloseable {
      * Returns a link of the OMERO.web client pointing to a server entity.
      *
      * @param entity  the entity to have a link to.
-     *                Must be an {@link Image}, a {@link Dataset}, or a {@link Project}
+     *                Must be an {@link Image}, {@link Dataset}, {@link Project},
+     *                {@link Screen}, {@link Plate} or {@link PlateAcquisition}
      * @return a URL pointing to the server entity
-     * @throws IllegalArgumentException when the provided entity is not an image, dataset or project
+     * @throws IllegalArgumentException when the provided entity is not an image, dataset, project,
+     * screen, plate, or plate acquisition
      */
     public String getEntityURI(ServerEntity entity) {
         if (!TYPE_TO_URI_LABEL.containsKey(entity.getClass())) {
             throw new IllegalArgumentException(String.format(
-                    "The provided item (%s) is not an image, dataset or project.",
+                    "The provided item (%s) is not an image, dataset, project, screen, plate, or plate acquisition.",
                     entity
             ));
         }
@@ -166,14 +172,16 @@ class WebclientApi implements AutoCloseable {
      * <p>This function is asynchronous.</p>
      *
      * @param entity  the type of the entity whose annotation should be retrieved.
-     *                Must be an {@link Image}, a {@link Dataset}, or a {@link Project}
+     *                Must be an {@link Image}, {@link Dataset}, {@link Project},
+     *                {@link Screen}, {@link Plate}, or {@link PlateAcquisition}.
      * @return a CompletableFuture with the annotation, or an empty Optional if an error occurred
-     * @throws IllegalArgumentException when the provided entity is not an image, dataset or project
+     * @throws IllegalArgumentException when the provided entity is not an image, dataset, project,
+     * screen, plate, or plate acquisition
      */
     public CompletableFuture<Optional<AnnotationGroup>> getAnnotations(ServerEntity entity) {
         if (!TYPE_TO_URI_LABEL.containsKey(entity.getClass())) {
             throw new IllegalArgumentException(String.format(
-                    "The provided item (%s) is not an image, dataset or project.",
+                    "The provided item (%s) is not an image, dataset, project, screen, plate, or plate acquisition.",
                     entity
             ));
         }
@@ -251,9 +259,39 @@ class WebclientApi implements AutoCloseable {
      * <p>Attempt to retrieve the OMERO image icon.</p>
      * <p>This function is asynchronous.</p>
      *
-     * @return a CompletableFuture with the icon, of an empty Optional if an error occured
+     * @return a CompletableFuture with the icon, of an empty Optional if an error occurred
      */
     public CompletableFuture<Optional<BufferedImage>> getImageIcon() {
         return ApiUtilities.getImage(String.format(IMAGE_ICON_URL, host));
+    }
+
+    /**
+     * <p>Attempt to retrieve the OMERO screen icon.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @return a CompletableFuture with the icon, of an empty Optional if an error occurred
+     */
+    public CompletableFuture<Optional<BufferedImage>> getScreenIcon() {
+        return ApiUtilities.getImage(String.format(SCREEN_ICON_URL, host));
+    }
+
+    /**
+     * <p>Attempt to retrieve the OMERO plate icon.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @return a CompletableFuture with the icon, of an empty Optional if an error occurred
+     */
+    public CompletableFuture<Optional<BufferedImage>> getPlateIcon() {
+        return ApiUtilities.getImage(String.format(PLATE_ICON_URL, host));
+    }
+
+    /**
+     * <p>Attempt to retrieve the OMERO plate acquisition icon.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @return a CompletableFuture with the icon, of an empty Optional if an error occurred
+     */
+    public CompletableFuture<Optional<BufferedImage>> getPlateAcquisitionIcon() {
+        return ApiUtilities.getImage(String.format(PLATE_ACQUISITION_ICON_URL, host));
     }
 }

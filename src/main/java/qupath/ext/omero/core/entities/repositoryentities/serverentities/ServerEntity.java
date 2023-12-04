@@ -4,7 +4,7 @@ import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qupath.ext.omero.core.apis.ApisHandler;
+import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 /**
  * A server entity represents an OMERO entity belonging to the project/dataset/image
- * hierarchy.
+ * or the screen/plate/plate acquisition/well hierarchy.
  */
 public abstract class ServerEntity implements RepositoryEntity {
 
@@ -42,15 +42,10 @@ public abstract class ServerEntity implements RepositoryEntity {
     }
 
     @Override
-    public String getName() {
-        return name == null ? "" : name;
-    }
-
-    @Override
     public boolean isFilteredByGroupOwnerName(Group groupFilter, Owner ownerFilter, String nameFilter) {
         return (groupFilter == null || groupFilter == Group.getAllGroupsGroup() || group.equals(groupFilter)) &&
                 (ownerFilter == null || ownerFilter == Owner.getAllMembersOwner() || owner.equals(ownerFilter)) &&
-                filterProjectsByName(nameFilter);
+                (nameFilter == null || nameFilter.isEmpty() || getLabel().get().toLowerCase().contains(nameFilter.toLowerCase()));
     }
 
     /**
@@ -79,12 +74,12 @@ public abstract class ServerEntity implements RepositoryEntity {
      * If an entity cannot be created from a JSON element, it is discarded.
      *
      * @param jsonElements  the JSON elements supposed to represent server entities
-     * @param apisHandler the request handler of the browser
+     * @param client the corresponding web client
      * @return a stream of server entities
      */
-    public static Stream<ServerEntity> createFromJsonElements(List<JsonElement> jsonElements, ApisHandler apisHandler) {
+    public static Stream<ServerEntity> createFromJsonElements(List<JsonElement> jsonElements, WebClient client) {
         return jsonElements.stream()
-                .map(jsonElement -> createFromJsonElement(jsonElement, apisHandler))
+                .map(jsonElement -> createFromJsonElement(jsonElement, client))
                 .flatMap(Optional::stream);
     }
 
@@ -92,14 +87,14 @@ public abstract class ServerEntity implements RepositoryEntity {
      * Creates a server entity from a JSON element.
      *
      * @param jsonElement  the JSON element supposed to represent a server entity
-     * @param apisHandler the request handler of the browser
+     * @param client the corresponding web client
      * @return a server entity, or an empty Optional if it was impossible to create
      */
-    public static Optional<ServerEntity> createFromJsonElement(JsonElement jsonElement, ApisHandler apisHandler) {
-        Gson deserializer = new GsonBuilder().registerTypeAdapter(ServerEntity.class, new ServerEntityDeserializer(apisHandler)).setLenient().create();
+    public static Optional<ServerEntity> createFromJsonElement(JsonElement jsonElement, WebClient client) {
+        Gson deserializer = new GsonBuilder().registerTypeAdapter(ServerEntity.class, new ServerEntityDeserializer(client)).setLenient().create();
 
         try {
-            return Optional.of(deserializer.fromJson(jsonElement, ServerEntity.class));
+            return Optional.ofNullable(deserializer.fromJson(jsonElement, ServerEntity.class));
         } catch (JsonSyntaxException e) {
             logger.error("Error when deserializing " + jsonElement, e);
             return Optional.empty();
@@ -127,7 +122,7 @@ public abstract class ServerEntity implements RepositoryEntity {
         return group;
     }
 
-    private record ServerEntityDeserializer(ApisHandler apisHandler) implements JsonDeserializer<ServerEntity> {
+    private record ServerEntityDeserializer(WebClient client) implements JsonDeserializer<ServerEntity> {
         @Override
         public ServerEntity deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
             try {
@@ -136,13 +131,24 @@ public abstract class ServerEntity implements RepositoryEntity {
                 ServerEntity serverEntity = null;
                 if (Image.isImage(type)) {
                     serverEntity = context.deserialize(json, Image.class);
-                    ((Image) serverEntity).setWebClient(apisHandler.getClient());
+                    ((Image) serverEntity).setWebClient(client);
                 } else if (Dataset.isDataset(type)) {
                     serverEntity = context.deserialize(json, Dataset.class);
-                    ((Dataset) serverEntity).setApisHandler(apisHandler);
+                    ((Dataset) serverEntity).setApisHandler(client.getApisHandler());
                 } else if (Project.isProject(type)) {
                     serverEntity = context.deserialize(json, Project.class);
-                    ((Project) serverEntity).setApisHandler(apisHandler);
+                    ((Project) serverEntity).setApisHandler(client.getApisHandler());
+                } else if (Screen.isScreen(type)) {
+                    serverEntity = context.deserialize(json, Screen.class);
+                    ((Screen) serverEntity).setApisHandler(client.getApisHandler());
+                } else if (Plate.isPlate(type)) {
+                    serverEntity = context.deserialize(json, Plate.class);
+                    ((Plate) serverEntity).setApisHandler(client.getApisHandler());
+                } else if (PlateAcquisition.isPlateAcquisition(type)) {
+                    serverEntity = context.deserialize(json, PlateAcquisition.class);
+                    ((PlateAcquisition) serverEntity).setApisHandler(client.getApisHandler());
+                } else if (Well.isWell(type)) {
+                    serverEntity = context.deserialize(json, Well.class);
                 } else {
                     logger.warn("Unsupported type {} when deserializing {}", type, json);
                 }
@@ -165,9 +171,5 @@ public abstract class ServerEntity implements RepositoryEntity {
                 return null;
             }
         }
-    }
-
-    private boolean filterProjectsByName(String filter) {
-        return filter == null || filter.isEmpty() || !(this instanceof Project) || getName().toLowerCase().contains(filter.toLowerCase());
     }
 }

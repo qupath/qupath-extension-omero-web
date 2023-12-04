@@ -44,23 +44,31 @@ public interface PixelAPI {
 
     /**
      * Indicates if an image with the provided parameters can be read by this API.
+     * This method shouldn't need to be overridden.
      *
-     * @param isUint8  whether the image type is 8-bit unsigned integer
-     * @param has3Channels  whether the image has exactly 3 channels
+     * @param pixelType  the pixel type of the image
+     * @param numberOfChannels  the number of channels of the image
      * @return whether the image can be read
      */
-    boolean canReadImage(boolean isUint8, boolean has3Channels);
+    default boolean canReadImage(PixelType pixelType, int numberOfChannels) {
+        return canReadImage(pixelType) && canReadImage(numberOfChannels);
+    }
 
     /**
-     * Indicates if an image with the provided parameter can be read by this API.
-     * This function shouldn't need to be overridden.
+     * Indicates if an image with the provided parameters can be read by this API.
      *
-     * @param metadata  the metadata of the image
+     * @param pixelType  the pixel type of the image
      * @return whether the image can be read
      */
-    default boolean canReadImage(ImageServerMetadata metadata) {
-        return canReadImage(metadata.getPixelType().equals(PixelType.UINT8), metadata.getChannels().size() == 3);
-    }
+    boolean canReadImage(PixelType pixelType);
+
+    /**
+     * Indicates if an image with the provided parameters can be read by this API.
+     *
+     * @param numberOfChannels  the number of channels of the image
+     * @return whether the image can be read
+     */
+    boolean canReadImage(int numberOfChannels);
 
     /**
      * <p>
@@ -76,18 +84,16 @@ public interface PixelAPI {
      * @param metadata  the metadata of the image to open
      * @param allowSmoothInterpolation  whether to use smooth interpolation when resizing the image to open
      * @param nResolutions  the number of resolutions of the image to open
-     * @param args  optional arguments
      * @return a new reader corresponding to this API
      * @throws IOException when the reader creation fails
      * @throws IllegalStateException when this API is not available (see {@link #isAvailable()})
      * @throws IllegalArgumentException when the provided image cannot be read by this API
-     * (see {@link #canReadImage(ImageServerMetadata)} or {@link #canReadImage(boolean, boolean)})
+     * (see {@link #canReadImage(PixelType, int)})
      */
     PixelAPIReader createReader(
             long id,
             ImageServerMetadata metadata,
             boolean allowSmoothInterpolation,
-            int nResolutions,
-            String... args
+            int nResolutions
     ) throws IOException;
 }

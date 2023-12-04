@@ -205,7 +205,7 @@ public class AdvancedSearch extends Stage {
 
         importImage.textProperty().bind(Bindings.createStringBinding(
                 () -> results.getSelectionModel().getSelectedItems().size() == 1 ?
-                        resources.getString("Browser.ServerBrowser.AdvancedSearch.import") + " " + results.getSelectionModel().getSelectedItems().get(0).getType() :
+                        resources.getString("Browser.ServerBrowser.AdvancedSearch.import") + " " + results.getSelectionModel().getSelectedItems().get(0).getName() :
                         resources.getString("Browser.ServerBrowser.AdvancedSearch.importObjects"),
                 results.getSelectionModel().getSelectedItems()
         ));

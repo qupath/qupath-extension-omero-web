@@ -11,6 +11,7 @@ import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -27,12 +28,12 @@ public class TestImage extends OmeroServer {
         }
 
         @Test
-        void Check_Number_Of_Children() {
-            int expectedNumberOfChildren = 0;
+        void Check_Has_Children() {
+            boolean expectedChildren = false;
 
-            int numberOfChildren = image.getNumberOfChildren();
+            boolean hasChildren = image.hasChildren();
 
-            Assertions.assertEquals(expectedNumberOfChildren, numberOfChildren);
+            Assertions.assertEquals(expectedChildren, hasChildren);
         }
 
         @Test
@@ -44,7 +45,7 @@ public class TestImage extends OmeroServer {
                 TimeUnit.MILLISECONDS.sleep(50);
             }
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedChildren, children);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedChildren, children);
         }
 
         @Test
@@ -54,86 +55,11 @@ public class TestImage extends OmeroServer {
         abstract void Check_Supported();
 
         @Test
-        abstract void Check_Uint8();
-
-        @Test
-        abstract void Check_Has_3_channels();
+        abstract void Check_Unsupported_Reasons();
     }
 
     @Nested
-    class SimpleRGBImage extends GenericImage {
-
-        @BeforeAll
-        static void createClient() throws ExecutionException, InterruptedException {
-            client = OmeroServer.createUnauthenticatedClient();
-
-            while (client.getServer().isPopulatingChildren()) {
-                TimeUnit.MILLISECONDS.sleep(50);
-            }
-
-            OrphanedFolder orphanedFolder = client.getServer().getChildren().stream()
-                    .filter(child -> child instanceof OrphanedFolder)
-                    .map(p -> (OrphanedFolder) p)
-                    .findAny()
-                    .orElse(null);
-            assert orphanedFolder != null;
-
-            List<? extends RepositoryEntity> orphanedFolderChildren = orphanedFolder.getChildren();
-            while (orphanedFolder.isPopulatingChildren()) {
-                TimeUnit.MILLISECONDS.sleep(50);
-            }
-
-            image = orphanedFolderChildren.stream()
-                    .filter(child -> child instanceof Image)
-                    .map(d -> (Image) d)
-                    .findAny()
-                    .orElse(null);
-        }
-
-        @Test
-        @Override
-        void Check_Attributes() {
-            int numberOfValues = image.getNumberOfAttributes();
-            String[] expectedAttributeValues = new String[numberOfValues];
-            for (int i=0; i<numberOfValues; ++i) {
-                expectedAttributeValues[i] = OmeroServer.getOrphanedImageAttributeValue(i);
-            }
-
-            String[] attributesValues = new String[numberOfValues];
-            for (int i=0; i<numberOfValues; ++i) {
-                attributesValues[i] = image.getAttributeValue(i);
-            }
-
-            Assertions.assertArrayEquals(expectedAttributeValues, attributesValues);
-        }
-
-        @Test
-        @Override
-        void Check_Supported() {
-            boolean isSupported = image.isSupported().get();
-
-            Assertions.assertTrue(isSupported);
-        }
-
-        @Test
-        @Override
-        void Check_Uint8() {
-            boolean isUint8 = image.isUint8();
-
-            Assertions.assertTrue(isUint8);
-        }
-
-        @Test
-        @Override
-        void Check_Has_3_channels() {
-            boolean has3Channels = image.has3Channels();
-
-            Assertions.assertTrue(has3Channels);
-        }
-    }
-
-    @Nested
-    class ComplexImage extends GenericImage {
+    class RGBImage extends GenericImage {
 
         @BeforeAll
         static void createClient() throws ExecutionException, InterruptedException {
@@ -169,6 +95,7 @@ public class TestImage extends OmeroServer {
             image = datasetChildren.stream()
                     .filter(child -> child instanceof Image)
                     .map(d -> (Image) d)
+                    .filter(image -> image.equals(OmeroServer.getRGBImage()))
                     .findAny()
                     .orElse(null);
         }
@@ -179,7 +106,7 @@ public class TestImage extends OmeroServer {
             int numberOfValues = image.getNumberOfAttributes();
             String[] expectedAttributeValues = new String[numberOfValues];
             for (int i=0; i<numberOfValues; ++i) {
-                expectedAttributeValues[i] = OmeroServer.getImageAttributeValue(i);
+                expectedAttributeValues[i] = OmeroServer.getRGBImageAttributeValue(i);
             }
 
             String[] attributesValues = new String[numberOfValues];
@@ -200,18 +127,78 @@ public class TestImage extends OmeroServer {
 
         @Test
         @Override
-        void Check_Uint8() {
-            boolean isUint8 = image.isUint8();
+        void Check_Unsupported_Reasons() {
+            Set<Image.UNSUPPORTED_REASON> expectedReasons = Set.of();
 
-            Assertions.assertFalse(isUint8);
+            Set<Image.UNSUPPORTED_REASON> reasons = image.getUnsupportedReasons();
+
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedReasons, reasons);
+        }
+    }
+
+    @Nested
+    class ComplexImage extends GenericImage {
+
+        @BeforeAll
+        static void createClient() throws ExecutionException, InterruptedException {
+            client = OmeroServer.createUnauthenticatedClient();
+
+            while (client.getServer().isPopulatingChildren()) {
+                TimeUnit.MILLISECONDS.sleep(50);
+            }
+
+            OrphanedFolder orphanedFolder = client.getServer().getChildren().stream()
+                    .filter(child -> child instanceof OrphanedFolder)
+                    .map(p -> (OrphanedFolder) p)
+                    .findAny()
+                    .orElse(null);
+            assert orphanedFolder != null;
+
+            List<? extends RepositoryEntity> orphanedFolderChildren = orphanedFolder.getChildren();
+            while (orphanedFolder.isPopulatingChildren()) {
+                TimeUnit.MILLISECONDS.sleep(50);
+            }
+
+            image = orphanedFolderChildren.stream()
+                    .filter(child -> child instanceof Image)
+                    .map(d -> (Image) d)
+                    .findAny()
+                    .orElse(null);
         }
 
         @Test
         @Override
-        void Check_Has_3_channels() {
-            boolean has3Channels = image.has3Channels();
+        void Check_Attributes() {
+            int numberOfValues = image.getNumberOfAttributes();
+            String[] expectedAttributeValues = new String[numberOfValues];
+            for (int i=0; i<numberOfValues; ++i) {
+                expectedAttributeValues[i] = OmeroServer.getComplexImageAttributeValue(i);
+            }
 
-            Assertions.assertFalse(has3Channels);
+            String[] attributesValues = new String[numberOfValues];
+            for (int i=0; i<numberOfValues; ++i) {
+                attributesValues[i] = image.getAttributeValue(i);
+            }
+
+            Assertions.assertArrayEquals(expectedAttributeValues, attributesValues);
+        }
+
+        @Test
+        @Override
+        void Check_Supported() {
+            boolean isSupported = image.isSupported().get();
+
+            Assertions.assertTrue(isSupported);
+        }
+
+        @Test
+        @Override
+        void Check_Unsupported_Reasons() {
+            Set<Image.UNSUPPORTED_REASON> expectedReasons = Set.of();
+
+            Set<Image.UNSUPPORTED_REASON> reasons = image.getUnsupportedReasons();
+
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedReasons, reasons);
         }
     }
 }

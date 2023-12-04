@@ -1,5 +1,7 @@
 package qupath.ext.omero.core.entities.repositoryentities;
 
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;
@@ -14,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A server is the top element in the OMERO entity hierarchy.
- * It contains one {@link OrphanedFolder}, and zero or more projects and orphaned datasets (described in
+ * It contains one {@link OrphanedFolder}, and zero or more projects, orphaned datasets, screen, and orphaned plates (described in
  * {@link qupath.ext.omero.core.entities.repositoryentities.serverentities server entities}).
  */
 public class Server implements RepositoryEntity {
@@ -40,8 +42,8 @@ public class Server implements RepositoryEntity {
     }
 
     @Override
-    public int getNumberOfChildren() {
-        return children.size();
+    public boolean hasChildren() {
+        return true;
     }
 
     @Override
@@ -50,8 +52,8 @@ public class Server implements RepositoryEntity {
     }
 
     @Override
-    public String getName() {
-        return resources.getString("Web.Entities.RepositoryEntities.Server.server");
+    public ReadOnlyStringProperty getLabel() {
+        return new SimpleStringProperty(resources.getString("Web.Entities.RepositoryEntities.Server.server"));
     }
 
     @Override
@@ -179,13 +181,23 @@ public class Server implements RepositoryEntity {
         apisHandler.getProjects().thenCompose(projects -> {
             children.addAll(projects);
 
+            return apisHandler.getScreens();
+        }).thenCompose(screens -> {
+            children.addAll(screens);
+
             return apisHandler.getOrphanedDatasets();
         }).thenCompose(orphanedDatasets -> {
             children.addAll(orphanedDatasets);
 
+            return apisHandler.getOrphanedPlates();
+        }).thenCompose(orphanedPlates -> {
+            children.addAll(orphanedPlates);
+
             return OrphanedFolder.create(apisHandler);
         }).thenAccept(orphanedFolder -> {
-            children.add(orphanedFolder);
+            if (orphanedFolder.hasChildren()) {
+                children.add(orphanedFolder);
+            }
 
             isPopulating = false;
         });

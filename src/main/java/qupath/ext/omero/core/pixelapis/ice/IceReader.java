@@ -157,25 +157,25 @@ class IceReader implements PixelAPIReader {
 
         try {
             return gateway.connect(new LoginCredentials(
-                    client.getUsername().get(),
-                    client.getPassword().map(String::valueOf).orElse(null),
+                    client.getSessionUuid().orElse(""),
+                    client.getSessionUuid().orElse(""),
                     firstURI,
-                    client.getApisHandler().getPort()
+                    client.getApisHandler().getServerPort()
             ));
         } catch (DSOutOfServiceException e) {
             logger.warn(String.format(
                     "Can't connect to %s:%d. Trying %s:%d...",
                     firstURI,
-                    client.getApisHandler().getPort(),
+                    client.getApisHandler().getServerPort(),
                     secondURI,
-                    client.getApisHandler().getPort()
+                    client.getApisHandler().getServerPort()
             ), e);
 
             return gateway.connect(new LoginCredentials(
-                    client.getUsername().get(),
-                    client.getPassword().map(String::valueOf).orElse(null),
+                    client.getSessionUuid().orElse(""),
+                    client.getSessionUuid().orElse(""),
                     secondURI,
-                    client.getApisHandler().getPort()
+                    client.getApisHandler().getServerPort()
             ));
         }
     }
@@ -187,7 +187,7 @@ class IceReader implements PixelAPIReader {
         } catch (Exception ignored) {}
 
         List<ExperimenterGroup> groups = gateway.getAdminService(context).containedGroups(gateway.getLoggedInUser().asExperimenter().getId().getValue());
-        for(ExperimenterGroup group: groups) {
+        for (ExperimenterGroup group: groups) {
             context = new SecurityContext(group.getId().getValue());
 
             try {

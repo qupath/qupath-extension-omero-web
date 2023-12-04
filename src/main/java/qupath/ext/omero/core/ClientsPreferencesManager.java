@@ -17,6 +17,8 @@ import java.util.Optional;
 public class ClientsPreferencesManager {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientsPreferencesManager.class);
+    private static final String PREFERENCE_DELIMITER = ",";
+    private static final String PROPERTY_DELIMITER = "%";
     private static final StringProperty serverListPreference = PathPrefs.createPersistentPreference(
             "omero_ext.server_list",
             ""
@@ -33,15 +35,19 @@ public class ClientsPreferencesManager {
             "omero_ext.ms_pixel_buffer_port",
             ""
     );
+    private static final StringProperty webJpegQualityPreference = PathPrefs.createPersistentPreference(
+            "omero_ext.web_jpeg_quality",
+            ""
+    );
     private static final ObservableList<String> uris = FXCollections.observableArrayList(
-            Arrays.stream(serverListPreference.get().split(","))
+            Arrays.stream(serverListPreference.get().split(PREFERENCE_DELIMITER))
                     .filter(uri -> !uri.isEmpty())
                     .toList()
     );
     private static final ObservableList<String> urisImmutable = FXCollections.unmodifiableObservableList(uris);
 
     static {
-        uris.addListener((ListChangeListener<? super String>) c -> setServerListPreference(String.join(",", uris)));
+        uris.addListener((ListChangeListener<? super String>) c -> setServerListPreference(String.join(PREFERENCE_DELIMITER, uris)));
     }
 
     private ClientsPreferencesManager() {
@@ -124,24 +130,15 @@ public class ClientsPreferencesManager {
      * @param serverURI  the URI of the OMERO server to whose port should be retrieved
      * @return the port, or an empty optional if not found
      */
-    public static synchronized Optional<Integer> getMsPixelBufferPort(String serverURI) {
-        String[] uriPorts = msPixelBufferPortPreference.get().split(",");
-
-        for (String uriPort: uriPorts) {
-            String uri = uriPort.split("%")[0];
-
-            if (uri.equals(serverURI)) {
-                String port = uriPort.split("%")[1];
-
-                try {
-                    return Optional.of(Integer.valueOf(port));
-                } catch (NumberFormatException e) {
-                    logger.error(String.format("Can't convert %s to int", port), e);
-                }
+    public static Optional<Integer> getMsPixelBufferPort(String serverURI) {
+        return getProperty(msPixelBufferPortPreference, serverURI).map(p -> {
+            try {
+                return Integer.valueOf(p);
+            } catch (NumberFormatException e) {
+                logger.error(String.format("Can't convert %s to int", p), e);
+                return null;
             }
-        }
-
-        return Optional.empty();
+        });
     }
 
     /**
@@ -151,26 +148,35 @@ public class ClientsPreferencesManager {
      * @param serverURI  the URI of the OMERO server to whose port should be set
      * @param port  the pixel buffer microservice port
      */
-    public static synchronized void setMsPixelBufferPort(String serverURI, int port) {
-        String[] uriPorts = msPixelBufferPortPreference.get().split(",");
+    public static void setMsPixelBufferPort(String serverURI, int port) {
+        setProperty(msPixelBufferPortPreference, serverURI, String.valueOf(port));
+    }
 
-        boolean portAdded = false;
-        for (int i=0; i<uriPorts.length; ++i) {
-            String uri = uriPorts[i].split("%")[0];
-
-            if (uri.equals(serverURI)) {
-                uriPorts[i] = uri + "%" + port;
-                portAdded = true;
+    /**
+     * Get the saved JPEG quality used by the pixel web API corresponding to the provided URI.
+     *
+     * @param serverURI  the URI of the OMERO server to whose JPEG quality should be retrieved
+     * @return the JPEG quality, or an empty optional if not found
+     */
+    public static Optional<Float> getWebJpegQuality(String serverURI) {
+        return getProperty(webJpegQualityPreference, serverURI).map(p -> {
+            try {
+                return Float.valueOf(p);
+            } catch (NumberFormatException e) {
+                logger.error(String.format("Can't convert %s to float", p), e);
+                return null;
             }
-        }
+        });
+    }
 
-        String newPreference = String.join(",", uriPorts);
-
-        if (!portAdded) {
-            newPreference += "," + serverURI + "%" + port;
-        }
-
-        msPixelBufferPortPreference.set(newPreference);
+    /**
+     * Set the saved JPEG quality used by the pixel web API corresponding to the provided URI.
+     *
+     * @param serverURI  the URI of the OMERO server to whose port should be set
+     * @param jpegQuality  the JPEG quality
+     */
+    public static synchronized void setWebJpegQuality(String serverURI, float jpegQuality) {
+        setProperty(webJpegQualityPreference, serverURI, String.valueOf(jpegQuality));
     }
 
     private static synchronized void setServerListPreference(String serverListPreference) {
@@ -195,5 +201,41 @@ public class ClientsPreferencesManager {
         } else {
             uris.remove(uri);
         }
+    }
+
+    private static synchronized Optional<String> getProperty(StringProperty preference, String serverURI) {
+        String[] uriProperties = preference.get().split(PREFERENCE_DELIMITER);
+
+        for (String uriProperty: uriProperties) {
+            String[] uriPropertySplit = uriProperty.split(PROPERTY_DELIMITER);
+
+            if (uriPropertySplit.length > 1 && uriPropertySplit[0].equals(serverURI)) {
+                return Optional.of(uriPropertySplit[1]);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public static synchronized void setProperty(StringProperty preference, String serverURI, String property) {
+        String[] uriProperties = preference.get().split(PREFERENCE_DELIMITER);
+
+        boolean propertyAdded = false;
+        for (int i=0; i<uriProperties.length; ++i) {
+            String[] uriPropertySplit = uriProperties[i].split(PROPERTY_DELIMITER);
+
+            if (uriPropertySplit.length > 0 && uriPropertySplit[0].equals(serverURI)) {
+                uriProperties[i] = serverURI + PROPERTY_DELIMITER + property;
+                propertyAdded = true;
+            }
+        }
+
+        String newPreference = String.join(PREFERENCE_DELIMITER, uriProperties);
+
+        if (!propertyAdded) {
+            newPreference += PREFERENCE_DELIMITER + serverURI + PROPERTY_DELIMITER + property;
+        }
+
+        preference.set(newPreference);
     }
 }

@@ -2,7 +2,7 @@ package qupath.ext.omero;
 
 import org.junit.jupiter.api.Assertions;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Adds some utility functions for testing.
@@ -19,13 +19,13 @@ public class TestUtilities {
      * This function doesn't work if some duplicates are present in one
      * of the list.
      *
-     * @param expectedList  the expected values
-     * @param actualList  the actual values
-     * @param <T>  the type of the elements of the list
+     * @param expectedCollection  the expected values
+     * @param actualCollection  the actual values
+     * @param <T>  the type of the elements of the collection
      */
-    public static <T> void assertListEqualsWithoutOrder(List<? extends T> expectedList, List<? extends T> actualList) {
-        Assertions.assertEquals(expectedList.size(), actualList.size());
-        Assertions.assertTrue(expectedList.containsAll(actualList));
-        Assertions.assertTrue(actualList.containsAll(expectedList));
+    public static <T> void assertCollectionsEqualsWithoutOrder(Collection<? extends T> expectedCollection, Collection<? extends T> actualCollection) {
+        Assertions.assertEquals(expectedCollection.size(), actualCollection.size());
+        Assertions.assertTrue(expectedCollection.containsAll(actualCollection));
+        Assertions.assertTrue(actualCollection.containsAll(expectedCollection));
     }
 }

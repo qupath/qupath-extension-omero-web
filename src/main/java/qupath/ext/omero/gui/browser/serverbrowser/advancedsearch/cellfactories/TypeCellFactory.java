@@ -4,15 +4,15 @@ import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.Tooltip;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import qupath.ext.omero.core.WebClient;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
+import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.search.SearchResult;
 import qupath.ext.omero.gui.UiUtilities;
 
 import java.awt.image.BufferedImage;
+import java.util.Optional;
 
 /**
  * Cell factory that displays an image representing the search result in the cell and in a tooltip.
@@ -32,45 +32,22 @@ public class TypeCellFactory extends TableCell<SearchResult, SearchResult> {
         if (item == null || empty) {
             hide();
         } else {
-            if (item.getType().equalsIgnoreCase("project")) {
-                client.getApisHandler().getOmeroIcon(Project.class).thenAccept(icon -> Platform.runLater(() -> {
-                    if (icon.isPresent()) {
-                        show(item, icon.get());
-                    } else {
-                        hide();
-                    }
-                }));
-            } else if (item.getType().equalsIgnoreCase("dataset")) {
-                client.getApisHandler().getOmeroIcon(Dataset.class).thenAccept(icon -> Platform.runLater(() -> {
-                    if (icon.isPresent()) {
-                        show(item, icon.get());
-                    } else {
-                        hide();
-                    }
-                }));
-            } else {
-                client.getApisHandler().getThumbnail(item.getId()).thenAccept(thumbnail -> Platform.runLater(() -> {
-                    if (thumbnail.isPresent()) {
-                        show(item, thumbnail.get());
-                    } else {
-                        hide();
-                    }
-                }));
-            }
+            client.getApisHandler().getThumbnail(item.getId()).thenAccept(thumbnail -> Platform.runLater(() -> {
+                if (thumbnail.isPresent()) {
+                    show(item, thumbnail.get());
+                } else {
+                    setIcon(item);
+                }
+            }));
         }
-    }
-
-    private void hide() {
-        setTooltip(null);
-        setGraphic(null);
     }
 
     private void show(SearchResult item, BufferedImage icon) {
         Canvas canvas = new Canvas(icon.getWidth(), icon.getHeight());
-        Image writableImage = UiUtilities.paintBufferedImageOnCanvas(icon, canvas);
+        var writableImage = UiUtilities.paintBufferedImageOnCanvas(icon, canvas);
 
         Tooltip tooltip = new Tooltip();
-        if (item.getType().equalsIgnoreCase("image")) {
+        if (item.getType().isPresent() && item.getType().get().equals(Image.class)) {
             ImageView imageView = new ImageView(writableImage);
             imageView.setFitHeight(250);
             imageView.setPreserveRatio(true);
@@ -81,5 +58,26 @@ public class TypeCellFactory extends TableCell<SearchResult, SearchResult> {
 
         setTooltip(tooltip);
         setGraphic(canvas);
+    }
+
+    private void setIcon(SearchResult item) {
+        Optional<Class<? extends RepositoryEntity>> type = item.getType();
+
+        if (type.isPresent()) {
+            client.getApisHandler().getOmeroIcon(type.get()).thenAccept(icon -> Platform.runLater(() -> {
+                if (icon.isPresent()) {
+                    show(item, icon.get());
+                } else {
+                    hide();
+                }
+            }));
+        } else {
+            hide();
+        }
+    }
+
+    private void hide() {
+        setTooltip(null);
+        setGraphic(null);
     }
 }

@@ -1,6 +1,8 @@
 package qupath.ext.omero.core.entities.repositoryentities.serverentities;
 
 import com.google.gson.annotations.SerializedName;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.ext.omero.core.apis.ApisHandler;
@@ -48,8 +50,8 @@ public class Project extends ServerEntity {
     }
 
     @Override
-    public int getNumberOfChildren() {
-        return childCount;
+    public boolean hasChildren() {
+        return childCount > 0;
     }
 
     /**
@@ -62,6 +64,12 @@ public class Project extends ServerEntity {
             childrenPopulated = true;
         }
         return childrenImmutable;
+    }
+
+    @Override
+    public ReadOnlyStringProperty getLabel() {
+        String name = this.name == null ? "" : this.name;
+        return new SimpleStringProperty(name + " (" + childCount + ")");
     }
 
     @Override
@@ -86,7 +94,7 @@ public class Project extends ServerEntity {
             case 2 -> description == null || description.isEmpty() ? "-" : description;
             case 3 -> getOwner().getFullName();
             case 4 -> getGroup().getName();
-            case 5 -> String.valueOf(getNumberOfChildren());
+            case 5 -> String.valueOf(childCount);
             default -> "";
         };
     }
@@ -112,7 +120,7 @@ public class Project extends ServerEntity {
     }
 
     /**
-     * Set the APIs handler for this dataset. This is needed to populate its children.
+     * Set the APIs handler for this project. This is needed to populate its children.
      *
      * @param apisHandler the APIs handler of this browser
      */

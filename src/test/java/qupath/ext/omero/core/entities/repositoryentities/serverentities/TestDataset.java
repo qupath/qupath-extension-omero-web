@@ -50,24 +50,24 @@ public class TestDataset extends OmeroServer {
     }
 
     @Test
-    void Check_Number_Of_Children() {
-        int expectedNumberOfChildren = 1;
+    void Check_Has_Children() {
+        boolean expectedChildren = true;
 
-        int numberOfChildren = dataset.getNumberOfChildren();
+        boolean hasChildren = dataset.hasChildren();
 
-        Assertions.assertEquals(expectedNumberOfChildren, numberOfChildren);
+        Assertions.assertEquals(expectedChildren, hasChildren);
     }
 
     @Test
     void Check_Children() throws InterruptedException {
-        List<? extends RepositoryEntity> expectedChildren = List.of(OmeroServer.getImage());
+        List<? extends RepositoryEntity> expectedChildren = OmeroServer.getImagesInDataset();
 
         List<? extends RepositoryEntity> children = dataset.getChildren();
         while (dataset.isPopulatingChildren()) {
             TimeUnit.MILLISECONDS.sleep(50);
         }
 
-        TestUtilities.assertListEqualsWithoutOrder(expectedChildren, children);
+        TestUtilities.assertCollectionsEqualsWithoutOrder(expectedChildren, children);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package qupath.ext.omero.core.entities.repositoryentities;
 
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.ext.omero.core.apis.ApisHandler;
@@ -63,8 +64,8 @@ public class OrphanedFolder implements RepositoryEntity {
     }
 
     @Override
-    public int getNumberOfChildren() {
-        return numberOfImages;
+    public boolean hasChildren() {
+        return numberOfImages > 0;
     }
 
     @Override
@@ -78,8 +79,11 @@ public class OrphanedFolder implements RepositoryEntity {
     }
 
     @Override
-    public String getName() {
-        return resources.getString("Web.Entities.RepositoryEntities.OrphanedFolder.orphanedImages");
+    public ReadOnlyStringProperty getLabel() {
+        return new SimpleStringProperty(
+                resources.getString("Web.Entities.RepositoryEntities.OrphanedFolder.orphanedImages") +
+                        " (" + numberOfImages + ")"
+        );
     }
 
     @Override

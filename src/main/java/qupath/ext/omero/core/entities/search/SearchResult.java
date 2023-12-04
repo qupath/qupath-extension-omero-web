@@ -3,6 +3,9 @@ package qupath.ext.omero.core.entities.search;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.*;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 
 import java.net.URI;
 import java.text.DateFormat;
@@ -136,10 +139,24 @@ public class SearchResult {
     }
 
     /**
-     * @return the type (e.g. image, dataset) of the result
+     * @return the class of the type (e.g. image, dataset) of the result, or an empty Optional if not found
      */
-    public String getType() {
-        return type;
+    public Optional<Class<? extends RepositoryEntity>> getType() {
+        if (type.equalsIgnoreCase("image")) {
+            return Optional.of(Image.class);
+        } else if (type.equalsIgnoreCase("dataset")) {
+            return Optional.of(Dataset.class);
+        } else if (type.equalsIgnoreCase("project")) {
+            return Optional.of(Project.class);
+        } else if (type.equalsIgnoreCase("screen")) {
+            return Optional.of(Screen.class);
+        } else if (type.equalsIgnoreCase("plate")) {
+            return Optional.of(Plate.class);
+        } else if (type.equalsIgnoreCase("well")) {
+            return Optional.of(Well.class);
+        } else {
+            return Optional.empty();
+        }
     }
 
     /**

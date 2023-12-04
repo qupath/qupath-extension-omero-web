@@ -1,5 +1,6 @@
 package qupath.ext.omero.core.apis;
 
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.collections.ObservableList;
 import org.junit.jupiter.api.*;
 import qupath.ext.omero.TestUtilities;
@@ -13,9 +14,7 @@ import qupath.ext.omero.core.entities.permissions.Owner;
 import qupath.ext.omero.core.entities.repositoryentities.OrphanedFolder;
 import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
 import qupath.ext.omero.core.entities.repositoryentities.Server;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.*;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.search.SearchQuery;
 import qupath.ext.omero.core.entities.search.SearchResult;
@@ -45,40 +44,119 @@ public class TestApisHandler extends OmeroServer {
         }
 
         @Test
-        void Check_Host() {
-            URI expectedHost = URI.create(OmeroServer.getServerURL());
+        void Check_UInt8_Pixel_Type() {
+            PixelType expectedPixelType = PixelType.UINT8;
 
-            URI host = apisHandler.getWebServerURI();
+            PixelType pixelType = ApisHandler.getPixelType("uint8").orElse(null);
 
-            Assertions.assertEquals(expectedHost, host);
+            Assertions.assertEquals(expectedPixelType, pixelType);
         }
 
         @Test
-        void Check_Server_Host() {
-            String expectedServerHost = OmeroServer.getServerHost();
+        void Check_Int8_Pixel_Type() {
+            PixelType expectedPixelType = PixelType.INT8;
 
-            String serverHost = apisHandler.getServerURI();
+            PixelType pixelType = ApisHandler.getPixelType("int8").orElse(null);
 
-            Assertions.assertEquals(expectedServerHost, serverHost);
+            Assertions.assertEquals(expectedPixelType, pixelType);
         }
 
         @Test
-        void Check_Port() {
-            int expectedPort = OmeroServer.getPort();
+        void Check_UInt16_Pixel_Type() {
+            PixelType expectedPixelType = PixelType.UINT16;
 
-            int port = apisHandler.getPort();
+            PixelType pixelType = ApisHandler.getPixelType("uint16").orElse(null);
 
-            Assertions.assertEquals(expectedPort, port);
+            Assertions.assertEquals(expectedPixelType, pixelType);
         }
 
         @Test
-        void Check_Image_URI_Of_Dataset() throws ExecutionException, InterruptedException {
+        void Check_Int16_Pixel_Type() {
+            PixelType expectedPixelType = PixelType.INT16;
+
+            PixelType pixelType = ApisHandler.getPixelType("int16").orElse(null);
+
+            Assertions.assertEquals(expectedPixelType, pixelType);
+        }
+
+        @Test
+        void Check_UInt32_Pixel_Type() {
+            PixelType expectedPixelType = PixelType.UINT32;
+
+            PixelType pixelType = ApisHandler.getPixelType("uint32").orElse(null);
+
+            Assertions.assertEquals(expectedPixelType, pixelType);
+        }
+
+        @Test
+        void Check_Int32_Pixel_Type() {
+            PixelType expectedPixelType = PixelType.INT32;
+
+            PixelType pixelType = ApisHandler.getPixelType("int32").orElse(null);
+
+            Assertions.assertEquals(expectedPixelType, pixelType);
+        }
+
+        @Test
+        void Check_Float_Pixel_Type() {
+            PixelType expectedPixelType = PixelType.FLOAT32;
+
+            PixelType pixelType = ApisHandler.getPixelType("float").orElse(null);
+
+            Assertions.assertEquals(expectedPixelType, pixelType);
+        }
+
+        @Test
+        void Check_Double_Pixel_Type() {
+            PixelType expectedPixelType = PixelType.FLOAT64;
+
+            PixelType pixelType = ApisHandler.getPixelType("double").orElse(null);
+
+            Assertions.assertEquals(expectedPixelType, pixelType);
+        }
+
+        @Test
+        void Check_Invalid_Pixel_Type() {
+            Optional<PixelType> pixelType = ApisHandler.getPixelType("invalid");
+
+            Assertions.assertTrue(pixelType.isEmpty());
+        }
+
+        @Test
+        void Check_Web_Server_URI() {
+            URI expectedWebServerURI = URI.create(OmeroServer.getWebServerURI());
+
+            URI webServerURI = apisHandler.getWebServerURI();
+
+            Assertions.assertEquals(expectedWebServerURI, webServerURI);
+        }
+
+        @Test
+        void Check_Server_URI() {
+            String expectedServerURI = OmeroServer.getServerURI();
+
+            String serverURI = apisHandler.getServerURI();
+
+            Assertions.assertEquals(expectedServerURI, serverURI);
+        }
+
+        @Test
+        void Check_Server_Port() {
+            int expectedServerPort = OmeroServer.getServerPort();
+
+            int serverPort = apisHandler.getServerPort();
+
+            Assertions.assertEquals(expectedServerPort, serverPort);
+        }
+
+        @Test
+        void Check_Images_URI_Of_Dataset() throws ExecutionException, InterruptedException {
             long datasetID = OmeroServer.getDataset().getId();
-            List<URI> expectedURIs = List.of(OmeroServer.getImageURI());
+            List<URI> expectedURIs = OmeroServer.getImagesUriInDataset();
 
             List<URI> uris = apisHandler.getImagesURIOfDataset(datasetID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedURIs, uris);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedURIs, uris);
         }
 
         @Test
@@ -88,17 +166,17 @@ public class TestApisHandler extends OmeroServer {
 
             List<URI> uris = apisHandler.getImagesURIOfDataset(datasetID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedURIs, uris);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedURIs, uris);
         }
 
         @Test
         void Check_Image_URI_Of_Project() throws ExecutionException, InterruptedException {
             long projectID = OmeroServer.getProject().getId();
-            List<URI> expectedURIs = List.of(OmeroServer.getImageURI());
+            List<URI> expectedURIs = OmeroServer.getImagesUriInDataset();
 
             List<URI> uris = apisHandler.getImagesURIOfProject(projectID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedURIs, uris);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedURIs, uris);
         }
 
         @Test
@@ -108,13 +186,13 @@ public class TestApisHandler extends OmeroServer {
 
             List<URI> uris = apisHandler.getImagesURIOfProject(projectID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedURIs, uris);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedURIs, uris);
         }
 
         @Test
         void Check_Image_URI() {
-            Image image = OmeroServer.getImage();
-            String expectedURI = OmeroServer.getImageURI().toString();
+            Image image = OmeroServer.getComplexImage();
+            String expectedURI = OmeroServer.getComplexImageURI().toString();
 
             String uri = apisHandler.getItemURI(image);
 
@@ -163,7 +241,7 @@ public class TestApisHandler extends OmeroServer {
 
             List<Long> ids = apisHandler.getOrphanedImagesIds().get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedIds, ids);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedIds, ids);
         }
 
         @Test
@@ -172,7 +250,7 @@ public class TestApisHandler extends OmeroServer {
 
             List<Group> groups = apisHandler.getGroups().get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedGroups, groups);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedGroups, groups);
         }
 
         @Test
@@ -181,7 +259,7 @@ public class TestApisHandler extends OmeroServer {
 
             List<Owner> owners = apisHandler.getOwners().get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedOwners, owners);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedOwners, owners);
         }
 
         @Test
@@ -190,7 +268,7 @@ public class TestApisHandler extends OmeroServer {
 
             List<Project> projects = apisHandler.getProjects().get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedProjects, projects);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedProjects, projects);
         }
 
         @Test
@@ -199,7 +277,7 @@ public class TestApisHandler extends OmeroServer {
 
             List<Dataset> orphanedDatasets = apisHandler.getOrphanedDatasets().get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedOrphanedDatasets, orphanedDatasets);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedOrphanedDatasets, orphanedDatasets);
         }
 
         @Test
@@ -209,7 +287,7 @@ public class TestApisHandler extends OmeroServer {
 
             List<Dataset> datasets = apisHandler.getDatasets(projectID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedDatasets, datasets);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedDatasets, datasets);
         }
 
         @Test
@@ -219,17 +297,17 @@ public class TestApisHandler extends OmeroServer {
 
             List<Dataset> datasets = apisHandler.getDatasets(invalidProjectID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedDatasets, datasets);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedDatasets, datasets);
         }
 
         @Test
         void Check_Images() throws ExecutionException, InterruptedException {
             long datasetID = OmeroServer.getDataset().getId();
-            List<Image> expectedImages = List.of(OmeroServer.getImage());
+            List<Image> expectedImages = OmeroServer.getImagesInDataset();
 
             List<Image> images = apisHandler.getImages(datasetID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedImages, images);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedImages, images);
         }
 
         @Test
@@ -239,12 +317,12 @@ public class TestApisHandler extends OmeroServer {
 
             List<Image> images = apisHandler.getImages(invalidDatasetID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedImages, images);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedImages, images);
         }
 
         @Test
         void Check_Image() throws ExecutionException, InterruptedException {
-            Image expectedImage = OmeroServer.getImage();
+            Image expectedImage = OmeroServer.getComplexImage();
             long imageID = expectedImage.getId();
 
             Image image = apisHandler.getImage(imageID).get().orElse(null);
@@ -280,7 +358,7 @@ public class TestApisHandler extends OmeroServer {
                 TimeUnit.MILLISECONDS.sleep(50);
             }
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedImages, images);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedImages, images);
         }
 
         @Test
@@ -295,6 +373,54 @@ public class TestApisHandler extends OmeroServer {
             int numberOfImages = apisHandler.getNumberOfOrphanedImagesLoaded().get();
 
             Assertions.assertEquals(expectedNumberOfImages, numberOfImages);
+        }
+
+        @Test
+        void Check_Screens() throws ExecutionException, InterruptedException {
+            List<Screen> expectedScreens = List.of(OmeroServer.getScreen());
+
+            List<Screen> screens = apisHandler.getScreens().get();
+
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedScreens, screens);
+        }
+
+        @Test
+        void Check_Orphaned_Plates() throws ExecutionException, InterruptedException {
+            List<Plate> expectedOrphanedPlates = List.of(OmeroServer.getOrphanedPlate());
+
+            List<Plate> orphanedPlates = apisHandler.getOrphanedPlates().get();
+
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedOrphanedPlates, orphanedPlates);
+        }
+
+        @Test
+        void Check_Plates() throws ExecutionException, InterruptedException {
+            long screenId = OmeroServer.getScreen().getId();
+            List<Plate> expectedPlates = List.of(OmeroServer.getPlate());
+
+            List<Plate> plates = apisHandler.getPlates(screenId).get();
+
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedPlates, plates);
+        }
+
+        @Test
+        void Check_Plate_Acquisitions() throws ExecutionException, InterruptedException {
+            long screenId = OmeroServer.getScreen().getId();
+            List<PlateAcquisition> expectedPlateAcquisitions = List.of();
+
+            List<PlateAcquisition> plateAcquisitions = apisHandler.getPlateAcquisitions(screenId).get();
+
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedPlateAcquisitions, plateAcquisitions);
+        }
+
+        @Test
+        void Check_Wells() throws ExecutionException, InterruptedException {
+            long plateId = OmeroServer.getPlate().getId();
+            List<Well> expectedWells = OmeroServer.getWells();
+
+            List<Well> wells = apisHandler.getWellsFromPlate(plateId).get();
+
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedWells, wells);
         }
 
         @Test
@@ -325,7 +451,7 @@ public class TestApisHandler extends OmeroServer {
 
             List<SearchResult> searchResults = apisHandler.getSearchResults(searchQuery).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedResults, searchResults);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedResults, searchResults);
         }
 
         @Test
@@ -375,7 +501,7 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Thumbnail() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
+            long imageId = OmeroServer.getComplexImage().getId();
 
             BufferedImage image = apisHandler.getThumbnail(imageId).get().orElse(null);
 
@@ -384,7 +510,7 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Thumbnail_With_Specific_Size() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
+            long imageId = OmeroServer.getComplexImage().getId();
             int size = 30;
 
             BufferedImage image = apisHandler.getThumbnail(imageId, size).get().orElse(null);
@@ -404,8 +530,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Name() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            String expectedName = OmeroServer.getImageName();
+            long imageId = OmeroServer.getComplexImage().getId();
+            String expectedName = OmeroServer.getComplexImageName();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -415,8 +541,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Pixel_Type() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            PixelType expectedPixelType = OmeroServer.getImagePixelType();
+            long imageId = OmeroServer.getComplexImage().getId();
+            PixelType expectedPixelType = OmeroServer.getComplexImagePixelType();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -426,8 +552,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Width() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            int expectedWidth = OmeroServer.getImageWidth();
+            long imageId = OmeroServer.getComplexImage().getId();
+            int expectedWidth = OmeroServer.getComplexImageWidth();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -437,8 +563,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Height() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            int expectedHeight = OmeroServer.getImageHeight();
+            long imageId = OmeroServer.getComplexImage().getId();
+            int expectedHeight = OmeroServer.getComplexImageHeight();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -448,8 +574,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Number_Of_Slices() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            int expectedNumberOfSlices = OmeroServer.getImageNumberOfSlices();
+            long imageId = OmeroServer.getComplexImage().getId();
+            int expectedNumberOfSlices = OmeroServer.getComplexImageNumberOfSlices();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -459,8 +585,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Number_Of_Channels() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            int expectedNumberOfChannels = OmeroServer.getImageNumberOfChannels();
+            long imageId = OmeroServer.getComplexImage().getId();
+            int expectedNumberOfChannels = OmeroServer.getComplexImageNumberOfChannels();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -470,8 +596,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Number_Of_Time_Points() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            int expectedNumberOfTimePoints = OmeroServer.getImageNumberOfTimePoints();
+            long imageId = OmeroServer.getComplexImage().getId();
+            int expectedNumberOfTimePoints = OmeroServer.getComplexImageNumberOfTimePoints();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -481,8 +607,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Is_RGB() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            boolean expectedRGB = OmeroServer.isImageRGB();
+            long imageId = OmeroServer.getComplexImage().getId();
+            boolean expectedRGB = OmeroServer.isComplexImageRGB();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -492,8 +618,8 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Pixel_Width() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            double expectedPixelWidth = OmeroServer.getImagePixelWidthMicrons();
+            long imageId = OmeroServer.getComplexImage().getId();
+            double expectedPixelWidth = OmeroServer.getComplexImagePixelWidthMicrons();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
@@ -503,13 +629,24 @@ public class TestApisHandler extends OmeroServer {
 
         @Test
         void Check_Image_Metadata_Pixel_Height() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
-            double expectedPixelHeight = OmeroServer.getImagePixelHeightMicrons();
+            long imageId = OmeroServer.getComplexImage().getId();
+            double expectedPixelHeight = OmeroServer.getComplexImagePixelHeightMicrons();
 
             ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
 
             Assertions.assertNotNull(metadata);
             Assertions.assertEquals(expectedPixelHeight, metadata.getPixelHeightMicrons().orElse(-1.));
+        }
+
+        @Test
+        void Check_Image_Metadata_Pixel_Z_Spacing() throws ExecutionException, InterruptedException {
+            long imageId = OmeroServer.getComplexImage().getId();
+            double expectedPixelZSpacing = OmeroServer.getComplexImagePixelZSpacingMicrons();
+
+            ImageMetadataResponse metadata = apisHandler.getImageMetadata(imageId).get().orElse(null);
+
+            Assertions.assertNotNull(metadata);
+            Assertions.assertEquals(expectedPixelZSpacing, metadata.getZSpacingMicrons().orElse(-1.));
         }
 
         @Test
@@ -528,7 +665,7 @@ public class TestApisHandler extends OmeroServer {
 
             List<Shape> rois = apisHandler.getROIs(invalidImageID).get();
 
-            TestUtilities.assertListEqualsWithoutOrder(expectedROIs, rois);
+            TestUtilities.assertCollectionsEqualsWithoutOrder(expectedROIs, rois);
         }
 
         @Test
@@ -547,7 +684,7 @@ public class TestApisHandler extends OmeroServer {
         @Test
         @Override
         void Check_Write_ROIs() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
+            long imageId = OmeroServer.getComplexImage().getId();
             List<Shape> rois = List.of(new Rectangle(10, 10, 100, 100), new Line(20, 20, 50, 50));
 
             boolean success = apisHandler.writeROIs(imageId, rois, true).get();
@@ -568,7 +705,7 @@ public class TestApisHandler extends OmeroServer {
         @Test
         @Override
         void Check_Write_ROIs() throws ExecutionException, InterruptedException {
-            long imageId = OmeroServer.getImage().getId();
+            long imageId = OmeroServer.getComplexImage().getId();
             List<Shape> rois = List.of(new Rectangle(10, 10, 100, 100), new Line(20, 20, 50, 50));
 
             boolean success = apisHandler.writeROIs(imageId, rois, true).get();
@@ -580,12 +717,17 @@ public class TestApisHandler extends OmeroServer {
     private static class ServerEntityImplementation extends ServerEntity {
 
         @Override
-        public int getNumberOfChildren() {
-            return 0;
+        public boolean hasChildren() {
+            return false;
         }
 
         @Override
         public ObservableList<? extends RepositoryEntity> getChildren() {
+            return null;
+        }
+
+        @Override
+        public ReadOnlyStringProperty getLabel() {
             return null;
         }
 

@@ -9,6 +9,7 @@ import qupath.ext.omero.core.WebClient;
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.ext.omero.core.pixelapis.PixelAPI;
 import qupath.ext.omero.core.pixelapis.PixelAPIReader;
+import qupath.lib.images.servers.PixelType;
 
 import java.io.IOException;
 
@@ -63,7 +64,12 @@ public class IceAPI implements PixelAPI {
     }
 
     @Override
-    public boolean canReadImage(boolean isUint8, boolean has3Channels) {
+    public boolean canReadImage(PixelType pixelType) {
+        return !pixelType.equals(PixelType.INT8) && !pixelType.equals(PixelType.UINT32);
+    }
+
+    @Override
+    public boolean canReadImage(int numberOfChannels) {
         return true;
     }
 
@@ -72,13 +78,12 @@ public class IceAPI implements PixelAPI {
             long id,
             ImageServerMetadata metadata,
             boolean allowSmoothInterpolation,
-            int nResolutions,
-            String... args
+            int nResolutions
     ) throws IOException {
         if (!isAvailable().get()) {
             throw new IllegalStateException("This API is not available and cannot be used");
         }
-        if (!canReadImage(metadata)) {
+        if (!canReadImage(metadata.getPixelType(), metadata.getSizeC())) {
             throw new IllegalArgumentException("The provided image cannot be read by this API");
         }
 

@@ -1,23 +1,17 @@
 package qupath.ext.omero.gui.browser.serverbrowser.hierarchy;
 
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.omero.core.WebClient;
-import qupath.ext.omero.gui.browser.serverbrowser.BrowserModel;
-import qupath.ext.omero.core.entities.repositoryentities.OrphanedFolder;
 import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.gui.UiUtilities;
 
 import java.io.IOException;
-import java.util.ResourceBundle;
 
 /**
  * <p>
@@ -35,28 +29,23 @@ import java.util.ResourceBundle;
 public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {
 
     private static final Logger logger = LoggerFactory.getLogger(HierarchyCellFactory.class);
-    private static final ResourceBundle resources = UiUtilities.getResources();
     private final WebClient client;
-    private final BrowserModel browserModel;
 
     /**
      * Creates the cell factory.
      *
      * @param client  the client from which icons and additional information will be retrieved
-     * @param browserModel  the browser model of the browser
      */
-    public HierarchyCellFactory(WebClient client, BrowserModel browserModel) {
+    public HierarchyCellFactory(WebClient client) {
         this.client = client;
-        this.browserModel = browserModel;
     }
 
     @Override
     public void updateItem(RepositoryEntity repositoryEntity, boolean empty) {
         super.updateItem(repositoryEntity, empty);
 
-        textProperty().unbind();
-        setText(null);
         setGraphic(null);
+        setText(null);
         setTooltip(null);
         opacityProperty().unbind();
         setOpacity(1);
@@ -66,26 +55,14 @@ public class HierarchyCellFactory extends TreeCell<RepositoryEntity> {
 
             Tooltip tooltip = new Tooltip();
 
-            if (repositoryEntity instanceof OrphanedFolder orphanedFolder) {
-                textProperty().bind(
-                        Bindings.when(browserModel.areOrphanedImagesLoading())
-                                .then(Bindings.concat(
-                                        orphanedFolder.getName(),
-                                        " (",
-                                        resources.getString("Browser.ServerBrowser.Hierarchy.loading"),
-                                        "...)")
-                                )
-                                .otherwise(Bindings.concat(orphanedFolder.getName(), " (", orphanedFolder.getNumberOfChildren(), ")")));
+            setText(repositoryEntity.getLabel().get());
+            tooltip.setText(repositoryEntity.getLabel().get());
+            repositoryEntity.getLabel().addListener((p, o, n) -> Platform.runLater(() -> {
+                setText(n);
+                tooltip.setText(n);
+            }));
 
-                tooltip.setText(orphanedFolder.getName());
-            } else if (repositoryEntity instanceof Project || repositoryEntity instanceof Dataset) {
-                String title = repositoryEntity.getName() + " (" + repositoryEntity.getNumberOfChildren() + ")";
-
-                setText(title);
-                tooltip.setText(title);
-            } else if (repositoryEntity instanceof Image image) {
-                setText(repositoryEntity.getName());
-
+            if (repositoryEntity instanceof Image image) {
                 setOpacity(image.isSupported().get() ? 1 : 0.5);
                 image.isSupported().addListener((p, o, n) -> Platform.runLater(() -> setOpacity(n ? 1 : 0.5)));
 

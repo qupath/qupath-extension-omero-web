@@ -78,7 +78,7 @@ class MsPixelBufferReader implements PixelAPIReader {
         if (images.size() != numberOfChannels) {
             throw new IOException("Could not retrieve all pixels for all channels");
         } else {
-            if (numberOfChannels == 1) {
+            if (numberOfChannels == 1 && pixelType.equals(PixelType.UINT8)) {
                 return images.get(0);
             } else {
                 DataBuffer dataBuffer = getDataBuffer(images.stream()

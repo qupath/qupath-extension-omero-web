@@ -2,6 +2,9 @@ package qupath.ext.omero.core.entities.search;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import qupath.ext.omero.TestUtilities;
+import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 
 import java.net.URI;
 import java.text.DateFormat;
@@ -35,13 +38,15 @@ public class TestSearchResult {
 
     @Test
     void Check_Results_Types() {
+        List<Class<? extends RepositoryEntity>> expectedTypes = List.of(Image.class, Image.class, Image.class);
         List<SearchResult> searchResults = createSearchResults();
 
-        List<String> resultsTypes = searchResults.stream().map(SearchResult::getType).toList();
+        List<Class<? extends RepositoryEntity>> resultsTypes = searchResults.stream()
+                .map(SearchResult::getType)
+                .flatMap(Optional::stream)
+                .toList();
 
-        for (String resultType: resultsTypes) {
-            Assertions.assertEquals("image", resultType);
-        }
+        TestUtilities.assertCollectionsEqualsWithoutOrder(expectedTypes, resultsTypes);
     }
 
     @Test

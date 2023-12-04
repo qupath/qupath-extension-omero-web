@@ -15,11 +15,8 @@ public class TestLoginResponse {
     }
 
     @Test
-    void Check_Blank_LoginResponse() {
-        LoginResponse loginResponse = LoginResponse.createSuccessLoginResponse(
-                "",
-                new char[]{}
-        );
+    void Check_Blank_Response() {
+        LoginResponse loginResponse = LoginResponse.createSuccessfulLoginResponse("");
 
         LoginResponse.Status status = loginResponse.getStatus();
 
@@ -27,11 +24,8 @@ public class TestLoginResponse {
     }
 
     @Test
-    void Check_Empty_LoginResponse() {
-        LoginResponse loginResponse = LoginResponse.createSuccessLoginResponse(
-                "{}",
-                new char[]{}
-        );
+    void Check_Empty_Response() {
+        LoginResponse loginResponse = LoginResponse.createSuccessfulLoginResponse("{}");
 
         LoginResponse.Status status = loginResponse.getStatus();
 
@@ -39,7 +33,7 @@ public class TestLoginResponse {
     }
 
     @Test
-    void Check_Successful_LoginResponse() {
+    void Check_Successful_Response() {
         LoginResponse loginResponse = getSuccessfulLoginResponse();
 
         LoginResponse.Status status = loginResponse.getStatus();
@@ -66,12 +60,12 @@ public class TestLoginResponse {
     }
 
     @Test
-    void Check_Password() {
+    void Check_Session_UUID() {
         LoginResponse loginResponse = getSuccessfulLoginResponse();
 
-        char[] password = loginResponse.getPassword();
+        String sessionUuid = loginResponse.getSessionUuid();
 
-        Assertions.assertArrayEquals("password".toCharArray(), password);
+        Assertions.assertEquals("86cdf82c-8df9-11ee-b9d1-0242ac120002", sessionUuid);
     }
 
     @Test
@@ -84,17 +78,17 @@ public class TestLoginResponse {
     }
 
     private LoginResponse getSuccessfulLoginResponse() {
-        return LoginResponse.createSuccessLoginResponse(
+        return LoginResponse.createSuccessfulLoginResponse(
                 """
                 {
                     "eventContext": {
                         "userId": 15,
                         "userName": "username",
-                        "@id": 54
+                        "@id": 54,
+                        "sessionUuid": "86cdf82c-8df9-11ee-b9d1-0242ac120002"
                     }
                 }
-                """,
-                "password".toCharArray()
+                """
         );
     }
 }

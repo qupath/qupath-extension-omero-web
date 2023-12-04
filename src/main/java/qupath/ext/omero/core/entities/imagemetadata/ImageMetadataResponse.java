@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qupath.ext.omero.core.apis.ApisHandler;
 import qupath.lib.common.ColorTools;
 import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.ImageServerMetadata;
@@ -11,7 +12,6 @@ import qupath.lib.images.servers.PixelType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -20,16 +20,6 @@ import java.util.Optional;
 public class ImageMetadataResponse {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageMetadataResponse.class);
-    private static final Map<String, PixelType> PIXEL_TYPE_MAP = Map.of(
-            "uint8", PixelType.UINT8,
-            "int8", PixelType.INT8,
-            "uint16", PixelType.UINT16,
-            "int16", PixelType.INT16,
-            "int32", PixelType.INT32,
-            "uint32", PixelType.UINT32,
-            "float", PixelType.FLOAT32,
-            "double", PixelType.FLOAT64
-    );
     private final String imageName;
     private final int sizeX;
     private final int sizeY;
@@ -145,14 +135,11 @@ public class ImageMetadataResponse {
                     imageName = meta.get("imageName").getAsString();
 
                 if (meta.has("pixelsType"))
-                    pixelType = PIXEL_TYPE_MAP.get(meta.get("pixelsType").getAsString());
+                    pixelType = ApisHandler.getPixelType(meta.get("pixelsType").getAsString()).orElse(null);
             }
 
             if (pixelType == null) {
-                throw new RuntimeException(
-                        "Unable to set pixel type from " + jsonObject +
-                                "\nAvailable pixel types are: " + PIXEL_TYPE_MAP.keySet() + "."
-                );
+                throw new RuntimeException("Unable to set pixel type from " + jsonObject);
             }
 
             int tileSizeX;
@@ -209,16 +196,6 @@ public class ImageMetadataResponse {
             logger.error("Could not create image metadata", e);
             return Optional.empty();
         }
-    }
-
-    /**
-     * Convert a pixel type returned by OMERO to a QuPath {@link PixelType}
-     *
-     * @param pixelType  the OMERO pixel type
-     * @return the QuPath pixel type, or an empty Optional if the OMERO pixel type was not recognized
-     */
-    public static Optional<PixelType> getPixelType(String pixelType) {
-        return Optional.ofNullable(PIXEL_TYPE_MAP.get(pixelType));
     }
 
     /**

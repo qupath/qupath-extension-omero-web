@@ -16,11 +16,12 @@ import qupath.ext.omero.core.WebClients;
 import qupath.ext.omero.core.entities.annotations.AnnotationGroup;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.*;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.search.SearchResult;
 import qupath.ext.omero.core.pixelapis.mspixelbuffer.MsPixelBufferAPI;
+import qupath.ext.omero.imagesserver.OmeroImageServer;
+import qupath.ext.omero.imagesserver.OmeroImageServerBuilder;
 import qupath.lib.images.servers.PixelType;
 
 import java.io.IOException;
@@ -77,7 +78,7 @@ public abstract class OmeroServer {
             redis = null;
             omeroServer = null;
             omeroWeb = null;
-            analysisFileId = "84";
+            analysisFileId = "85";
         } else {
             // See https://hub.docker.com/r/openmicroscopy/omero-server
             postgres = new GenericContainer<>(DockerImageName.parse("postgres"))
@@ -177,7 +178,7 @@ public abstract class OmeroServer {
         Assumptions.assumeTrue(dockerAvailable, "Aborting test: no docker environment detected");
     }
 
-    protected static String getServerURL() {
+    protected static String getWebServerURI() {
         return omeroWeb == null ?
                 "http://localhost:" + OMERO_WEB_PORT :
                 "http://" + omeroWeb.getHost() + ":" + omeroWeb.getMappedPort(OMERO_WEB_PORT);
@@ -205,11 +206,15 @@ public abstract class OmeroServer {
         );
     }
 
-    protected static String getServerHost() {
+    protected static OmeroImageServer createImageServer(URI uri) {
+        return (OmeroImageServer) new OmeroImageServerBuilder().buildServer(uri, "--pixelAPI", "Pixel Buffer Microservice");
+    }
+
+    protected static String getServerURI() {
         return "omero-server";
     }
 
-    protected static int getPort() {
+    protected static int getServerPort() {
         return OMERO_SERVER_PORT;
     }
 
@@ -234,7 +239,7 @@ public abstract class OmeroServer {
     }
 
     protected static URI getProjectURI() {
-        return URI.create(getServerURL() + "/webclient/?show=project-" + getProject().getId());
+        return URI.create(getWebServerURI() + "/webclient/?show=project-" + getProject().getId());
     }
 
     protected static String getProjectAttributeValue(int informationIndex) {
@@ -258,7 +263,7 @@ public abstract class OmeroServer {
     }
 
     protected static URI getDatasetURI() {
-        return URI.create(getServerURL() + "/webclient/?show=dataset-" + getDataset().getId());
+        return URI.create(getWebServerURI() + "/webclient/?show=dataset-" + getDataset().getId());
     }
 
     protected static AnnotationGroup getDatasetAnnotationGroup() {
@@ -314,7 +319,7 @@ public abstract class OmeroServer {
             case 2 -> "-";
             case 3 -> getCurrentOwner().getFullName();
             case 4 -> getCurrentGroup().getName();
-            case 5 -> "1";
+            case 5 -> "9";
             default -> "";
         };
     }
@@ -342,126 +347,322 @@ public abstract class OmeroServer {
         );
     }
 
-    protected static Image getImage() {
-        return new Image(1);
+    protected static List<Image> getImagesInDataset() {
+        return List.of(
+                new Image(1),
+                new Image(2),
+                new Image(3),
+                new Image(4),
+                new Image(5),
+                new Image(6),
+                new Image(7),
+                new Image(8),
+                new Image(9)
+        );
     }
 
-    protected static URI getImageURI() {
-        return URI.create(getServerURL() + "/webclient/?show=image-" + getImage().getId());
+    protected static List<URI> getImagesUriInDataset() {
+        return getImagesInDataset().stream()
+                .map(image -> URI.create(getWebServerURI() + "/webclient/?show=image-" + image.getId()))
+                .toList();
     }
 
-    protected static String getImageName() {
-        return "mitosis.tif";
+    protected static Image getRGBImage() {
+        return getImagesInDataset().get(0);
     }
 
-    protected static PixelType getImagePixelType() {
-        return PixelType.UINT16;
+    protected static URI getRGBImageURI() {
+        return getImagesUriInDataset().get(0);
     }
 
-    protected static int getImageWidth() {
-        return 171;
+    protected static String getRGBImageName() {
+        return "rgb.tiff";
     }
 
-    protected static int getImageHeight() {
-        return 196;
+    protected static int getRGBImageWidth() {
+        return 256;
     }
 
-    protected static int getImageNumberOfSlices() {
-        return 5;
+    protected static int getRGBImageHeight() {
+        return 256;
     }
 
-    protected static int getImageNumberOfChannels() {
-        return 2;
+    protected static PixelType getRGBImagePixelType() {
+        return PixelType.UINT8;
     }
 
-    protected static int getImageNumberOfTimePoints() {
-        return 51;
+    protected static int getRGBImageNumberOfSlices() {
+        return 1;
     }
 
-    protected static boolean isImageRGB() {
-        return false;
+    protected static int getRGBImageNumberOfChannels() {
+        return 3;
     }
 
-    protected static double getImagePixelWidthMicrons() {
-        return 0.08850000022125;
+    protected static int getRGBImageNumberOfTimePoints() {
+        return 1;
     }
 
-    protected static double getImagePixelHeightMicrons() {
-        return 0.08850000022125;
+    protected static double getRGBImagePixelWidthMicrons() {
+        return 1.0;
     }
 
-    protected static String getImageAttributeValue(int informationIndex) {
+    protected static double getRGBImagePixelHeightMicrons() {
+        return 1.0;
+    }
+
+    protected static String getRGBImageAttributeValue(int informationIndex) {
         return switch (informationIndex) {
-            case 0 -> getImageName();
-            case 1 -> String.valueOf(getImage().getId());
+            case 0 -> getRGBImageName();
+            case 1 -> String.valueOf(getRGBImage().getId());
             case 2 -> getCurrentOwner().getFullName();
             case 3 -> getCurrentGroup().getName();
             case 4, 13 -> "-";
-            case 5 -> getImageWidth() + " px";
-            case 6 -> getImageHeight() + " px";
-            case 7 -> "32.6 MB";
-            case 8 -> String.valueOf(getImageNumberOfSlices());
-            case 9 -> String.valueOf(getImageNumberOfChannels());
-            case 10 -> String.valueOf(getImageNumberOfTimePoints());
-            case 11 -> getImagePixelWidthMicrons() + " µm";
-            case 12 -> getImagePixelHeightMicrons() + " µm";
-            case 14 -> getImagePixelType().toString().toLowerCase();
+            case 5 -> getRGBImageWidth() + " px";
+            case 6 -> getRGBImageHeight() + " px";
+            case 7 -> "0.2 MB";
+            case 8 -> String.valueOf(getRGBImageNumberOfSlices());
+            case 9 -> String.valueOf(getRGBImageNumberOfChannels());
+            case 10 -> String.valueOf(getRGBImageNumberOfTimePoints());
+            case 11 -> getRGBImagePixelWidthMicrons() + " µm";
+            case 12 -> getRGBImagePixelHeightMicrons() + " µm";
+            case 14 -> getRGBImagePixelType().toString().toLowerCase();
+            default -> "";
+        };
+    }
+
+    protected static double getRGBImageRedChannelMean() {
+        return 69.966;
+    }
+
+    protected static double getRGBImageRedChannelStdDev() {
+        return 40.656;
+    }
+
+    protected static Image getUInt8Image() {
+        return getImagesInDataset().get(1);
+    }
+
+    protected static URI getUInt8ImageURI() {
+        return getImagesUriInDataset().get(1);
+    }
+
+    protected static double getUInt8ImageRedChannelMean() {
+        return 70.066;
+    }
+
+    protected static double getUInt8ImageRedChannelStdDev() {
+        return 40.653;
+    }
+
+    protected static Image getInt8Image() {
+        return getImagesInDataset().get(2);
+    }
+
+    protected static URI getInt8ImageURI() {
+        return getImagesUriInDataset().get(2);
+    }
+
+    protected static double getInt8ImageRedChannelMean() {
+        return 70.148;
+    }
+
+    protected static double getInt8ImageRedChannelStdDev() {
+        return 40.741;
+    }
+
+    protected static Image getUInt16Image() {
+        return getImagesInDataset().get(3);
+    }
+
+    protected static URI getUInt16ImageURI() {
+        return getImagesUriInDataset().get(3);
+    }
+
+    protected static double getUInt16ImageRedChannelMean() {
+        return 69.942;
+    }
+
+    protected static double getUInt16ImageRedChannelStdDev() {
+        return 40.322;
+    }
+
+    protected static Image getInt16Image() {
+        return getImagesInDataset().get(4);
+    }
+
+    protected static URI getInt16ImageURI() {
+        return getImagesUriInDataset().get(4);
+    }
+
+    protected static double getInt16ImageRedChannelMean() {
+        return 70.210;
+    }
+
+    protected static double getInt16ImageRedChannelStdDev() {
+        return 40.440;
+    }
+
+    protected static Image getUInt32Image() {
+        return getImagesInDataset().get(5);
+    }
+
+    protected static URI getUInt32ImageURI() {
+        return getImagesUriInDataset().get(5);
+    }
+
+    protected static double getUInt32ImageRedChannelMean() {
+        return 69.784;
+    }
+
+    protected static double getUInt32ImageRedChannelStdDev() {
+        return 40.521;
+    }
+
+    protected static Image getInt32Image() {
+        return getImagesInDataset().get(6);
+    }
+
+    protected static URI getInt32ImageURI() {
+        return getImagesUriInDataset().get(6);
+    }
+
+    protected static double getInt32ImageRedChannelMean() {
+        return 70.026;
+    }
+
+    protected static double getInt32ImageRedChannelStdDev() {
+        return 40.424;
+    }
+
+    protected static Image getFloat32Image() {
+        return getImagesInDataset().get(7);
+    }
+
+    protected static URI getFloat32ImageURI() {
+        return getImagesUriInDataset().get(7);
+    }
+
+    protected static double getFloat32ImageRedChannelMean() {
+        return 69.883;
+    }
+
+    protected static double getFloat32ImageRedChannelStdDev() {
+        return 40.464;
+    }
+
+    protected static Image getFloat64Image() {
+        return getImagesInDataset().get(8);
+    }
+
+    protected static URI getFloat64ImageURI() {
+        return getImagesUriInDataset().get(8);
+    }
+
+    protected static double getFloat64ImageRedChannelMean() {
+        return 70.042;
+    }
+
+    protected static double getFloat64ImageRedChannelStdDev() {
+        return 40.463;
+    }
+
+    protected static Image getComplexImage() {
+        return new Image(10);
+    }
+
+    protected static URI getComplexImageURI() {
+        return URI.create(getWebServerURI() + "/webclient/?show=image-" + getComplexImage().getId());
+    }
+
+    protected static String getComplexImageName() {
+        return "complex.tiff";
+    }
+
+    protected static PixelType getComplexImagePixelType() {
+        return PixelType.FLOAT32;
+    }
+
+    protected static int getComplexImageWidth() {
+        return 256;
+    }
+
+    protected static int getComplexImageHeight() {
+        return 256;
+    }
+
+    protected static int getComplexImageNumberOfSlices() {
+        return 10;
+    }
+
+    protected static int getComplexImageNumberOfChannels() {
+        return 1;
+    }
+
+    protected static int getComplexImageNumberOfTimePoints() {
+        return 3;
+    }
+
+    protected static boolean isComplexImageRGB() {
+        return false;
+    }
+
+    protected static double getComplexImagePixelWidthMicrons() {
+        return 2.675500000484335;
+    }
+
+    protected static double getComplexImagePixelHeightMicrons() {
+        return 2.675500000484335;
+    }
+
+    protected static double getComplexImagePixelZSpacingMicrons() {
+        return 3.947368;
+    }
+
+    protected static String getComplexImageAttributeValue(int informationIndex) {
+        return switch (informationIndex) {
+            case 0 -> getComplexImageName();
+            case 1 -> String.valueOf(getComplexImage().getId());
+            case 2 -> getCurrentOwner().getFullName();
+            case 3 -> getCurrentGroup().getName();
+            case 4 -> "-";
+            case 5 -> getComplexImageWidth() + " px";
+            case 6 -> getComplexImageHeight() + " px";
+            case 7 -> "7.5 MB";
+            case 8 -> String.valueOf(getComplexImageNumberOfSlices());
+            case 9 -> String.valueOf(getComplexImageNumberOfChannels());
+            case 10 -> String.valueOf(getComplexImageNumberOfTimePoints());
+            case 11 -> getComplexImagePixelWidthMicrons() + " µm";
+            case 12 -> getComplexImagePixelHeightMicrons() + " µm";
+            case 13 -> getComplexImagePixelZSpacingMicrons() + " µm";
+            case 14 -> "float";
             default -> "";
         };
     }
 
     protected static Image getOrphanedImage() {
-        return new Image(2);
+        return getComplexImage();
     }
 
-    protected static URI getOrphanedImageURI() {
-        return URI.create(getServerURL() + "/webclient/?show=image-" + getOrphanedImage().getId());
+    protected static Screen getScreen() {
+        return new Screen(1);
     }
 
-    protected static String getOrphanedImageName() {
-        return "Cardio.tif";
+    protected static Plate getPlate() {
+        return new Plate(1);
     }
 
-    protected static PixelType getOrphanedImagePixelType() {
-        return PixelType.UINT8;
+    protected static Plate getOrphanedPlate() {
+        return new Plate(2);
     }
 
-    protected static int getOrphanedImageWidth() {
-        return 1000;
-    }
-
-    protected static int getOrphanedImageHeight() {
-        return 1000;
-    }
-
-    protected static int getOrphanedImageNumberOfSlices() {
-        return 1;
-    }
-
-    protected static int getOrphanedImageNumberOfChannels() {
-        return 3;
-    }
-
-    protected static int getOrphanedImageNumberOfTimePoints() {
-        return 1;
-    }
-
-    protected static String getOrphanedImageAttributeValue(int informationIndex) {
-        return switch (informationIndex) {
-            case 0 -> getOrphanedImageName();
-            case 1 -> String.valueOf(getOrphanedImage().getId());
-            case 2 -> getCurrentOwner().getFullName();
-            case 3 -> getCurrentGroup().getName();
-            case 4, 11, 12, 13 -> "-";
-            case 5 -> getOrphanedImageWidth() + " px";
-            case 6 -> getOrphanedImageHeight() + " px";
-            case 7 -> "2.9 MB";
-            case 8 -> String.valueOf(getOrphanedImageNumberOfSlices());
-            case 9 -> String.valueOf(getOrphanedImageNumberOfChannels());
-            case 10 -> String.valueOf(getOrphanedImageNumberOfTimePoints());
-            case 14 -> getOrphanedImagePixelType().toString().toLowerCase();
-            default -> "";
-        };
+    protected static List<Well> getWells() {
+        return List.of(
+                new Well(1),
+                new Well(2),
+                new Well(3),
+                new Well(4)
+        );
     }
 
     protected static List<Group> getGroups() {
@@ -494,7 +695,7 @@ public abstract class OmeroServer {
         int attempt = 0;
 
         do {
-            webClient = WebClients.createClient(getServerURL(), true, args).get();
+            webClient = WebClients.createClient(getWebServerURI(), true, args).get();
         } while (!webClient.getStatus().equals(WebClient.Status.SUCCESS) && ++attempt < CLIENT_CREATION_ATTEMPTS);
 
         if (webClient.getStatus().equals(WebClient.Status.SUCCESS)) {

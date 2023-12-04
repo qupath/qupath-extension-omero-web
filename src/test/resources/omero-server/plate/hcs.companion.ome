@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<OME xmlns="http://www.openmicroscopy.org/Schemas/OME/2016-06" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openmicroscopy.org/Schemas/OME/2016-06 http://www.openmicroscopy.org/Schemas/OME/2016-06/ome.xsd">
+  <Plate ID="Plate:0" Name="plate">
+    <Well ID="Well:0:0" Row="0" Column="1">
+      <WellSample ID="WellSample:0:0:0" Index="1">
+        <ImageRef ID="Image:0"/>
+      </WellSample>
+    </Well>
+    <Well ID="Well:0:1" Row="1" Column="0">
+      <WellSample ID="WellSample:0:1:0" Index="2">
+        <ImageRef ID="Image:1"/>
+      </WellSample>
+    </Well>
+    <Well ID="Well:0:2" Row="1" Column="2">
+      <WellSample ID="WellSample:0:2:0" Index="3">
+        <ImageRef ID="Image:2"/>
+      </WellSample>
+    </Well>
+    <Well ID="Well:0:3" Row="2" Column="1">
+      <WellSample ID="WellSample:0:3:0" Index="4">
+        <ImageRef ID="Image:3"/>
+      </WellSample>
+      <WellSample ID="WellSample:0:3:1" Index="5">
+        <ImageRef ID="Image:4"/>
+      </WellSample>
+    </Well>
+  </Plate>
+  <Image ID="Image:0">
+    <Pixels ID="Pixels:0" DimensionOrder="XYZCT" SizeX="256" SizeY="256" SizeZ="1" SizeC="1" SizeT="1" Type="float">
+      <TiffData FirstC="0" FirstT="0" FirstZ="0" IFD="0" PlaneCount="1">
+        <UUID FileName="well.tiff"></UUID>
+      </TiffData>
+    </Pixels>
+  </Image>
+  <Image ID="Image:1">
+    <Pixels ID="Pixels:1" DimensionOrder="XYZCT" SizeX="256" SizeY="256" SizeZ="1" SizeC="1" SizeT="1" Type="float">
+      <TiffData FirstC="0" FirstT="0" FirstZ="0" IFD="0" PlaneCount="1">
+        <UUID FileName="well.tiff"></UUID>
+      </TiffData>
+    </Pixels>
+  </Image>
+  <Image ID="Image:2">
+    <Pixels ID="Pixels:2" DimensionOrder="XYZCT" SizeX="256" SizeY="256" SizeZ="1" SizeC="1" SizeT="1" Type="float">
+      <TiffData FirstC="0" FirstT="0" FirstZ="0" IFD="0" PlaneCount="1">
+        <UUID FileName="well.tiff"></UUID>
+      </TiffData>
+    </Pixels>
+  </Image>
+  <Image ID="Image:3">
+    <Pixels ID="Pixels:3" DimensionOrder="XYZCT" SizeX="256" SizeY="256" SizeZ="1" SizeC="1" SizeT="1" Type="float">
+      <TiffData FirstC="0" FirstT="0" FirstZ="0" IFD="0" PlaneCount="1">
+        <UUID FileName="well.tiff"></UUID>
+      </TiffData>
+    </Pixels>
+  </Image>
+  <Image ID="Image:4">
+    <Pixels ID="Pixels:4" DimensionOrder="XYZCT" SizeX="256" SizeY="256" SizeZ="1" SizeC="1" SizeT="1" Type="float">
+      <TiffData FirstC="0" FirstT="0" FirstZ="0" IFD="0" PlaneCount="1">
+        <UUID FileName="well.tiff"></UUID>
+      </TiffData>
+    </Pixels>
+  </Image>
+</OME>

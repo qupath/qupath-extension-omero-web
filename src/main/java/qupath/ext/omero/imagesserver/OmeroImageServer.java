@@ -68,13 +68,12 @@ public class OmeroImageServer extends AbstractTileableImageServer implements Pat
 
                 pixelAPI.setParametersFromArgs(args);
 
-                if (pixelAPI.canReadImage(omeroImageServer.getMetadata())) {
+                if (pixelAPI.canReadImage(omeroImageServer.getMetadata().getPixelType(), omeroImageServer.getMetadata().getSizeC())) {
                     omeroImageServer.pixelAPIReader = pixelAPI.createReader(
                             omeroImageServer.id,
                             omeroImageServer.getMetadata(),
                             omeroImageServer.allowSmoothInterpolation(),
-                            omeroImageServer.nResolutions(),
-                            args
+                            omeroImageServer.nResolutions()
                     );
                 } else {
                     logger.error("The selected pixel API (" + pixelAPI + ") can't read the provided image");

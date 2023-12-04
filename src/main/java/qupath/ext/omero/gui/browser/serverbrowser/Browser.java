@@ -24,8 +24,6 @@ import qupath.ext.omero.gui.browser.serverbrowser.advancedinformation.AdvancedIn
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
 import qupath.ext.omero.core.entities.repositoryentities.RepositoryEntity;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
 import qupath.ext.omero.core.entities.repositoryentities.serverentities.image.Image;
 import qupath.ext.omero.core.entities.repositoryentities.OrphanedFolder;
@@ -166,7 +164,7 @@ public class Browser extends Stage {
                 } else {
                     Dialogs.showErrorMessage(
                             resources.getString("Browser.ServerBrowser.cantDisplayInformation"),
-                            MessageFormat.format(resources.getString("Browser.ServerBrowser.errorWhenFetchingInformation"), serverEntity.getName())
+                            MessageFormat.format(resources.getString("Browser.ServerBrowser.errorWhenFetchingInformation"), serverEntity.getLabel().get())
                     );
                 }
             }));
@@ -313,7 +311,7 @@ public class Browser extends Stage {
                 browserModel.getSelectedGroup(),
                 nameFilter.textProperty()
         ));
-        hierarchy.setCellFactory(n -> new HierarchyCellFactory(client, browserModel));
+        hierarchy.setCellFactory(n -> new HierarchyCellFactory(client));
 
         attributeColumn.setCellValueFactory(cellData -> {
             var selectedItems = hierarchy.getSelectionModel().getSelectedItems();
@@ -459,13 +457,13 @@ public class Browser extends Stage {
 
     private void updateImportButton() {
         var importableEntities = hierarchy.getSelectionModel().getSelectedItems().stream()
-                .map(TreeItem::getValue)
+                .map(item -> item == null ? null : item.getValue())
+                .filter(Objects::nonNull)
                 .filter(repositoryEntity -> {
                     if (repositoryEntity instanceof Image image) {
-                        return browserModel.getSelectedPixelAPI().get() != null &&
-                                browserModel.getSelectedPixelAPI().get().canReadImage(image.isUint8(), image.has3Channels());
+                        return image.isSupported().get();
                     } else {
-                        return repositoryEntity instanceof Dataset || repositoryEntity instanceof Project;
+                        return repositoryEntity instanceof ServerEntity;
                     }
                 })
                 .toList();
@@ -475,13 +473,10 @@ public class Browser extends Stage {
         if (importableEntities.isEmpty()) {
             importImage.setText(resources.getString("Browser.ServerBrowser.cantImportSelectedToQuPath"));
         } else if (importableEntities.size() == 1) {
-            if (importableEntities.get(0) instanceof Image) {
-                importImage.setText(resources.getString("Browser.ServerBrowser.importImageToQuPath"));
-            } else if (importableEntities.get(0) instanceof Dataset) {
-                importImage.setText(resources.getString("Browser.ServerBrowser.importDatasetToQuPath"));
-            } else if (importableEntities.get(0) instanceof Project) {
-                importImage.setText(resources.getString("Browser.ServerBrowser.importProjectToQuPath"));
-            }
+            importImage.setText(MessageFormat.format(
+                    resources.getString("Browser.ServerBrowser.importToQuPath"),
+                    importableEntities.get(0).getLabel().get()
+            ));
         } else {
             importImage.setText(resources.getString("Browser.ServerBrowser.importSelectedToQuPath"));
         }

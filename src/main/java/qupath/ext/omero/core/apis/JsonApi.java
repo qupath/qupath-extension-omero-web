@@ -7,10 +7,10 @@ import com.google.gson.reflect.TypeToken;
 import javafx.beans.property.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qupath.ext.omero.core.WebClient;
 import qupath.ext.omero.core.apis.authenticators.Authenticator;
 import qupath.ext.omero.core.entities.login.LoginResponse;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Dataset;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.Project;
+import qupath.ext.omero.core.entities.repositoryentities.serverentities.*;
 import qupath.ext.omero.core.entities.shapes.Shape;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
@@ -19,7 +19,6 @@ import qupath.ext.omero.core.entities.serverinformation.OmeroAPI;
 import qupath.ext.omero.core.entities.serverinformation.OmeroServerList;
 import qupath.ext.omero.core.WebUtilities;
 import qupath.ext.omero.core.RequestSender;
-import qupath.ext.omero.core.entities.repositoryentities.serverentities.ServerEntity;
 
 import java.net.PasswordAuthentication;
 import java.net.URI;
@@ -42,6 +41,8 @@ class JsonApi {
     private static final String PROJECTS_URL_KEY = "url:projects";
     private static final String DATASETS_URL_KEY = "url:datasets";
     private static final String IMAGES_URL_KEY = "url:images";
+    private static final String SCREENS_URL_KEY = "url:screens";
+    private static final String PLATES_URL_KEY = "url:plates";
     private static final String TOKEN_URL_KEY = "url:token";
     private static final String SERVERS_URL_KEY = "url:servers";
     private static final String LOGIN_URL_KEY = "url:login";
@@ -50,20 +51,26 @@ class JsonApi {
     private static final String DATASETS_URL = "%s%d/datasets/?childCount=true";
     private static final String IMAGES_URL = "%s%d/images/?childCount=true";
     private static final String ORPHANED_DATASETS_URL = "%s?childCount=true&orphaned=true";
+    private static final String SCREENS_URL = "%s?childCount=true";
+    private static final String PLATES_URL = "%s%d/plates/";
+    private static final String ORPHANED_PLATES_URL = "%s?orphaned=true";
+    private static final String PLATE_ACQUISITIONS_URL = "%s/api/v0/m/plates/%d/plateacquisitions/";
+    private static final String PLATE_WELLS_URL = "%s/api/v0/m/plates/%d/wells/";
+    private static final String WELLS_URL = "%s/api/v0/m/plateacquisitions/%d/wellsampleindex/%d/wells/";
     private static final String ROIS_URL = "%s/api/v0/m/rois/?image=%s";
     private final IntegerProperty numberOfEntitiesLoading = new SimpleIntegerProperty(0);
     private final BooleanProperty areOrphanedImagesLoading = new SimpleBooleanProperty(false);
     private final IntegerProperty numberOfOrphanedImagesLoaded = new SimpleIntegerProperty(0);
     private final URI webHost;
-    private final ApisHandler apisHandler;
+    private final WebClient client;
     private Map<String, String> urls;
     private int serverID;
     private String serverHost;
     private int port;
     private String token;
 
-    private JsonApi(ApisHandler apisHandler, URI host) {
-        this.apisHandler = apisHandler;
+    private JsonApi(WebClient client, URI host) {
+        this.client = client;
         this.webHost = host;
     }
 
@@ -76,12 +83,12 @@ class JsonApi {
      * <p>Attempt to create a JSON API client.</p>
      * <p>This function is asynchronous.</p>
      *
-     * @param apisHandler  the RequestsHandler using this API. It is used to have access to other APIs
+     * @param client  the corresponding web client
      * @param host  the base server URI (e.g. <a href="https://idr.openmicroscopy.org">https://idr.openmicroscopy.org</a>)
      * @return a CompletableFuture with the JSON API client, an empty Optional if an error occurred
      */
-    public static CompletableFuture<Optional<JsonApi>> create(ApisHandler apisHandler, URI host) {
-        JsonApi jsonApi = new JsonApi(apisHandler, host);
+    public static CompletableFuture<Optional<JsonApi>> create(WebClient client, URI host) {
+        JsonApi jsonApi = new JsonApi(client, host);
 
         return jsonApi.initialize().thenApply(initialized -> {
             if (initialized) {
@@ -123,7 +130,7 @@ class JsonApi {
      * @return the server port of this server. This is the OMERO server
      * port and may be different from the OMERO web port
      */
-    public int getPort() {
+    public int getServerPort() {
         return port;
     }
 
@@ -161,7 +168,6 @@ class JsonApi {
         if (uri.isEmpty() || authentication == null) {
             return CompletableFuture.completedFuture(LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.CANCELED));
         } else {
-            char[] nonEncodedPassword = Arrays.copyOf(authentication.getPassword(), authentication.getPassword().length);
             char[] encodedPassword = ApiUtilities.urlEncode(authentication.getPassword());
 
             byte[] body = ApiUtilities.concatAndConvertToBytes(
@@ -177,12 +183,9 @@ class JsonApi {
             ).thenApply(response -> {
                 Arrays.fill(body, (byte) 0);
 
-                if (response.isPresent()) {
-                    return LoginResponse.createSuccessLoginResponse(response.get(), nonEncodedPassword);
-                } else {
-                    Arrays.fill(nonEncodedPassword, (char) 0);
-                    return LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.FAILED);
-                }
+                return response
+                        .map(LoginResponse::createSuccessfulLoginResponse)
+                        .orElseGet(() -> LoginResponse.createNonSuccessfulLoginResponse(LoginResponse.Status.FAILED));
             });
         }
     }
@@ -308,9 +311,13 @@ class JsonApi {
         var uri = WebUtilities.createURI(urls.get(IMAGES_URL_KEY) + imageID);
 
         if (uri.isPresent()) {
+            changeNumberOfEntitiesLoading(true);
+
             return RequestSender.getAndConvert(uri.get(), JsonElement.class).thenApply(jsonElement -> {
+                changeNumberOfEntitiesLoading(false);
+
                 if (jsonElement.isPresent()) {
-                    var serverEntity = ServerEntity.createFromJsonElement(jsonElement.get().getAsJsonObject().get("data"), apisHandler);
+                    var serverEntity = ServerEntity.createFromJsonElement(jsonElement.get().getAsJsonObject().get("data"), client);
                     if (serverEntity.isPresent() && serverEntity.get() instanceof Image image) {
                         return Optional.of(image);
                     }
@@ -328,7 +335,7 @@ class JsonApi {
      * @return a CompletableFuture with the number of orphaned images, or 0 if it couldn't be retrieved
      */
     public CompletableFuture<Integer> getNumberOfOrphanedImages() {
-        return apisHandler.getOrphanedImagesIds().thenApply(ids -> ids.stream()
+        return client.getApisHandler().getOrphanedImagesIds().thenApply(ids -> ids.stream()
                 .map(id -> WebUtilities.createURI(urls.get(IMAGES_URL_KEY) + id))
                 .flatMap(Optional::stream)
                 .toList()
@@ -355,16 +362,15 @@ class JsonApi {
             // to avoid too many concurrent streams
             List<List<URI>> batches = Lists.partition(uris, 16);
             for (List<URI> batch: batches) {
-                List<Image> serverEntities = batch.stream()
+                children.addAll(batch.stream()
                         .map(this::requestImageInfo)
                         .map(CompletableFuture::join)
                         .flatMap(Optional::stream)
-                        .map(jsonObject -> ServerEntity.createFromJsonElement(jsonObject, apisHandler))
+                        .map(jsonObject -> ServerEntity.createFromJsonElement(jsonObject, client))
                         .flatMap(Optional::stream)
                         .map(serverEntity -> (Image) serverEntity)
-                        .toList();
-
-                children.addAll(serverEntities);
+                        .toList()
+                );
 
                 addToNumberOfOrphanedImagesLoaded(batch.size());
             }
@@ -387,6 +393,83 @@ class JsonApi {
      */
     public ReadOnlyIntegerProperty getNumberOfOrphanedImagesLoaded() {
         return numberOfOrphanedImagesLoaded;
+    }
+
+    /**
+     * <p>Attempt to retrieve all screens of the server.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @return a CompletableFuture with the list containing all screen of this server
+     */
+    public CompletableFuture<List<Screen>> getScreens() {
+        return getChildren(String.format(SCREENS_URL, urls.get(SCREENS_URL_KEY))).thenApply(
+                children -> children.stream().map(child -> (Screen) child).toList()
+        );
+    }
+
+    /**
+     * <p>Attempt to retrieve all orphaned (e.g. not in any screen) plates of the server.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @return a CompletableFuture with the list containing all orphaned plates of this server
+     */
+    public CompletableFuture<List<Plate>> getOrphanedPlates() {
+        return getChildren(String.format(ORPHANED_PLATES_URL, urls.get(PLATES_URL_KEY))).thenApply(
+                children -> children.stream().map(child -> (Plate) child).toList()
+        );
+    }
+
+    /**
+     * <p>Attempt to retrieve all plates of a project.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @param screenID  the screen ID whose plates should be retrieved
+     * @return a CompletableFuture with the list containing all plates of the screen
+     */
+    public CompletableFuture<List<Plate>> getPlates(long screenID) {
+        return getChildren(String.format(PLATES_URL, urls.get(SCREENS_URL_KEY), screenID)).thenApply(
+                children -> children.stream().map(child -> (Plate) child).toList()
+        );
+    }
+
+    /**
+     * <p>Attempt to retrieve all plate acquisitions of a plate.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @param plateID  the plate ID whose plate acquisitions should be retrieved
+     * @return a CompletableFuture with the list containing all plate acquisitions of the plate
+     */
+    public CompletableFuture<List<PlateAcquisition>> getPlateAcquisitions(long plateID) {
+        return getChildren(String.format(PLATE_ACQUISITIONS_URL, webHost, plateID)).thenApply(
+                children -> children.stream().map(child -> (PlateAcquisition) child).toList()
+        );
+    }
+
+    /**
+     * <p>Attempt to retrieve all wells of a plate.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @param plateID  the plate acquisition ID whose wells should be retrieved
+     * @return a CompletableFuture with the list containing all wells of the plate
+     */
+    public CompletableFuture<List<Well>> getWellsFromPlate(long plateID) {
+        return getChildren(String.format(PLATE_WELLS_URL, webHost, plateID)).thenApply(
+                children -> children.stream().map(child -> (Well) child).toList()
+        );
+    }
+
+    /**
+     * <p>Attempt to retrieve all wells of a plate acquisition.</p>
+     * <p>This function is asynchronous.</p>
+     *
+     * @param plateAcquisitionID  the plate acquisition ID whose wells should be retrieved
+     * @param wellSampleIndex  the index of the well sample
+     * @return a CompletableFuture with the list containing all wells of the plate acquisition
+     */
+    public CompletableFuture<List<Well>> getWellsFromPlateAcquisition(long plateAcquisitionID, int wellSampleIndex) {
+        return getChildren(String.format(WELLS_URL, webHost, plateAcquisitionID, wellSampleIndex)).thenApply(
+                children -> children.stream().map(child -> (Well) child).toList()
+        );
     }
 
     /**
@@ -489,7 +572,7 @@ class JsonApi {
     }
 
     private CompletableFuture<List<URI>> getOrphanedImagesURIs() {
-        return apisHandler.getOrphanedImagesIds().thenApply(ids -> ids.stream()
+        return client.getApisHandler().getOrphanedImagesIds().thenApply(ids -> ids.stream()
                 .map(id -> WebUtilities.createURI(urls.get(IMAGES_URL_KEY) + id))
                 .flatMap(Optional::stream)
                 .toList()
@@ -577,7 +660,7 @@ class JsonApi {
             return RequestSender.getPaginated(uri.get()).thenApply(jsonElements -> {
                 changeNumberOfEntitiesLoading(false);
 
-                return ServerEntity.createFromJsonElements(jsonElements, apisHandler).toList();
+                return ServerEntity.createFromJsonElements(jsonElements, client).toList();
             });
         } else {
             return CompletableFuture.completedFuture(List.of());

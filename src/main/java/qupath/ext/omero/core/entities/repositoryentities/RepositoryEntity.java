@@ -1,5 +1,6 @@
 package qupath.ext.omero.core.entities.repositoryentities;
 
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.collections.ObservableList;
 import qupath.ext.omero.core.entities.permissions.Group;
 import qupath.ext.omero.core.entities.permissions.Owner;
@@ -10,9 +11,9 @@ import qupath.ext.omero.core.entities.permissions.Owner;
 public interface RepositoryEntity {
 
     /**
-     * @return the number of children of this entity
+     * @return whether this entity has children
      */
-    int getNumberOfChildren();
+    boolean hasChildren();
 
     /**
      * <p>Returns the list of children of this element.</p>
@@ -29,17 +30,17 @@ public interface RepositoryEntity {
     ObservableList<? extends RepositoryEntity> getChildren();
 
     /**
-     * @return a text describing the entity, or an empty String if the name was not found
+     * @return a read only property describing the entity. This property may be updated from any thread
      */
-    String getName();
+    ReadOnlyStringProperty getLabel();
 
     /**
      * Indicates if this entity belongs to the provided group, the provided owner,
-     * and (if the entity is a project) match the provided name.
+     * and match the provided name.
      *
      * @param groupFilter  the group the entity should belong to
      * @param ownerFilter  the owner the entity should belong to
-     * @param nameFilter  the name the entity should contain (if the entity is a project)
+     * @param nameFilter  the name the entity should contain
      * @return whether this entity matches all the filters
      */
     boolean isFilteredByGroupOwnerName(Group groupFilter, Owner ownerFilter, String nameFilter);

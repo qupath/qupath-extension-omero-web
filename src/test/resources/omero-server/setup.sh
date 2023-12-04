@@ -20,8 +20,21 @@ file=$(/opt/omero/server/venv3/bin/omero obj new FileAnnotation file=$analysis)
 
 /opt/omero/server/venv3/bin/omero obj new Dataset name=orphaned_dataset
 
-/opt/omero/server/venv3/bin/omero import -d $dataset /resources/mitosis.tif
-/opt/omero/server/venv3/bin/omero import /resources/Cardio.tif
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/rgb.tiff
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/uint8.tiff
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/int8.tiff
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/uint16.tiff
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/int16.tiff
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/uint32.tiff
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/int32.tiff
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/float32.tiff
+/opt/omero/server/venv3/bin/omero import -d $dataset /resources/images/float64.tiff
+/opt/omero/server/venv3/bin/omero import /resources/images/complex.tiff
+
+screen=$(/opt/omero/server/venv3/bin/omero obj new Screen name=screen)
+/opt/omero/server/venv3/bin/omero import -r $screen /resources/plate/hcs.companion.ome
+
+/opt/omero/server/venv3/bin/omero import /resources/plate/hcs.companion.ome
 
 tar -czvf /tmp/OMERO.tar.gz /OMERO
 
