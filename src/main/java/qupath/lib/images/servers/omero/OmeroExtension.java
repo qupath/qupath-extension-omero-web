@@ -39,14 +39,14 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import qupath.fx.dialogs.Dialogs;
+import qupath.fx.utils.GridPaneUtils;
 import qupath.lib.common.Version;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.actions.ActionTools;
-import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
 import qupath.lib.gui.tools.MenuTools;
-import qupath.lib.gui.tools.PaneTools;
 
 /**
  * Extension to access images hosted on OMERO.
@@ -131,8 +131,8 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 				gp.setVgap(5.0);
 		        TextField tf = new TextField();
 		        tf.setPrefWidth(400);
-		        PaneTools.addGridRow(gp, 0, 0, "Enter OMERO URL", new Label("Enter an OMERO server URL to browse (e.g. http://idr.openmicroscopy.org/):"));
-		        PaneTools.addGridRow(gp, 1, 0, "Enter OMERO URL", tf, tf);
+		        GridPaneUtils.addGridRow(gp, 0, 0, "Enter OMERO URL", new Label("Enter an OMERO server URL to browse (e.g. http://idr.openmicroscopy.org/):"));
+				GridPaneUtils.addGridRow(gp, 1, 0, "Enter OMERO URL", tf, tf);
 		        var confirm = Dialogs.showConfirmDialog("Enter OMERO URL", gp);
 		        if (!confirm)
 		        	return;
@@ -202,6 +202,6 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 	
 	@Override
 	public Version getQuPathVersion() {
-		return Version.parse("0.3.0-rc2");
+		return Version.parse("0.5.0");
 	}
 }
