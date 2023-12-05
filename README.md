@@ -18,9 +18,14 @@ This effectively means it is most useful for viewing and annotating RGB images
 (including whole slide images), but is not suitable for quantitative analysis 
 where JPEG compression artifacts would be problematic.
 
-The extension is intended for the (at the time of writing) not-yet-released 
-QuPath v0.3.
-It is not compatible with earlier QuPath versions.
+## Compatibility
+
+The extension is intended for use with QuPath v0.5; it is not compatible with earlier QuPath versions.
+A *new* QuPath OMERO extension is currently under active development.
+
+## Docs
+
+The main documentation for the extension is at https://qupath.readthedocs.io/en/0.5/docs/advanced/omero.html
 
 ## Installing
 
@@ -34,7 +39,7 @@ You might then need to restart QuPath (but not your computer).
 
 ## Building
 
-You can build the extension using OpenJDK 11 or later with
+You can build the extension using OpenJDK 17 or later with
 
 ```bash
 gradlew clean build
