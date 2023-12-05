@@ -1,5 +1,11 @@
-## Version 0.3.0-SNAPSHOT
-*In progress*
+## Version 0.4.0
+
+* Supports QuPath v0.5.0
+* Renamed to `qupath-extension-omero-web`
+  * To make way for a new OMERO extension soon...
+
+
+## Version 0.3.0
 
 * Now separated from QuPath in its own repository!
 * Log on/off OMERO servers with different credentials
