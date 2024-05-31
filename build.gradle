@@ -7,7 +7,7 @@ plugins {
   id 'org.bytedeco.gradle-javacpp-platform'
 }
 
-ext.moduleName = 'qupath.extension.omero'
+ext.moduleName = 'qupath.extension.omero-web'
 ext.qupathVersion = gradle.ext.qupathVersion
 ext.qupathJavaVersion = 17
 
