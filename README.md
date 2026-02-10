@@ -3,7 +3,12 @@
 [![Downloads (latest release)](https://img.shields.io/github/downloads-pre/qupath/qupath-extension-omero/latest/total)](https://github.com/qupath/qupath-extension-omero/releases/latest)
 [![Downloads (all releases)](https://img.shields.io/github/downloads/qupath/qupath-extension-omero/total)](https://github.com/qupath/qupath-extension-omero/releases)
 
-# QuPath OMERO extension
+# QuPath OMERO web extension
+
+> [!WARNING]
+> The OMERO web extension is no longer supported in QuPath 0.6.0 (or later) and was replaced by the new [QuPath OMERO extension](https://github.com/qupath/qupath-extension-omero).
+> 
+> To migrate your existing QuPath projects to work with the new extension, follow the instructions on the [documentation page of the OMERO extension](https://qupath.readthedocs.io/en/stable/docs/advanced/omero.html#migrating).
 
 Welcome to the OMERO extension for [QuPath](http://qupath.github.io)!
 
